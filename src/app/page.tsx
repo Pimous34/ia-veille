@@ -5,10 +5,10 @@ import Hero from '@/components/Hero';
 import ArticleList from '@/components/ArticleList';
 import Footer from '@/components/Footer';
 import OnboardingModal from '@/components/OnboardingModal';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingProvider, useOnboardingContext } from '@/contexts/OnboardingContext';
 
-export default function Home() {
-  const { isOnboardingOpen, isLoading, completeOnboarding, skipOnboarding } = useOnboarding();
+function HomeContent() {
+  const { isOnboardingOpen, isLoading, completeOnboarding, skipOnboarding } = useOnboardingContext();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
@@ -27,5 +27,13 @@ export default function Home() {
         />
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <OnboardingProvider>
+      <HomeContent />
+    </OnboardingProvider>
   );
 }

@@ -1,6 +1,11 @@
+'use client';
+
 import Link from 'next/link';
+import { useOnboardingContext } from '@/contexts/OnboardingContext';
 
 const Hero = () => {
+  const { user, openOnboarding } = useOnboardingContext();
+
   return (
     <section className="pt-32 pb-20 md:pt-40 md:pb-28">
       <div className="container mx-auto px-4">
@@ -24,12 +29,21 @@ const Hero = () => {
           
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-            <Link 
-              href="/inscription" 
-              className="px-8 py-4 bg-indigo-600 text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              Démarrez ma Veille IA Personnalisée
-            </Link>
+            {!user ? (
+              <button 
+                onClick={openOnboarding}
+                className="px-8 py-4 bg-indigo-600 text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Démarrez ma Veille IA Personnalisée
+              </button>
+            ) : (
+              <Link 
+                href="/dashboard" 
+                className="px-8 py-4 bg-indigo-600 text-white rounded-lg font-semibold text-lg hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                Accéder à mon Dashboard
+              </Link>
+            )}
             <Link 
               href="#apercu" 
               className="px-8 py-4 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 rounded-lg font-semibold text-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"

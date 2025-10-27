@@ -9,6 +9,8 @@ interface OnboardingData {
   experienceLevel: 'debutant' | 'intermediaire' | 'pro' | null;
   interests: string[];
   toolsUsed: string[];
+  wantsNewsletter: boolean;
+  newsletterFrequency: number; // 1 = quotidien, 2 = tous les 2 jours, ..., 7 = hebdomadaire
 }
 
 interface OnboardingModalProps {
@@ -54,9 +56,11 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
     experienceLevel: null,
     interests: [],
     toolsUsed: [],
+    wantsNewsletter: false,
+    newsletterFrequency: 7, // Par défaut hebdomadaire
   });
 
-  const totalSteps = 4;
+  const totalSteps = 5;
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -316,6 +320,91 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
                             </button>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Step 5: Newsletter */}
+                    {step === 5 && (
+                      <div className="space-y-6">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                          Souhaitez-vous recevoir notre newsletter ?
+                        </h3>
+                        
+                        {/* Yes/No Toggle */}
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                          <button
+                            onClick={() => setFormData({ ...formData, wantsNewsletter: true })}
+                            className={`p-6 rounded-xl border-2 transition-all ${
+                              formData.wantsNewsletter
+                                ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                            }`}
+                          >
+                            <div className="text-4xl mb-3">📧</div>
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Oui, je veux rester informé
+                            </h4>
+                          </button>
+                          <button
+                            onClick={() => setFormData({ ...formData, wantsNewsletter: false })}
+                            className={`p-6 rounded-xl border-2 transition-all ${
+                              !formData.wantsNewsletter
+                                ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                            }`}
+                          >
+                            <div className="text-4xl mb-3">🔕</div>
+                            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              Non merci
+                            </h4>
+                          </button>
+                        </div>
+
+                        {/* Frequency Slider (only if wants newsletter) */}
+                        {formData.wantsNewsletter && (
+                          <div className="space-y-4 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                            <label className="block text-lg font-semibold text-gray-900 dark:text-white">
+                              À quelle fréquence ?
+                            </label>
+                            <div className="space-y-6">
+                              <input
+                                type="range"
+                                min="1"
+                                max="7"
+                                value={formData.newsletterFrequency}
+                                onChange={(e) => setFormData({ ...formData, newsletterFrequency: parseInt(e.target.value) })}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
+                              />
+                              <div className="text-center">
+                                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                                  {formData.newsletterFrequency === 1 && '📬 Quotidien'}
+                                  {formData.newsletterFrequency === 2 && '📬 Tous les 2 jours'}
+                                  {formData.newsletterFrequency === 3 && '📬 Tous les 3 jours'}
+                                  {formData.newsletterFrequency === 4 && '📬 Tous les 4 jours'}
+                                  {formData.newsletterFrequency === 5 && '📬 Tous les 5 jours'}
+                                  {formData.newsletterFrequency === 6 && '📬 Tous les 6 jours'}
+                                  {formData.newsletterFrequency === 7 && '📬 Hebdomadaire'}
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {formData.newsletterFrequency === 1 && 'Recevez les dernières actualités IA chaque jour'}
+                                  {formData.newsletterFrequency === 7 && 'Un résumé hebdomadaire des meilleures actualités'}
+                                  {formData.newsletterFrequency > 1 && formData.newsletterFrequency < 7 && 
+                                    `Recevez une newsletter tous les ${formData.newsletterFrequency} jours`}
+                                </p>
+                              </div>
+                              {/* Visual frequency markers */}
+                              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 px-1">
+                                <span>Quotidien</span>
+                                <span>2j</span>
+                                <span>3j</span>
+                                <span>4j</span>
+                                <span>5j</span>
+                                <span>6j</span>
+                                <span>Hebdo</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </motion.div>

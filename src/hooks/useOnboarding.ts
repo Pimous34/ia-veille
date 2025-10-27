@@ -23,13 +23,6 @@ export const useOnboarding = () => {
 
   const checkOnboardingStatus = async () => {
     try {
-      // MODE TEST : Afficher toujours le modal pour la démo
-      // Décommentez les lignes ci-dessous pour activer le mode test
-      console.log('[TEST MODE] Affichage du modal d\'onboarding');
-      setIsOnboardingOpen(true);
-      setIsLoading(false);
-      return;
-      
       // Get current user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
@@ -105,10 +98,16 @@ export const useOnboarding = () => {
     setIsOnboardingOpen(false);
   };
 
+  const openOnboarding = () => {
+    setIsOnboardingOpen(true);
+  };
+
   return {
     isOnboardingOpen,
     isLoading,
+    user,
     completeOnboarding,
     skipOnboarding,
+    openOnboarding,
   };
 };
