@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface OnboardingData {
   userType: 'professionnel' | 'particulier' | null;
   experienceLevel: 'debutant' | 'intermediaire' | 'pro' | null;
+  aiTools: string[]; // IA utilisées (ChatGPT, Claude, etc.)
   interests: string[];
   toolsUsed: string[];
   wantsNewsletter: boolean;
@@ -23,30 +25,219 @@ const INTERESTS_OPTIONS = [
   'Machine Learning',
   'LLM (Large Language Models)',
   'Computer Vision',
-  'NLP (Traitement du langage)',
+  'NLP (Natural Language Processing)',
   'Robotique',
   'Éthique IA',
   'IA Générative',
   'Deep Learning',
   'Data Science',
-  'MLOps',
+  'Data Analyst',
   'IA en Santé',
   'IA en Finance',
+  'Graphisme',
+  'Vidéo',
+  'Jeux vidéo',
+  'Vibecoding',
+  'No-code',
 ];
 
-const TOOLS_OPTIONS = [
+const AI_TOOLS_OPTIONS = [
   'ChatGPT',
   'Claude',
   'Gemini',
+  'Grok',
+  'MCP',
+  'Mistral AI',
+  'Llama',
+  'Perplexity',
+  'Copilot',
   'Midjourney',
+  'DALL-E',
   'Stable Diffusion',
+];
+
+const TOOLS_OPTIONS = [
+  'n8n',
+  'Make (Integromat)',
+  'Zapier',
+  'Airtable',
+  'Notion',
+  'Cursor',
+  'GitHub Copilot',
+  'LangChain',
+  'Supabase',
+  'Vercel',
+  'Figma',
+  'Linear',
+];
+
+// Liste étendue pour l'autocomplétion
+const ALL_TOOLS_SUGGESTIONS = [
   'TensorFlow',
   'PyTorch',
   'Hugging Face',
   'LangChain',
   'OpenAI API',
-  'Copilot',
+  'Anthropic API',
   'Cursor',
+  'GitHub Copilot',
+  'Keras',
+  'Scikit-learn',
+  'XGBoost',
+  'LightGBM',
+  'FastAPI',
+  'Flask',
+  'Django',
+  'Streamlit',
+  'Gradio',
+  'Weights & Biases',
+  'MLflow',
+  'Ray',
+  'Apache Spark',
+  'Dask',
+  'Pandas',
+  'NumPy',
+  'Matplotlib',
+  'Seaborn',
+  'Plotly',
+  'Jupyter',
+  'VS Code',
+  'PyCharm',
+  'Colab',
+  'Kaggle',
+  'Docker',
+  'Kubernetes',
+  'AWS SageMaker',
+  'Azure ML',
+  'Google Cloud AI',
+  'Vertex AI',
+  'Databricks',
+  'Snowflake',
+  'dbt',
+  'Airflow',
+  'Prefect',
+  'Great Expectations',
+  'DVC',
+  'ClearML',
+  'Neptune.ai',
+  'Comet.ml',
+  'Evidently AI',
+  'Seldon',
+  'BentoML',
+  'ONNX',
+  'TensorRT',
+  'OpenVINO',
+  'Triton',
+  'LlamaIndex',
+  'Semantic Kernel',
+  'AutoGPT',
+  'LangSmith',
+  'Pinecone',
+  'Weaviate',
+  'Chroma',
+  'Qdrant',
+  'Milvus',
+  'FAISS',
+  'Elasticsearch',
+  'Redis',
+  'PostgreSQL',
+  'MongoDB',
+  'Supabase',
+  'Firebase',
+  'Vercel',
+  'Netlify',
+  'Railway',
+  'Render',
+  // No-code/Low-code & Automation
+  'n8n',
+  'Make (Integromat)',
+  'Zapier',
+  'Airtable',
+  'Notion',
+  'Coda',
+  'Retool',
+  'Bubble',
+  'Webflow',
+  'Framer',
+  'Figma',
+  // Productivity & Collaboration
+  'Slack',
+  'Discord',
+  'Linear',
+  'Jira',
+  'Asana',
+  'Trello',
+  'Monday.com',
+  'ClickUp',
+  'Miro',
+  'FigJam',
+  'Excalidraw',
+  // Data & Analytics
+  'Tableau',
+  'Power BI',
+  'Looker',
+  'Metabase',
+  'Superset',
+  'Redash',
+  'Google Analytics',
+  'Mixpanel',
+  'Amplitude',
+  'Segment',
+  'Rudderstack',
+  // CMS & Content
+  'Contentful',
+  'Sanity',
+  'Strapi',
+  'WordPress',
+  'Ghost',
+  'Webflow CMS',
+  // API & Backend
+  'Postman',
+  'Insomnia',
+  'Swagger',
+  'GraphQL',
+  'REST',
+  'tRPC',
+  'Prisma',
+  'Drizzle',
+  // Testing & QA
+  'Playwright',
+  'Cypress',
+  'Selenium',
+  'Jest',
+  'Vitest',
+  'Pytest',
+  // Version Control & CI/CD
+  'Git',
+  'GitHub',
+  'GitLab',
+  'Bitbucket',
+  'GitHub Actions',
+  'GitLab CI',
+  'CircleCI',
+  'Jenkins',
+  'Travis CI',
+  // Monitoring & Observability
+  'Sentry',
+  'Datadog',
+  'New Relic',
+  'Grafana',
+  'Prometheus',
+  'LogRocket',
+  'Hotjar',
+  'FullStory',
+  // Other
+  'Stripe',
+  'Twilio',
+  'SendGrid',
+  'Mailchimp',
+  'Resend',
+  'Cloudflare',
+  'AWS',
+  'GCP',
+  'Azure',
+  'DigitalOcean',
+  'Heroku',
 ];
 
 const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) => {
@@ -54,13 +245,43 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
   const [formData, setFormData] = useState<OnboardingData>({
     userType: null,
     experienceLevel: null,
+    aiTools: [],
     interests: [],
     toolsUsed: [],
     wantsNewsletter: false,
-    newsletterFrequency: 7, // Par défaut hebdomadaire
+    newsletterFrequency: 1, // Par défaut quotidien
   });
 
-  const totalSteps = 5;
+  const totalSteps = 7;
+  const supabase = createClient();
+  
+  // État pour le champ de saisie personnalisé des outils
+  const [customToolInput, setCustomToolInput] = useState('');
+  const [toolSuggestions, setToolSuggestions] = useState<string[]>([]);
+
+  // Fonction générique pour l'authentification OAuth
+  const handleOAuthSignIn = async (provider: 'google' | 'apple' | 'facebook' | 'twitter' | 'azure') => {
+    try {
+      // Sauvegarder les données de l'onboarding dans localStorage avant la redirection OAuth
+      localStorage.setItem('onboarding-data', JSON.stringify(formData));
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          skipBrowserRedirect: false,
+        },
+      });
+
+      if (error) {
+        console.error(`Erreur d'authentification ${provider}:`, error);
+        alert(`Erreur lors de la connexion avec ${provider}. Veuillez réessayer.`);
+      }
+    } catch (err) {
+      console.error('Erreur:', err);
+      alert('Une erreur est survenue. Veuillez réessayer.');
+    }
+  };
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -85,6 +306,15 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
     }));
   };
 
+  const toggleAiTool = (tool: string) => {
+    setFormData(prev => ({
+      ...prev,
+      aiTools: prev.aiTools.includes(tool)
+        ? prev.aiTools.filter(t => t !== tool)
+        : [...prev.aiTools, tool],
+    }));
+  };
+
   const toggleTool = (tool: string) => {
     setFormData(prev => ({
       ...prev,
@@ -94,6 +324,43 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
     }));
   };
 
+  // Gérer la saisie de l'outil personnalisé
+  const handleCustomToolInput = (value: string) => {
+    setCustomToolInput(value);
+    
+    if (value.trim().length > 0) {
+      // Filtrer les suggestions basées sur la saisie
+      const filtered = ALL_TOOLS_SUGGESTIONS.filter(tool =>
+        tool.toLowerCase().includes(value.toLowerCase()) &&
+        !formData.toolsUsed.includes(tool)
+      ).slice(0, 5); // Limiter à 5 suggestions
+      setToolSuggestions(filtered);
+    } else {
+      setToolSuggestions([]);
+    }
+  };
+
+  // Ajouter un outil personnalisé ou depuis les suggestions
+  const addCustomTool = (tool: string) => {
+    const trimmedTool = tool.trim();
+    if (trimmedTool && !formData.toolsUsed.includes(trimmedTool)) {
+      setFormData(prev => ({
+        ...prev,
+        toolsUsed: [...prev.toolsUsed, trimmedTool],
+      }));
+      setCustomToolInput('');
+      setToolSuggestions([]);
+    }
+  };
+
+  // Gérer l'appui sur Entrée
+  const handleCustomToolKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && customToolInput.trim()) {
+      e.preventDefault();
+      addCustomTool(customToolInput);
+    }
+  };
+
   const canProceed = () => {
     switch (step) {
       case 1:
@@ -101,9 +368,15 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
       case 2:
         return formData.experienceLevel !== null;
       case 3:
-        return formData.interests.length > 0;
+        return formData.aiTools.length > 0;
       case 4:
+        return formData.interests.length > 0;
+      case 5:
         return true; // Tools are optional
+      case 6:
+        return true; // Newsletter is optional
+      case 7:
+        return false; // Sign up step - no "next" button, only sign up buttons
       default:
         return false;
     }
@@ -271,12 +544,41 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
                       </div>
                     )}
 
-                    {/* Step 3: Interests */}
+                    {/* Step 3: AI Tools */}
                     {step === 3 && (
                       <div className="space-y-4">
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                          Quels sujets vous intéressent ? (Sélectionnez-en plusieurs)
+                          Quelles IA avez-vous l&apos;habitude d&apos;utiliser ?
                         </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {AI_TOOLS_OPTIONS.map((tool) => (
+                            <button
+                              key={tool}
+                              onClick={() => toggleAiTool(tool)}
+                              className={`p-4 rounded-lg border-2 transition-all text-left ${
+                                formData.aiTools.includes(tool)
+                                  ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                              }`}
+                            >
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                {tool}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 4: Interests */}
+                    {step === 4 && (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                          Quels domaines de l&apos;IA vous intéressent ?
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          Sélectionnez un ou plusieurs domaines
+                        </p>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                           {INTERESTS_OPTIONS.map((interest) => (
                             <button
@@ -297,34 +599,101 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
                       </div>
                     )}
 
-                    {/* Step 4: Tools */}
-                    {step === 4 && (
-                      <div className="space-y-4">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-                          Quels outils utilisez-vous ? (Optionnel)
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {TOOLS_OPTIONS.map((tool) => (
-                            <button
-                              key={tool}
-                              onClick={() => toggleTool(tool)}
-                              className={`p-4 rounded-lg border-2 transition-all text-left ${
-                                formData.toolsUsed.includes(tool)
-                                  ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
-                                  : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
-                              }`}
-                            >
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                {tool}
-                              </span>
-                            </button>
-                          ))}
+                    {/* Step 5: Tools */}
+                    {step === 5 && (
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Quels logiciels/frameworks utilisez-vous ?
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Optionnel - Pour les développeurs et data scientists
+                          </p>
+                        </div>
+
+                        {/* Champ de saisie personnalisé EN HAUT */}
+                        <div className="relative">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Rechercher ou ajouter un outil
+                          </label>
+                          <input
+                            type="text"
+                            value={customToolInput}
+                            onChange={(e) => handleCustomToolInput(e.target.value)}
+                            onKeyPress={handleCustomToolKeyPress}
+                            placeholder="Tapez le nom d'un outil (ex: n8n, Notion, Zapier)..."
+                            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 transition-all"
+                          />
+                          
+                          {/* Suggestions d'autocomplétion */}
+                          {toolSuggestions.length > 0 && (
+                            <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                              {toolSuggestions.map((suggestion) => (
+                                <button
+                                  key={suggestion}
+                                  onClick={() => addCustomTool(suggestion)}
+                                  className="w-full px-4 py-3 text-left hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                                >
+                                  {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Outils sélectionnés (tags) - JUSTE EN DESSOUS */}
+                        {formData.toolsUsed.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                              Outils sélectionnés ({formData.toolsUsed.length}) :
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {formData.toolsUsed.map((tool) => (
+                                <span
+                                  key={tool}
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium"
+                                >
+                                  {tool}
+                                  <button
+                                    onClick={() => toggleTool(tool)}
+                                    className="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Outils populaires suggérés - EN BAS */}
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            Outils populaires :
+                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {TOOLS_OPTIONS.map((tool) => (
+                              <button
+                                key={tool}
+                                onClick={() => toggleTool(tool)}
+                                className={`p-4 rounded-lg border-2 transition-all text-left ${
+                                  formData.toolsUsed.includes(tool)
+                                    ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                                }`}
+                              >
+                                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {tool}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 5: Newsletter */}
-                    {step === 5 && (
+                    {/* Step 6: Newsletter */}
+                    {step === 6 && (
                       <div className="space-y-6">
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                           Souhaitez-vous recevoir notre newsletter ?
@@ -407,6 +776,95 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
                         )}
                       </div>
                     )}
+
+                    {/* Step 7: Sign Up */}
+                    {step === 7 && (
+                      <div className="space-y-6">
+                        <div className="text-center mb-8">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                            Créez votre compte
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            Choisissez votre méthode d&apos;inscription pour commencer
+                          </p>
+                        </div>
+
+                        {/* Social Sign Up Buttons */}
+                        <div className="space-y-3">
+                          {/* Google */}
+                          <button
+                            onClick={() => handleOAuthSignIn('google')}
+                            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400 transition-all shadow-sm hover:shadow-lg hover:scale-[1.02]"
+                          >
+                            <svg className="w-6 h-6" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            Continuer avec Google
+                          </button>
+
+                          {/* Apple */}
+                          <button
+                            onClick={() => handleOAuthSignIn('apple')}
+                            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-black dark:bg-white border-2 border-black dark:border-white rounded-xl font-semibold text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-sm hover:shadow-lg hover:scale-[1.02]"
+                          >
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                            </svg>
+                            Continuer avec Apple
+                          </button>
+
+                          {/* Facebook */}
+                          <button
+                            onClick={() => handleOAuthSignIn('facebook')}
+                            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-[#1877F2] border-2 border-[#1877F2] rounded-xl font-semibold text-white hover:bg-[#166FE5] hover:border-[#0d5dbf] transition-all shadow-sm hover:shadow-lg hover:scale-[1.02]"
+                          >
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                            Continuer avec Facebook
+                          </button>
+
+                          {/* X (Twitter) */}
+                          <button
+                            onClick={() => handleOAuthSignIn('twitter')}
+                            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-black dark:bg-white border-2 border-black dark:border-white rounded-xl font-semibold text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-sm hover:shadow-lg hover:scale-[1.02]"
+                          >
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                            Continuer avec X
+                          </button>
+
+                          {/* Microsoft */}
+                          <button
+                            onClick={() => handleOAuthSignIn('azure')}
+                            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-xl font-semibold text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-400 transition-all shadow-sm hover:shadow-lg hover:scale-[1.02]"
+                          >
+                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                              <path fill="#F25022" d="M0 0h11.377v11.372H0z"/>
+                              <path fill="#00A4EF" d="M12.623 0H24v11.372H12.623z"/>
+                              <path fill="#7FBA00" d="M0 12.623h11.377V24H0z"/>
+                              <path fill="#FFB900" d="M12.623 12.623H24V24H12.623z"/>
+                            </svg>
+                            Continuer avec Microsoft
+                          </button>
+                        </div>
+
+                        <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-8">
+                          En vous inscrivant, vous acceptez nos{' '}
+                          <a href="/terms" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                            Conditions d&apos;utilisation
+                          </a>
+                          {' '}et notre{' '}
+                          <a href="/privacy" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                            Politique de confidentialité
+                          </a>
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -425,18 +883,20 @@ const OnboardingModal = ({ isOpen, onClose, onComplete }: OnboardingModalProps) 
                   <ChevronLeft className="w-5 h-5" />
                   Retour
                 </button>
-                <button
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                    canProceed()
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {step === totalSteps ? 'Terminer' : 'Suivant'}
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+                {step !== 7 && (
+                  <button
+                    onClick={handleNext}
+                    disabled={!canProceed()}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                      canProceed()
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        : 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Suivant
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

@@ -12,14 +12,9 @@ const Hero = () => {
         <div className="max-w-5xl mx-auto text-center">
           {/* Problématique */}
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-            Trop d&apos;informations sur l&apos;IA,<br />
-            <span className="text-indigo-600 dark:text-indigo-400">tue l&apos;IA !</span>
+            Trop d&apos;informations sur l&apos;IA ?<br />
+            <span className="text-indigo-600 dark:text-indigo-400">Personnalisez votre veille de manière efficace !</span>
           </h1>
-          
-          {/* Solution */}
-          <h2 className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 mb-8 font-semibold">
-            Nous simplifions votre veille personnalisée
-          </h2>
           
           {/* Argument Clé */}
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-10 max-w-3xl mx-auto">

@@ -8,8 +8,11 @@ import toast from 'react-hot-toast';
 interface OnboardingData {
   userType: 'professionnel' | 'particulier' | null;
   experienceLevel: 'debutant' | 'intermediaire' | 'pro' | null;
+  aiTools: string[];
   interests: string[];
   toolsUsed: string[];
+  wantsNewsletter: boolean;
+  newsletterFrequency: number;
 }
 
 export const useOnboarding = () => {
@@ -19,6 +22,22 @@ export const useOnboarding = () => {
 
   useEffect(() => {
     checkOnboardingStatus();
+    
+    // Vérifier si des données d'onboarding sont en attente dans localStorage
+    const savedOnboardingData = localStorage.getItem('onboarding-data');
+    if (savedOnboardingData) {
+      try {
+        const data = JSON.parse(savedOnboardingData);
+        // Sauvegarder automatiquement après connexion
+        setTimeout(() => {
+          completeOnboarding(data);
+          localStorage.removeItem('onboarding-data');
+        }, 1000);
+      } catch (error) {
+        console.error('Error parsing onboarding data:', error);
+        localStorage.removeItem('onboarding-data');
+      }
+    }
   }, []);
 
   const checkOnboardingStatus = async () => {
@@ -73,8 +92,11 @@ export const useOnboarding = () => {
           onboarding_completed: true,
           user_type: data.userType,
           experience_level: data.experienceLevel,
+          ai_tools: data.aiTools,
           interests: data.interests,
           tools_used: data.toolsUsed,
+          wants_newsletter: data.wantsNewsletter,
+          newsletter_frequency: data.newsletterFrequency.toString(),
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'id'
