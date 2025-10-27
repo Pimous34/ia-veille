@@ -1,36 +1,231 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🤖 IA Veille - Plateforme de Veille Technologique IA
 
-## Getting Started
+> **Trop d'informations sur l'IA, aucune adaptée à vos besoins réels ?**  
+> IA Veille filtre le bruit pour vous livrer la veille technologique IA qui vous correspond.
 
-First, run the development server:
+![Next.js](https://img.shields.io/badge/Next.js-16.0-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38bdf8)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ✨ Fonctionnalités Principales
+
+### 🎯 Pour les Utilisateurs
+- **Swipe Tinder** : Affinez vos préférences de veille en swipant les sujets
+- **Newsletters Personnalisées** : Recevez uniquement les articles pertinents
+- **Podcast Audio** : Écoutez les news du jour générées automatiquement
+- **Playlist YouTube** : Vidéos sélectionnées selon vos intérêts
+- **Classification Intelligente** : Articles organisés par catégories et tags
+- **Moteur de Recherche Avancé** : Filtrage par date, source, catégorie
+
+### 🔧 Pour les Administrateurs
+- **Agrégation Automatique** : RSS, Twitter, API de newsletters
+- **Web Scraping** : Collecte depuis blogs et sites spécialisés
+- **Modération** : Interface de gestion des commentaires
+- **Analytics** : Statistiques de consultation détaillées
+- **Gestion des Sources** : Ajout/retrait de flux facilité
+
+## 🏗️ Architecture Technique
+
+### Stack Technologique
+
+```
+Frontend:  Next.js 16 + React + TypeScript + Tailwind CSS v4
+Backend:   Supabase (PostgreSQL + Auth + Edge Functions)
+Automation: n8n (Workflows d'agrégation et newsletters)
+Email:     SendGrid / Mailgun
+Analytics: Google Analytics (optionnel)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Structure de la Base de Données
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sql
+├── articles          # Contenu agrégé
+├── sources           # Flux RSS, API, etc.
+├── categories        # Classification thématique
+├── user_profiles     # Profils et préférences
+├── user_activity_log # Historique pour recommandations
+├── saved_articles    # Articles sauvegardés
+├── article_scores    # Scores de pertinence
+└── newsletters       # Historique d'envoi
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Démarrage Rapide
 
-## Learn More
+### Prérequis
 
-To learn more about Next.js, take a look at the following resources:
+- Node.js 18+
+- Compte Supabase
+- Compte SendGrid (pour les emails)
+- n8n (optionnel, pour l'automatisation)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Cloner le projet
+git clone https://github.com/votre-username/ia-veille.git
+cd ia-veille
 
-## Deploy on Vercel
+# Installer les dépendances
+npm install
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Copier le fichier d'environnement
+cp env.example .env.local
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Configurer les variables d'environnement
+# Éditez .env.local avec vos clés Supabase, SendGrid, etc.
+
+# Exécuter le schéma SQL dans Supabase
+# Copiez le contenu de supabase/schema.sql dans le SQL Editor de Supabase
+
+# Lancer le serveur de développement
+npm run dev
+```
+
+Ouvrez [http://localhost:3000](http://localhost:3000) pour voir le résultat.
+
+## 📁 Structure du Projet
+
+```
+ia-veille/
+├── src/
+│   ├── app/              # Pages Next.js (App Router)
+│   ├── components/       # Composants React réutilisables
+│   │   ├── Navbar.tsx
+│   │   ├── Hero.tsx
+│   │   ├── ArticleList.tsx
+│   │   ├── SwipePreferences.tsx
+│   │   ├── CookieBanner.tsx
+│   │   └── Footer.tsx
+│   ├── lib/              # Utilitaires et clients (Supabase)
+│   ├── types/            # Types TypeScript
+│   └── hooks/            # Custom React hooks
+├── supabase/
+│   └── schema.sql        # Schéma de base de données
+├── public/               # Assets statiques
+└── env.example           # Template des variables d'environnement
+```
+
+## 🎨 Fonctionnalités Détaillées
+
+### 1. Système de Swipe Tinder
+
+Permet aux utilisateurs de définir leurs préférences de manière ludique :
+- Swipe à droite = J'aime ce sujet
+- Swipe à gauche = Pas intéressé
+- Algorithme de recommandation basé sur ces préférences
+
+### 2. Newsletters Personnalisées
+
+- **Fréquence configurable** : Quotidienne, hebdomadaire, mensuelle
+- **Contenu adapté** : Basé sur les préférences et l'historique
+- **Résumés IA** : Articles résumés automatiquement
+- **Envoi planifié** : Via n8n et SendGrid
+
+### 3. Podcast Audio Automatique
+
+- Génération via NotebookLM
+- Résumé des actualités du jour
+- Stockage dans Supabase Storage
+- Notification aux abonnés
+
+### 4. Conformité RGPD
+
+- Bannière de cookies conforme
+- Gestion des préférences utilisateur
+- Politique de confidentialité
+- Droit à l'oubli
+
+## 🔐 Sécurité
+
+- **Row Level Security (RLS)** : Activé sur toutes les tables
+- **Authentification** : Gérée par Supabase Auth
+- **Validation** : Côté serveur via Edge Functions
+- **HTTPS** : Obligatoire en production
+
+## 📊 SEO
+
+### Optimisations Implémentées
+
+- ✅ Schema.org (Article, NewsArticle)
+- ✅ Meta tags Open Graph
+- ✅ Twitter Cards
+- ✅ Sitemap.xml automatique
+- ✅ Robots.txt configuré
+- ✅ Core Web Vitals optimisés
+- ✅ Mobile-First responsive
+
+### Stratégie de Contenu
+
+- **Longue Traîne** : Ciblage de requêtes spécifiques
+- **Hubs Thématiques** : Pages piliers par catégorie
+- **Données Originales** : Analyses et classements exclusifs
+- **Google Actualités** : Inscription prévue
+
+## 🛠️ Scripts Disponibles
+
+```bash
+npm run dev          # Serveur de développement
+npm run build        # Build de production
+npm run start        # Serveur de production
+npm run lint         # Vérification du code
+```
+
+## 📖 Documentation Complète
+
+Consultez [SETUP.md](./SETUP.md) pour :
+- Configuration détaillée de Supabase
+- Configuration des workflows n8n
+- Déploiement sur Vercel
+- Gestion des variables d'environnement
+
+## 🗺️ Roadmap
+
+### Phase 1 (Actuelle) ✅
+- [x] Structure de base Next.js + Tailwind
+- [x] Schéma de base de données Supabase
+- [x] Hero avec accroche optimisée
+- [x] Système de swipe Tinder
+- [x] Bannière de cookies RGPD
+- [x] Types TypeScript
+
+### Phase 2 (En cours) 🔄
+- [ ] Authentification complète
+- [ ] Tableau de bord utilisateur
+- [ ] Système de newsletters
+- [ ] Intégration n8n
+- [ ] Moteur de recommandation
+- [ ] Podcast audio automatique
+
+### Phase 3 (Future) 🎯
+- [ ] Playlist YouTube du jour
+- [ ] Système de commentaires
+- [ ] Partage social
+- [ ] Analytics avancées
+- [ ] Application mobile
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](./CONTRIBUTING.md) pour les guidelines.
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour plus de détails.
+
+## 📞 Support
+
+- 📧 Email : support@ia-veille.com
+- 💬 Discord : [Rejoindre la communauté](#)
+- 📖 Documentation : [docs.ia-veille.com](#)
+
+## 🙏 Remerciements
+
+- [Next.js](https://nextjs.org)
+- [Supabase](https://supabase.com)
+- [Tailwind CSS](https://tailwindcss.com)
+- [n8n](https://n8n.io)
+- [Framer Motion](https://www.framer.com/motion)
+
+---
+
+**Fait avec ❤️ pour la communauté IA**
