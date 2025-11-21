@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OREEGAM'IA - Veille IA & No-Code</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link">
+                <div class="logo">
+                    <div class="logo-wrapper">
+                        <img src="logo.png" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.svg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpeg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                    </div>
+                    <div class="logo-placeholder">
+                        <span class="logo-text">OREEGAM'IA</span>
+                    </div>
+                </div>
+            </a>
+            <nav class="main-nav">
+                <a href="#shortnews" class="nav-link">ShortNews</a>
+                <a href="#categories" class="nav-link">Catégories</a>
+                <a href="#mon-espace" class="nav-link">Mon Espace</a>
+            </nav>
+            <div class="search-container">
+                <form class="search-form" onsubmit="handleSearch(event)">
+                    <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
+                    <button type="submit" class="search-button" aria-label="Rechercher">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Video Section -->
+        <section class="video-section">
+            <div class="container">
+                <div class="video-wrapper">
+                    <iframe 
+                        class="video-player"
+                        src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+                        title="JT News - Veille IA & No-Code"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Articles from JT News -->
+        <section class="articles-section jt-articles">
+            <div class="container">
+                <div class="articles-grid" id="jtArticles">
+                    <!-- Articles will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Articles -->
+        <section class="articles-section trending-articles">
+            <div class="container">
+                <h2 class="section-title">Articles Tendances</h2>
+                <div class="articles-grid" id="trendingArticles">
+                    <!-- Articles will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 OREEGAM'IA - Veille IA & No-Code</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
