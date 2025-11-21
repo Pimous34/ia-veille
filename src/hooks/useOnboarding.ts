@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import toast from 'react-hot-toast';
 
-interface OnboardingData {
+export interface OnboardingData {
   userType: 'professionnel' | 'particulier' | null;
   experienceLevel: 'debutant' | 'intermediaire' | 'pro' | null;
   aiTools: string[];
@@ -20,27 +20,7 @@ export const useOnboarding = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    checkOnboardingStatus();
-    
-    // Vérifier si des données d'onboarding sont en attente dans localStorage
-    const savedOnboardingData = localStorage.getItem('onboarding-data');
-    if (savedOnboardingData) {
-      try {
-        const data = JSON.parse(savedOnboardingData);
-        // Sauvegarder automatiquement après connexion
-        setTimeout(() => {
-          completeOnboarding(data);
-          localStorage.removeItem('onboarding-data');
-        }, 1000);
-      } catch (error) {
-        console.error('Error parsing onboarding data:', error);
-        localStorage.removeItem('onboarding-data');
-      }
-    }
-  }, []);
-
-  const checkOnboardingStatus = async () => {
+  const checkOnboardingStatus = useCallback(async () => {
     try {
       // Get current user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -77,9 +57,9 @@ export const useOnboarding = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const completeOnboarding = async (data: OnboardingData) => {
+  const completeOnboarding = useCallback(async (data: OnboardingData) => {
     if (!user) return;
 
     try {
@@ -114,7 +94,49 @@ export const useOnboarding = () => {
       console.error('Error in completeOnboarding:', error);
       throw error;
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    checkOnboardingStatus();
+    
+    // Vérifier si des données d'onboarding sont en attente dans localStorage
+    const savedOnboardingData = localStorage.getItem('onboarding-data');
+    if (savedOnboardingData) {
+      try {
+        const data = JSON.parse(savedOnboardingData);
+        // Sauvegarder automatiquement après connexion
+        setTimeout(() => {
+          completeOnboarding(data);
+          localStorage.removeItem('onboarding-data');
+        }, 1000);
+      } catch (error) {
+        console.error('Error parsing onboarding data:', error);
+        localStorage.removeItem('onboarding-data');
+      }
+    }
+
+    // Écouter les changements d'authentification pour détecter les nouvelles connexions
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('Utilisateur vient de se connecter:', session.user.email);
+        
+        // Vérifier si c'est une nouvelle inscription
+        const justSignedIn = localStorage.getItem('just-signed-in');
+        if (justSignedIn) {
+          localStorage.removeItem('just-signed-in');
+          
+          // Attendre un peu pour que l'utilisateur soit bien créé en base
+          setTimeout(async () => {
+            await checkOnboardingStatus();
+          }, 500);
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [checkOnboardingStatus, completeOnboarding]);
 
   const skipOnboarding = () => {
     setIsOnboardingOpen(false);

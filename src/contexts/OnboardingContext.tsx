@@ -1,13 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { useOnboarding, type OnboardingData } from '@/hooks/useOnboarding';
+import type { User } from '@/types/user';
 
 interface OnboardingContextType {
   isOnboardingOpen: boolean;
   isLoading: boolean;
-  user: any;
-  completeOnboarding: (data: any) => Promise<void>;
+  user: User | null;
+  completeOnboarding: (data: OnboardingData) => Promise<void>;
   skipOnboarding: () => void;
   openOnboarding: () => void;
 }

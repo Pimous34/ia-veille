@@ -1,13 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import LoginModal from './LoginModal';
+import OreegamiaLogo from './OreegamiaLogo';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,47 +47,70 @@ const Navbar = () => {
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
+  // Fermer le menu quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsMenuOpen(false);
+    router.push('/');
+  };
+
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    return user.user_metadata?.full_name?.split(' ')[0] || 
+           user.user_metadata?.name?.split(' ')[0] || 
+           user.email?.split('@')[0];
+  };
+
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm' : 'bg-transparent'
-    }`}
+    <nav
+      className={`fixed top-0 w-full z-50 transition-all duration-300 bg-white dark:bg-white ${
+        isScrolled ? 'shadow-md' : 'shadow-sm'
+      }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-            IA Veille
+          <Link href="/" className="flex items-center shrink-0" aria-label="OREEGAM'IA">
+            <OreegamiaLogo className="w-20 md:w-24" />
           </Link>
           
-          <div className="hidden md:flex items-center space-x-8">
-            {user && (
-              <span className="text-gray-900 dark:text-white font-semibold">
-                Bonjour {user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || user.email?.split('@')[0]}
-              </span>
-            )}
-            <Link href="/" className="text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 transition-colors">
-              Accueil
+          <div className="flex items-center gap-4 md:gap-8 overflow-x-auto no-scrollbar ml-4 flex-1 mask-linear-to-r">
+            <Link href="/jt" className="text-black hover:text-indigo-600 transition-colors whitespace-nowrap font-medium text-sm">
+              JT
             </Link>
-            <Link href="/articles" className="text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 transition-colors">
-              Articles
+            <Link href="/scroll" className="text-black hover:text-indigo-600 transition-colors whitespace-nowrap font-medium text-sm">
+              Scroll
             </Link>
-            <Link href="/categories" className="text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 transition-colors">
-              Catégories
+            <Link href="/articles" className="text-black hover:text-indigo-600 transition-colors whitespace-nowrap font-medium text-sm">
+              Article
             </Link>
-            <Link href="/a-propos" className="text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400 transition-colors">
-              À propos
+            <Link href="/sauvegarder" className="text-black hover:text-indigo-600 transition-colors whitespace-nowrap font-medium text-sm">
+              Sauvegarder
             </Link>
           </div>
-
-          <button 
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label="Menu"
-          >
-            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </div>
       </div>
+      
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+      />
     </nav>
   );
 };

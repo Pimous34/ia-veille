@@ -13,9 +13,11 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
       <Navbar />
-      <main className="container mx-auto px-4 py-8">
+      <main>
         <Hero />
-        <ArticleList />
+        <div id="dernier-article" className="container mx-auto px-4 py-8 scroll-mt-24">
+          <ArticleList />
+        </div>
       </main>
       <Footer />
       
