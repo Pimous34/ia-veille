@@ -1115,3 +1115,202 @@ body {
         left: auto;
     }
 }
+
+/* ShortNews Page */
+/* ShortNews Page */
+.shorts-page {
+    /* Background inherited from body (main page style) */
+    /* Remove height/overflow constraints on body to avoid conflicts */
+}
+
+.shorts-container {
+    /* Strict Fixed Layout */
+    position: fixed;
+    top: 120px;
+    /* Start strictly below header */
+    bottom: 0;
+    /* Go to bottom of screen */
+    left: 50%;
+    transform: translateX(-50%);
+    /* Center horizontally */
+
+    width: 100%;
+    max-width: 500px;
+    /* Restrict width */
+    height: auto;
+    /* Height defined by top/bottom */
+    margin: 0;
+
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+
+    /* Hide scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    background-color: transparent;
+    z-index: 1;
+}
+
+.shorts-container::-webkit-scrollbar {
+    display: none;
+}
+
+.short-article {
+    height: 100%;
+    width: 100%;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0;
+    /* Vertical padding between cards */
+}
+
+/* Portrait Card Container */
+.short-card-container {
+    width: 100%;
+    height: 100%;
+    /* Fill the article slot */
+    max-height: 800px;
+    /* Max height constraint */
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.short-image {
+    height: 45%;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.short-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    text-align: left;
+    background: #ffffff;
+    color: var(--text-color);
+}
+
+.short-category {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+    align-self: flex-start;
+}
+
+.short-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+    color: #1a1a1a;
+    text-shadow: none;
+}
+
+.short-excerpt {
+    font-size: 1rem;
+    margin-bottom: auto;
+    /* Pushes meta to bottom */
+    line-height: 1.6;
+    color: #555;
+    opacity: 1;
+    text-shadow: none;
+}
+
+.short-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+    width: 100%;
+}
+
+.short-date {
+    font-size: 0.9rem;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.short-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: transparent;
+    color: var(--primary-color);
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.short-link:hover {
+    transform: translateX(5px);
+    background: transparent;
+    color: var(--secondary-color);
+}
+
+/* Backgrounds for placeholders */
+.short-img-1 {
+    background-image: linear-gradient(135deg, #1A237E, #81D4FA);
+}
+
+.short-img-2 {
+    background-image: linear-gradient(135deg, #FF6B9D, #FF9800);
+}
+
+.short-img-3 {
+    background-image: linear-gradient(135deg, #2196F3, #9C27B0);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Shorts */
+@media (max-width: 480px) {
+    .short-card-container {
+        height: 100vh;
+        max-width: 100%;
+        border-radius: 0;
+    }
+
+    .short-image {
+        height: 40%;
+    }
+
+    .short-title {
+        font-size: 1.5rem;
+    }
+}

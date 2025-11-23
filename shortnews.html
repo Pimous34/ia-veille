@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShortNews - OREEGAM'IA</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="shorts-page">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link">
+                <div class="logo">
+                    <div class="logo-wrapper">
+                        <img src="logo.png" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.svg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpeg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                    </div>
+                    <div class="logo-placeholder">
+                        <span class="logo-text">OREEGAM'IA</span>
+                    </div>
+                </div>
+            </a>
+            <nav class="main-nav">
+                <a href="index.html#jtnews" class="nav-link">JTNews</a>
+                <a href="index.html#categories" class="nav-link">Catégories</a>
+                <a href="index.html#actualite" class="nav-link">Actualité</a>
+                <a href="shortnews.html" class="nav-link active">ShortNews</a>
+            </nav>
+            <div class="search-container">
+                <form class="search-form" onsubmit="handleSearch(event)">
+                    <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
+                    <button type="submit" class="search-button" aria-label="Rechercher">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            <a href="#" class="auth-button">
+                <span class="auth-text">S'inscrire / Se connecter</span>
+                <svg class="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- Shorts Container -->
+    <main class="shorts-container">
+        <!-- Short 1 -->
+        <article class="short-article">
+            <div class="short-card-container">
+                <div class="short-image short-img-1"></div>
+                <div class="short-content">
+                    <span class="short-category cat-ia">IA</span>
+                    <h2 class="short-title">L'IA générative révolutionne le design</h2>
+                    <p class="short-excerpt">Découvrez comment les nouveaux outils d'IA transforment la façon dont nous
+                        créons des visuels époustouflants en quelques secondes.</p>
+                    <div class="short-meta">
+                        <span class="short-date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg> 23 Nov 2025</span>
+                        <a href="#" class="short-link">Lire <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg></a>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Short 2 -->
+        <article class="short-article">
+            <div class="short-card-container">
+                <div class="short-image short-img-2"></div>
+                <div class="short-content">
+                    <span class="short-category cat-nocode">No-Code</span>
+                    <h2 class="short-title">Créez votre app sans coder</h2>
+                    <p class="short-excerpt">Les plateformes No-Code permettent désormais de lancer des applications
+                        complexes sans écrire une seule ligne de code.</p>
+                    <div class="short-meta">
+                        <span class="short-date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg> 22 Nov 2025</span>
+                        <a href="#" class="short-link">Lire <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg></a>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Short 3 -->
+        <article class="short-article">
+            <div class="short-card-container">
+                <div class="short-image short-img-3"></div>
+                <div class="short-content">
+                    <span class="short-category cat-auto">Automatisation</span>
+                    <h2 class="short-title">Gagnez 10h par semaine</h2>
+                    <p class="short-excerpt">L'automatisation des tâches répétitives est la clé de la productivité
+                        moderne. Voici les outils indispensables.</p>
+                    <div class="short-meta">
+                        <span class="short-date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg> 21 Nov 2025</span>
+                        <a href="#" class="short-link">Lire <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg></a>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
