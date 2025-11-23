@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OREEGAM'IA - Veille IA & No-Code</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -24,53 +26,87 @@
                 </div>
             </a>
             <nav class="main-nav">
-                <a href="#shortnews" class="nav-link">ShortNews</a>
+                <a href="#jtnews" class="nav-link">JTNews</a>
                 <a href="#categories" class="nav-link">Catégories</a>
-                <a href="#mon-espace" class="nav-link">Mon Espace</a>
+                <a href="#actualite" class="nav-link">Actualité</a>
+                <a href="#shortnews" class="nav-link">ShortNews</a>
             </nav>
             <div class="search-container">
                 <form class="search-form" onsubmit="handleSearch(event)">
                     <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
                     <button type="submit" class="search-button" aria-label="Rechercher">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
                             <circle cx="11" cy="11" r="8"></circle>
                             <path d="m21 21-4.35-4.35"></path>
                         </svg>
                     </button>
                 </form>
             </div>
+            <a href="#" class="auth-button">
+                <span class="auth-text">S'inscrire / Se connecter</span>
+                <svg class="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </a>
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Video Section -->
-        <section class="video-section">
+        <!-- Hero Section (Video + Related Articles) -->
+        <section class="hero-section" id="jtnews">
             <div class="container">
-                <div class="video-wrapper">
-                    <iframe 
-                        class="video-player"
-                        src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
-                        title="JT News - Veille IA & No-Code"
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
+                <div class="hero-container">
+                    <!-- Video Column -->
+                    <div class="video-column">
+                        <div class="video-wrapper">
+                            <iframe class="video-player" src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                                title="JT News - Veille IA & No-Code" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+
+                    <!-- Articles Column -->
+                    <div class="articles-column">
+                        <div class="section-title-wrapper">
+                            <h2 class="section-title">JT News : Le Flash Info de la semaine</h2>
+                        </div>
+                        <div class="articles-grid" id="jtArticles">
+                            <!-- Articles will be loaded dynamically -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Articles from JT News -->
-        <section class="articles-section jt-articles">
+        <!-- Categories Section -->
+        <section class="categories-section" id="categories">
             <div class="container">
-                <div class="articles-grid" id="jtArticles">
-                    <!-- Articles will be loaded dynamically -->
+                <h2 class="section-title">Toutes les catégories</h2>
+                <div class="categories-grid">
+                    <a href="#" class="category-card cat-ia">
+                        <span class="category-name">IA</span>
+                    </a>
+                    <a href="#" class="category-card cat-nocode">
+                        <span class="category-name">No-Code</span>
+                    </a>
+                    <a href="#" class="category-card cat-auto">
+                        <span class="category-name">Automatisation</span>
+                    </a>
+                    <a href="#" class="category-card cat-vibe">
+                        <span class="category-name">Vibe-coding</span>
+                    </a>
                 </div>
             </div>
         </section>
 
         <!-- Trending Articles -->
-        <section class="articles-section trending-articles">
+        <section class="articles-section trending-articles" id="actualite">
             <div class="container">
                 <h2 class="section-title">Articles Tendances</h2>
                 <div class="articles-grid" id="trendingArticles">
@@ -89,5 +125,5 @@
 
     <script src="script.js"></script>
 </body>
-</html>
 
+</html>
