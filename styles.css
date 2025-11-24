@@ -2128,6 +2128,10 @@ body {
         max-width: none;
         top: 80px;
     }
+
+    .hero-section {
+        margin-top: 80px !important;
+    }
 }
 
 /* Tablet & iPad Pro: 768px - 1366px */
@@ -2239,6 +2243,8 @@ body {
         height: 32px;
     }
 
+
+
     /* Logo - Absolute Left of Pill */
     .logo-link {
         position: absolute;
@@ -2270,6 +2276,20 @@ body {
 
     .logo-text {
         display: none;
+    }
+}
+
+/* Global Margin adjustment for 900px - 1370px (Applies to all tablet layouts) */
+@media (min-width: 900px) and (max-width: 1370px) {
+    .hero-section {
+        margin-top: 50px !important;
+    }
+}
+
+/* Global Margin adjustment for 767px - 900px */
+@media (min-width: 767px) and (max-width: 900px) {
+    .hero-section {
+        margin-top: 30px !important;
     }
 }
 
