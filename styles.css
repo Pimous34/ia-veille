@@ -335,8 +335,8 @@ body {
 /* Fullscreen Button */
 .fullscreen-btn {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.5rem;
+    right: 0.5rem;
     z-index: 20;
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
@@ -382,13 +382,27 @@ body {
     margin: 0 auto;
     border: none;
     border-radius: 0;
+    padding-bottom: 0;
+}
+
+/* Keep buttons visible in fullscreen */
+.video-column.fullscreen .fullscreen-btn {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+}
+
+.video-column.fullscreen .format-controls {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
 }
 
 /* Format Switcher */
 .format-controls {
     position: absolute;
-    bottom: 1rem;
-    right: 1rem;
+    bottom: 0.5rem;
+    right: 0.5rem;
     z-index: 20;
 }
 
@@ -556,34 +570,6 @@ body {
     gap: 1.5rem;
 }
 
-.articles-column .section-title {
-    text-align: left;
-    margin-bottom: 1.5rem;
-    /* Increased margin */
-    padding: 0;
-    font-size: 1.75rem;
-    /* Match other titles */
-    background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 25%, #9C27B0 50%, #5E35B1 75%, #2196F3 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    border-bottom: none;
-    padding-bottom: 0.5rem;
-    position: relative;
-    display: inline-block;
-}
-
-.articles-column .section-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 25%, #9C27B0 50%, #5E35B1 75%, #2196F3 100%);
-    border-radius: 2px;
-}
-
 /* Adjust grid for related articles to be a vertical list */
 .articles-column .articles-grid {
     display: flex;
@@ -644,16 +630,15 @@ body {
     /* Offset for fixed header */
 }
 
-.articles-section .section-title {
+/* Unified Section Title Style - Applied to all sections */
+.section-title,
+.articles-section .section-title,
+.trending-articles .section-title,
+.categories-section .section-title,
+.articles-column .section-title {
     font-size: 1.75rem;
     font-weight: 700;
     margin-bottom: 2rem;
-    color: var(--text-color);
-    padding-bottom: 0.5rem;
-    border-bottom: 3px solid var(--primary-color);
-}
-
-.trending-articles .section-title {
     background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 25%, #9C27B0 50%, #5E35B1 75%, #2196F3 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -664,7 +649,12 @@ body {
     display: inline-block;
 }
 
-.trending-articles .section-title::after {
+/* Unified underline for all section titles */
+.section-title::after,
+.articles-section .section-title::after,
+.trending-articles .section-title::after,
+.categories-section .section-title::after,
+.articles-column .section-title::after {
     content: '';
     position: absolute;
     bottom: 0;
@@ -673,6 +663,19 @@ body {
     height: 3px;
     background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 25%, #9C27B0 50%, #5E35B1 75%, #2196F3 100%);
     border-radius: 2px;
+}
+
+/* Category page specific: full-width underline within container */
+#categoryTitle {
+    display: block;
+    width: 100%;
+}
+
+#categoryTitle::after {
+    width: calc(100vw - 40px);
+    max-width: 1200px;
+    left: 0;
+    transform: none;
 }
 
 .articles-grid {
@@ -920,32 +923,6 @@ body {
     margin-bottom: 4rem;
     scroll-margin-top: 120px;
     /* Offset for fixed header */
-}
-
-.categories-section .section-title {
-    font-size: 1.75rem;
-    /* Match Articles Tendances */
-    background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 25%, #9C27B0 50%, #5E35B1 75%, #2196F3 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    border-bottom: none;
-    padding-bottom: 0.5rem;
-    position: relative;
-    display: inline-block;
-    margin-bottom: 2rem;
-    /* Small gap between title and categories */
-}
-
-.categories-section .section-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 25%, #9C27B0 50%, #5E35B1 75%, #2196F3 100%);
-    border-radius: 2px;
 }
 
 .categories-grid {
