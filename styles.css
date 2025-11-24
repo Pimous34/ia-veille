@@ -2037,29 +2037,111 @@ body {
     /* Hide desktop navigation */
     .main-nav {
         position: fixed;
+        position: fixed;
         top: 0;
-        left: -100%;
-        width: 280px;
+        left: 0;
+        width: 100%;
         height: 100vh;
-        background: white;
+        background: linear-gradient(135deg,
+                rgba(255, 220, 240, 0.95) 0%,
+                rgba(230, 220, 255, 0.95) 25%,
+                rgba(220, 240, 255, 0.95) 50%,
+                rgba(220, 255, 240, 0.95) 75%,
+                rgba(255, 240, 220, 0.95) 100%) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         flex-direction: column;
-        padding: 5rem 2rem 2rem;
-        gap: 1rem;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-        transition: left 0.3s ease;
-        z-index: 101;
-        align-items: flex-start;
+        padding: 6rem 2rem 3rem;
+        gap: 0.5rem;
+        box-shadow: none;
+        border-radius: 0;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     .main-nav.active {
-        left: 0;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+    }
+
+    @keyframes slideInMenu {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 
     .nav-link {
         width: 100%;
-        padding: 0.8rem 1rem;
-        font-size: 1rem;
-        border-radius: 8px;
+        max-width: 400px;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 16px;
+        color: var(--text-color) !important;
+        opacity: 1 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        text-align: center;
+    }
+
+    .nav-link::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent);
+        transition: left 0.6s ease;
+    }
+
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #FF6B9D, #9C27B0, #2196F3);
+        transition: width 0.3s ease;
+        border-radius: 2px;
+    }
+
+    .nav-link:hover::before {
+        left: 100%;
+    }
+
+    .nav-link:hover::after {
+        width: 100%;
+    }
+
+    .nav-link:hover {
+        transform: translateX(8px) scale(1.02);
+        background: linear-gradient(135deg,
+                rgba(255, 107, 157, 0.08) 0%,
+                rgba(156, 39, 176, 0.08) 50%,
+                rgba(33, 150, 243, 0.08) 100%);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    }
+
+    .nav-link:active {
+        transform: translateX(6px) scale(0.98);
     }
 
     /* Show hamburger menu */
@@ -2113,13 +2195,22 @@ body {
     }
 
     .auth-button {
+        display: flex !important;
+        position: relative !important;
+        order: 4;
         padding: 0.5rem;
         min-width: auto;
+        flex-shrink: 0;
+        right: auto !important;
+        left: auto !important;
+        transform: none !important;
+        margin-left: 0.5rem;
     }
 
     .auth-icon {
         width: 20px;
         height: 20px;
+        display: block !important;
     }
 
     /* Search overlay adjustments */
@@ -2588,7 +2679,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     z-index: 100;
     opacity: 0;
     transition: opacity 0.3s ease;
