@@ -34,16 +34,12 @@
                 <a href="shortnews.html" class="nav-link active">ShortNews</a>
             </nav>
             <div class="search-container">
-                <form class="search-form" onsubmit="handleSearch(event)">
-                    <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
-                    <button type="submit" class="search-button" aria-label="Rechercher">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                    </button>
-                </form>
+                <button class="search-toggle-btn" onclick="toggleSearch()" aria-label="Rechercher">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
             </div>
             <a href="auth.html" class="auth-button">
                 <span class="auth-text">S'inscrire / Se connecter</span>
@@ -55,6 +51,28 @@
             </a>
         </div>
     </header>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-overlay-content">
+            <form class="search-overlay-form" onsubmit="handleSearch(event)">
+                <input type="search" class="search-overlay-input" placeholder="Rechercher des articles..."
+                    aria-label="Rechercher" autofocus>
+                <button type="submit" class="search-overlay-submit" aria-label="Rechercher">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+                <button type="button" class="search-overlay-close" onclick="toggleSearch()" aria-label="Fermer">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- Shorts Container -->
     <main class="shorts-container">
@@ -132,6 +150,7 @@
     </main>
 
     <script src="script.js"></script>
+    <script src="search-toggle.js"></script>
 </body>
 
 </html>
