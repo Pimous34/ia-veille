@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OREEGAM'IA - Catégorie</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link">
+                <div class="logo">
+                    <div class="logo-wrapper">
+                        <img src="logo.png" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.svg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpeg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                    </div>
+                    <div class="logo-placeholder">
+                        <span class="logo-text">OREEGAM'IA</span>
+                    </div>
+                </div>
+            </a>
+            <nav class="main-nav">
+                <a href="index.html#jtnews" class="nav-link">JTNews</a>
+                <a href="index.html#categories" class="nav-link">Catégories</a>
+                <a href="index.html#actualite" class="nav-link">Actualité</a>
+                <a href="shortnews.html" class="nav-link">ShortNews</a>
+            </nav>
+            <div class="search-container">
+                <form class="search-form" onsubmit="handleSearch(event)">
+                    <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
+                    <button type="submit" class="search-button" aria-label="Rechercher">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+            <a href="#" class="auth-button">
+                <span class="auth-text">S'inscrire / Se connecter</span>
+                <svg class="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <section class="articles-section" style="margin-top: 120px;">
+            <div class="container">
+                <h2 class="section-title" id="categoryTitle">Articles</h2>
+                <div class="subcategory-tags" id="subcategoryTags"></div>
+                <div class="articles-grid" id="categoryArticles">
+                    <!-- Articles will be loaded dynamically -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 OREEGAM'IA - Veille IA & No-Code</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

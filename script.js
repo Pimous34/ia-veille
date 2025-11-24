@@ -5,6 +5,7 @@ const jtArticles = [
         title: "L'IA générative révolutionne le développement d'applications",
         excerpt: "Découvrez comment les outils d'IA générative transforment la façon dont nous créons des applications, réduisant le temps de développement de manière significative.",
         category: "IA",
+        tags: ["ChatGPT", "Claude"],
         date: "2024-01-15",
         link: "#",
         image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
@@ -14,6 +15,7 @@ const jtArticles = [
         title: "No-Code : La démocratisation de la création digitale",
         excerpt: "Les plateformes No-Code permettent désormais à tous de créer des applications professionnelles sans connaissances en programmation.",
         category: "No-Code",
+        tags: ["Bubble", "Webflow"],
         date: "2024-01-14",
         link: "#",
         image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"
@@ -23,6 +25,7 @@ const jtArticles = [
         title: "ChatGPT et les assistants IA : Nouveaux outils de productivité",
         excerpt: "Comment les assistants IA comme ChatGPT changent la productivité des développeurs et créateurs de contenu.",
         category: "IA",
+        tags: ["ChatGPT"],
         date: "2024-01-13",
         link: "#",
         image: "https://images.unsplash.com/photo-1676299080923-6c98c0cf4e48?w=800"
@@ -35,6 +38,7 @@ const trendingArticles = [
         title: "Midjourney vs DALL-E : Comparaison des générateurs d'images IA",
         excerpt: "Une analyse approfondie des deux leaders du marché de la génération d'images par intelligence artificielle.",
         category: "IA",
+        tags: ["Midjourney", "DALL-E"],
         date: "2024-01-16",
         link: "#",
         image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800"
@@ -44,6 +48,7 @@ const trendingArticles = [
         title: "Bubble.io : Créer une SaaS complète sans coder",
         excerpt: "Guide complet pour créer votre première application SaaS avec Bubble.io, la plateforme No-Code la plus populaire.",
         category: "No-Code",
+        tags: ["Bubble"],
         date: "2024-01-15",
         link: "#",
         image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800"
@@ -53,6 +58,7 @@ const trendingArticles = [
         title: "L'avenir du travail avec l'IA : Opportunités et défis",
         excerpt: "Exploration des transformations que l'IA apporte au monde du travail et comment s'y adapter.",
         category: "IA",
+        tags: ["Gemini", "Perplexity"],
         date: "2024-01-14",
         link: "#",
         image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800"
@@ -62,19 +68,189 @@ const trendingArticles = [
         title: "Webflow : Design et développement réunis",
         excerpt: "Découvrez comment Webflow révolutionne la création de sites web en combinant design visuel et développement.",
         category: "No-Code",
+        tags: ["Webflow"],
         date: "2024-01-13",
         link: "#",
         image: "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=800"
     }
 ];
 
-// Function to create article card HTML
+// Category Tags Configuration
+const categoryTags = {
+    'IA': ['ChatGPT', 'Gemini', 'Perplexity', 'Claude', 'Midjourney', 'DALL-E'],
+    'No-Code': ['Bubble', 'Webflow', 'Make', 'Airtable', 'Notion'],
+    'Automatisation': ['Make', 'Zapier', 'n8n'],
+    'Vibe-coding': ['Cursor', 'Replit']
+};
+
+// ... (createArticleCard, formatDate, renderArticles functions remain same)
+
+// Try to load logo on page load
+document.addEventListener('DOMContentLoaded', function () {
+    // Category Page Logic
+    const categoryArticlesContainer = document.getElementById('categoryArticles');
+    if (categoryArticlesContainer) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const category = urlParams.get('category');
+
+        // Combine all articles for filtering
+        const allArticles = [...jtArticles, ...trendingArticles];
+
+        if (category) {
+            document.getElementById('categoryTitle').textContent = `Catégorie : ${category}`;
+            document.title = `OREEGAM'IA - ${category}`;
+
+            // Render Sub-category Tags
+            const tagsContainer = document.getElementById('subcategoryTags');
+            if (tagsContainer && categoryTags[category]) {
+                const tags = categoryTags[category];
+
+                // Tag color mapping (same as article tags)
+                const tagColors = {
+                    'ChatGPT': 'tag-chatgpt',
+                    'Gemini': 'tag-gemini',
+                    'Perplexity': 'tag-perplexity',
+                    'Claude': 'tag-claude',
+                    'Midjourney': 'tag-midjourney',
+                    'DALL-E': 'tag-dalle',
+                    'Bubble': 'tag-bubble',
+                    'Webflow': 'tag-webflow',
+                    'Make': 'tag-make',
+                    'Airtable': 'tag-airtable',
+                    'Notion': 'tag-notion',
+                    'Zapier': 'tag-zapier',
+                    'n8n': 'tag-n8n',
+                    'Cursor': 'tag-cursor',
+                    'Replit': 'tag-replit'
+                };
+
+                tagsContainer.innerHTML = tags.map(tag => {
+                    const colorClass = tagColors[tag] || 'tag-default';
+                    return `<button class="tag-btn ${colorClass}" onclick="filterByTag('${tag}')">${tag}</button>`;
+                }).join('');
+            }
+
+            // Initial Filter (Show all for category)
+            const filteredArticles = allArticles.filter(article => article.category === category);
+            renderArticles(filteredArticles, 'categoryArticles');
+
+            // Expose filter function globally for this page scope
+            window.filterByTag = function (tag) {
+                // Toggle active class on buttons
+                const buttons = document.querySelectorAll('.tag-btn');
+                let isActive = false;
+
+                buttons.forEach(btn => {
+                    if (btn.textContent === tag) {
+                        if (btn.classList.contains('active')) {
+                            btn.classList.remove('active');
+                            isActive = false;
+                        } else {
+                            btn.classList.add('active');
+                            isActive = true;
+                        }
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+
+                if (isActive) {
+                    // Filter by tag
+                    const tagFiltered = filteredArticles.filter(article => article.tags && article.tags.includes(tag));
+                    renderArticles(tagFiltered, 'categoryArticles');
+                } else {
+                    // Show all for category
+                    renderArticles(filteredArticles, 'categoryArticles');
+                }
+            };
+
+        } else {
+            document.getElementById('categoryTitle').textContent = `Tous les articles`;
+            renderArticles(allArticles, 'categoryArticles');
+        }
+    }
+
+    // Index Page Logic
+    const jtContainer = document.getElementById('jtArticles');
+    if (jtContainer) {
+        renderArticles(jtArticles, 'jtArticles');
+    }
+
+    const trendingContainer = document.getElementById('trendingArticles');
+    if (trendingContainer) {
+        renderArticles(trendingArticles, 'trendingArticles');
+    }
+
+    // Logo Logic
+    const logoContainer = document.querySelector('.logo');
+    if (logoContainer) {
+        const logos = logoContainer.querySelectorAll('.logo-img');
+        const placeholder = logoContainer.querySelector('.logo-placeholder');
+
+        const logoFormats = ['logo.png', 'logo.svg', 'logo.jpg', 'logo.jpeg'];
+        let logoIndex = 0;
+
+        function tryNextLogo() {
+            if (logoIndex < logos.length) {
+                const logo = logos[logoIndex];
+                logo.style.display = 'block';
+                logo.onload = function () {
+                    logos.forEach((l, i) => {
+                        if (i !== logoIndex) l.style.display = 'none';
+                    });
+                    if (placeholder) placeholder.style.display = 'none';
+                };
+                logo.onerror = function () {
+                    logo.style.display = 'none';
+                    logoIndex++;
+                    tryNextLogo();
+                };
+                logo.src = logoFormats[logoIndex];
+            } else {
+                if (placeholder) placeholder.style.display = 'flex';
+            }
+        }
+
+        tryNextLogo();
+    }
+});
+
 function createArticleCard(article) {
+    // Tag color mapping
+    const tagColors = {
+        'ChatGPT': 'tag-chatgpt',
+        'Gemini': 'tag-gemini',
+        'Perplexity': 'tag-perplexity',
+        'Claude': 'tag-claude',
+        'Midjourney': 'tag-midjourney',
+        'DALL-E': 'tag-dalle',
+        'Bubble': 'tag-bubble',
+        'Webflow': 'tag-webflow',
+        'Make': 'tag-make',
+        'Airtable': 'tag-airtable',
+        'Notion': 'tag-notion',
+        'Zapier': 'tag-zapier',
+        'n8n': 'tag-n8n',
+        'Cursor': 'tag-cursor',
+        'Replit': 'tag-replit'
+    };
+
+    // Generate tags HTML if tags exist
+    const tagsHTML = article.tags && article.tags.length > 0
+        ? `<div class="article-tags">
+            ${article.tags.map(tag => {
+            const colorClass = tagColors[tag] || 'tag-default';
+            return `<span class="article-tag ${colorClass}">${tag}</span>`;
+        }).join('')}
+           </div>`
+        : '';
+
     return `
         <article class="article-card" onclick="window.open('${article.link}', '_blank')">
             <img src="${article.image}" alt="${article.title}" class="article-image" onerror="this.style.display='none'">
             <div class="article-content">
                 <span class="article-category">${article.category}</span>
+                ${tagsHTML}
                 <h3 class="article-title">${article.title}</h3>
                 <p class="article-excerpt">${article.excerpt}</p>
                 <div class="article-meta">
@@ -122,14 +298,7 @@ function renderArticles(articles, containerId) {
     container.innerHTML = articles.map(article => createArticleCard(article)).join('');
 }
 
-// Initialize the page
-document.addEventListener('DOMContentLoaded', function () {
-    // Render JT News articles
-    renderArticles(jtArticles, 'jtArticles');
-
-    // Render trending articles
-    renderArticles(trendingArticles, 'trendingArticles');
-});
+// Initialize the page - Logic moved to main DOMContentLoaded listener
 
 // Function to update video source (you can call this to change the video)
 function updateVideo(videoId) {
@@ -168,39 +337,76 @@ function handleLogoError(img) {
 
 // Try to load logo on page load
 document.addEventListener('DOMContentLoaded', function () {
-    const logoContainer = document.querySelector('.logo');
-    const logos = logoContainer.querySelectorAll('.logo-img');
-    const placeholder = logoContainer.querySelector('.logo-placeholder');
+    // Category Page Logic
+    const categoryArticlesContainer = document.getElementById('categoryArticles');
+    if (categoryArticlesContainer) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const category = urlParams.get('category');
 
-    // Try each logo format (PNG first, then other formats)
-    const logoFormats = ['logo.png', 'logo.svg', 'logo.jpg', 'logo.jpeg'];
-    let logoIndex = 0;
+        // Combine all articles for filtering
+        // Note: In a real app, you might fetch this from an API
+        const allArticles = [...jtArticles, ...trendingArticles];
 
-    function tryNextLogo() {
-        if (logoIndex < logos.length) {
-            const logo = logos[logoIndex];
-            logo.style.display = 'block';
-            logo.onload = function () {
-                // Hide other logos and placeholder
-                logos.forEach((l, i) => {
-                    if (i !== logoIndex) l.style.display = 'none';
-                });
-                if (placeholder) placeholder.style.display = 'none';
-            };
-            logo.onerror = function () {
-                logo.style.display = 'none';
-                logoIndex++;
-                tryNextLogo();
-            };
-            // Force reload
-            logo.src = logoFormats[logoIndex];
+        if (category) {
+            document.getElementById('categoryTitle').textContent = `Catégorie : ${category}`;
+            document.title = `OREEGAM'IA - ${category}`;
+
+            // Filter articles
+            const filteredArticles = allArticles.filter(article => article.category === category);
+            renderArticles(filteredArticles, 'categoryArticles');
         } else {
-            // All logos failed, show placeholder
-            if (placeholder) placeholder.style.display = 'flex';
+            document.getElementById('categoryTitle').textContent = `Tous les articles`;
+            renderArticles(allArticles, 'categoryArticles');
         }
     }
 
-    tryNextLogo();
+    // Index Page Logic
+    const jtContainer = document.getElementById('jtArticles');
+    if (jtContainer) {
+        renderArticles(jtArticles, 'jtArticles');
+    }
+
+    const trendingContainer = document.getElementById('trendingArticles');
+    if (trendingContainer) {
+        renderArticles(trendingArticles, 'trendingArticles');
+    }
+
+    // Logo Logic
+    const logoContainer = document.querySelector('.logo');
+    if (logoContainer) {
+        const logos = logoContainer.querySelectorAll('.logo-img');
+        const placeholder = logoContainer.querySelector('.logo-placeholder');
+
+        // Try each logo format (PNG first, then other formats)
+        const logoFormats = ['logo.png', 'logo.svg', 'logo.jpg', 'logo.jpeg'];
+        let logoIndex = 0;
+
+        function tryNextLogo() {
+            if (logoIndex < logos.length) {
+                const logo = logos[logoIndex];
+                logo.style.display = 'block';
+                logo.onload = function () {
+                    // Hide other logos and placeholder
+                    logos.forEach((l, i) => {
+                        if (i !== logoIndex) l.style.display = 'none';
+                    });
+                    if (placeholder) placeholder.style.display = 'none';
+                };
+                logo.onerror = function () {
+                    logo.style.display = 'none';
+                    logoIndex++;
+                    tryNextLogo();
+                };
+                // Force reload
+                logo.src = logoFormats[logoIndex];
+            } else {
+                // All logos failed, show placeholder
+                if (placeholder) placeholder.style.display = 'flex';
+            }
+        }
+
+        tryNextLogo();
+    }
 });
 
 // Function to handle search
