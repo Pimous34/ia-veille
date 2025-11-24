@@ -2904,3 +2904,65 @@ body {
         gap: 1rem;
     }
 }
+
+/* Ensure header doesn't cut off content on large screens */
+@media (min-width: 1368px) {
+    .header-container {
+        justify-content: space-between !important;
+        gap: 2rem !important;
+    }
+
+    /* Center auth button in right margin space */
+    .auth-button {
+        position: absolute !important;
+        /* Calculate: (viewport - header width) / 4 gives center of right margin */
+        right: calc((100vw - 100%) / -4) !important;
+        top: 50% !important;
+        transform: translate(50%, -50%) !important;
+        z-index: 110;
+    }
+}
+
+@media (min-width: 1500px) {
+    .header {
+        overflow: visible !important;
+    }
+
+    .header-container {
+        justify-content: space-between !important;
+    }
+}
+
+/* Fix for 1500-1667px range where button gets cut off */
+@media (min-width: 1500px) and (max-width: 1667px) {
+    .header {
+        max-width: 1400px !important;
+    }
+
+    .main-nav {
+        gap: 2rem !important;
+    }
+
+    .nav-link {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .header-container {
+        gap: 1rem !important;
+    }
+
+    /* Hide text, show only icon */
+    .auth-text {
+        display: none !important;
+    }
+
+    .auth-icon {
+        display: block !important;
+    }
+
+    .auth-button {
+        padding: 0.5rem !important;
+        min-width: auto !important;
+    }
+}
