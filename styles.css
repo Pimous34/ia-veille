@@ -844,6 +844,24 @@ body {
     border-color: #ca8a04;
 }
 
+.tag-winsurf {
+    background-color: #dbeafe;
+    color: #0284c7;
+    border-color: #0284c7;
+}
+
+.tag-antigravity {
+    background-color: #fce7f3;
+    color: #ec4899;
+    border-color: #ec4899;
+}
+
+.tag-bolt {
+    background-color: #fef9c3;
+    color: #eab308;
+    border-color: #eab308;
+}
+
 /* Default tag color */
 .tag-default {
     background-color: #f1f5f9;
@@ -1779,6 +1797,24 @@ body {
     background-color: #fef3c7;
     color: #ca8a04;
     border-color: #ca8a04;
+}
+
+.tag-btn.tag-winsurf {
+    background-color: #dbeafe;
+    color: #0284c7;
+    border-color: #0284c7;
+}
+
+.tag-btn.tag-antigravity {
+    background-color: #fce7f3;
+    color: #ec4899;
+    border-color: #ec4899;
+}
+
+.tag-btn.tag-bolt {
+    background-color: #fef9c3;
+    color: #eab308;
+    border-color: #eab308;
 }
 
 .tag-btn.tag-default {

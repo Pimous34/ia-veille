@@ -78,9 +78,9 @@ const trendingArticles = [
 // Category Tags Configuration
 const categoryTags = {
     'IA': ['ChatGPT', 'Gemini', 'Perplexity', 'Claude', 'Midjourney', 'DALL-E'],
-    'No-Code': ['Bubble', 'Webflow', 'Make', 'Airtable', 'Notion'],
+    'No-Code': ['Bubble', 'Webflow', 'Airtable', 'Notion'],
     'Automatisation': ['Make', 'Zapier', 'n8n'],
-    'Vibe-coding': ['Cursor', 'Replit']
+    'Vibe-coding': ['Cursor', 'Winsurf', 'Antigravity', 'Bolt']
 };
 
 // ... (createArticleCard, formatDate, renderArticles functions remain same)
@@ -121,7 +121,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Zapier': 'tag-zapier',
                     'n8n': 'tag-n8n',
                     'Cursor': 'tag-cursor',
-                    'Replit': 'tag-replit'
+                    'Replit': 'tag-replit',
+                    'Winsurf': 'tag-winsurf',
+                    'Antigravity': 'tag-antigravity',
+                    'Bolt': 'tag-bolt'
                 };
 
                 tagsContainer.innerHTML = tags.map(tag => {
@@ -232,7 +235,10 @@ function createArticleCard(article) {
         'Zapier': 'tag-zapier',
         'n8n': 'tag-n8n',
         'Cursor': 'tag-cursor',
-        'Replit': 'tag-replit'
+        'Replit': 'tag-replit',
+        'Winsurf': 'tag-winsurf',
+        'Antigravity': 'tag-antigravity',
+        'Bolt': 'tag-bolt'
     };
 
     // Generate tags HTML if tags exist
