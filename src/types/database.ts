@@ -13,7 +13,12 @@ export interface Article {
   tags: string[];
   read_time?: number;
   author?: string;
+  view_count?: number;
+  is_daily_news?: boolean;
+  daily_news_date?: string;
+  relevance_score?: number;
 }
+
 
 export interface Source {
   id: string;
@@ -85,4 +90,22 @@ export interface Newsletter {
   sent_at: string;
   articles: string[];
   status: 'pending' | 'sent' | 'failed';
+}
+
+export interface DailyNewsVideo {
+  id: string;
+  date: string;
+  title: string;
+  script: string;
+  article_ids: string[];
+  video_url: string | null;
+  thumbnail_url: string | null;
+  duration: number | null;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  d_id_talk_id: string | null;
+  d_id_result: Record<string, unknown> | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+  view_count: number;
 }

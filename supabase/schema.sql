@@ -41,7 +41,10 @@ CREATE TABLE articles (
   tags TEXT[] DEFAULT '{}',
   read_time INTEGER,
   author VARCHAR(200),
-  view_count INTEGER DEFAULT 0
+  view_count INTEGER DEFAULT 0,
+  is_daily_news BOOLEAN DEFAULT false,
+  daily_news_date DATE,
+  relevance_score DECIMAL(5,2)
 );
 
 -- Create index for full-text search
@@ -115,6 +118,29 @@ CREATE TABLE newsletters (
 
 CREATE INDEX newsletters_user_idx ON newsletters(user_id, sent_at DESC);
 
+-- Daily News Videos (JT quotidien)
+CREATE TABLE daily_news_videos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  date DATE NOT NULL UNIQUE,
+  title VARCHAR(500) NOT NULL,
+  script TEXT NOT NULL,
+  article_ids UUID[] DEFAULT '{}',
+  video_url TEXT,
+  thumbnail_url TEXT,
+  duration INTEGER, -- en secondes
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+  d_id_talk_id VARCHAR(100),
+  d_id_result JSONB,
+  error_message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  completed_at TIMESTAMP WITH TIME ZONE,
+  view_count INTEGER DEFAULT 0
+);
+
+CREATE INDEX daily_news_videos_date_idx ON daily_news_videos(date DESC);
+CREATE INDEX daily_news_videos_status_idx ON daily_news_videos(status);
+
+
 -- Row Level Security (RLS) Policies
 
 -- Enable RLS on all tables
@@ -124,6 +150,8 @@ ALTER TABLE user_activity_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE article_scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE newsletters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_news_videos ENABLE ROW LEVEL SECURITY;
+
 
 -- Articles: Public read, admin write
 CREATE POLICY "Articles are viewable by everyone" ON articles
@@ -163,6 +191,11 @@ CREATE POLICY "Users can view their own scores" ON article_scores
 -- Newsletters: Users can view their own newsletters
 CREATE POLICY "Users can view their own newsletters" ON newsletters
   FOR SELECT USING (auth.uid() = user_id);
+
+-- Daily News Videos: Public read
+CREATE POLICY "Daily news videos are viewable by everyone" ON daily_news_videos
+  FOR SELECT USING (true);
+
 
 -- Functions
 
