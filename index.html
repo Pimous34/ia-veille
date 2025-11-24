@@ -12,6 +12,15 @@
     <!-- Header -->
     <header class="header">
         <div class="header-container">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
             <a href="index.html" class="logo-link">
                 <div class="logo">
                     <div class="logo-wrapper">
@@ -72,6 +81,9 @@
             </form>
         </div>
     </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="toggleMobileMenu()"></div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -232,6 +244,7 @@
 
     <script src="script.js"></script>
     <script src="search-toggle.js"></script>
+    <script src="mobile-menu.js"></script>
 </body>
 
 </html>
