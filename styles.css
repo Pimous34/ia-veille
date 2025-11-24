@@ -2014,6 +2014,24 @@ body {
         gap: 0.5rem;
         padding: 0 10px;
         position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .mobile-menu-toggle {
+        order: 1;
+        flex-shrink: 0;
+    }
+
+    .search-container {
+        order: 3;
+        flex-shrink: 0;
+    }
+
+    .auth-button {
+        order: 4;
+        flex-shrink: 0;
     }
 
     /* Hide desktop navigation */
@@ -2051,15 +2069,43 @@ body {
         justify-content: center;
     }
 
-    /* Hide logo on mobile */
+    /* Show logo centered on mobile */
     .logo-link {
-        display: none;
+        display: flex !important;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        /* Center vertically and horizontally */
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        height: 100%;
+        /* Full height of header */
+    }
+
+    .logo-img {
+        height: 60px;
+        /* Even larger logo */
+        max-height: 100%;
+        width: auto;
+    }
+
+    .logo-placeholder {
+        height: 60px;
     }
 
     /* Compact search and auth */
     .search-toggle-btn {
         width: 36px;
         height: 36px;
+    }
+
+    .search-container {
+        order: 3;
+        flex-shrink: 0;
+        margin-left: auto;
+        /* Push to right */
     }
 
     .auth-text {
