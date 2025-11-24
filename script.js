@@ -75,6 +75,43 @@ const trendingArticles = [
     }
 ];
 
+// Course Preparation Articles - Articles to prepare for the next course
+const coursePrepArticles = [
+    {
+        id: 8,
+        title: "Les fondamentaux de l'IA pour débutants",
+        excerpt: "Comprendre les bases de l'intelligence artificielle avant de plonger dans les outils avancés. Un guide essentiel pour bien démarrer.",
+        category: "IA",
+        tags: ["ChatGPT", "Gemini"],
+        date: "2024-01-17",
+        link: "#",
+        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800",
+        coursePrep: true
+    },
+    {
+        id: 9,
+        title: "Premiers pas avec les prompts efficaces",
+        excerpt: "Apprenez à formuler des prompts qui donnent des résultats précis et pertinents avec les IA génératives.",
+        category: "IA",
+        tags: ["ChatGPT", "Claude"],
+        date: "2024-01-17",
+        link: "#",
+        image: "https://images.unsplash.com/photo-1676299080923-6c98c0cf4e48?w=800",
+        coursePrep: true
+    },
+    {
+        id: 10,
+        title: "Introduction aux outils No-Code",
+        excerpt: "Découvrez les plateformes No-Code les plus populaires et leurs cas d'usage pour créer sans coder.",
+        category: "No-Code",
+        tags: ["Bubble", "Webflow"],
+        date: "2024-01-16",
+        link: "#",
+        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
+        coursePrep: true
+    }
+];
+
 // Category Tags Configuration
 const categoryTags = {
     'IA': ['ChatGPT', 'Gemini', 'Perplexity', 'Claude', 'Midjourney', 'DALL-E'],
@@ -182,6 +219,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const trendingContainer = document.getElementById('trendingArticles');
     if (trendingContainer) {
         renderArticles(trendingArticles, 'trendingArticles');
+    }
+
+    // Course Preparation Articles
+    const coursePrepContainer = document.getElementById('coursePrepArticles');
+    if (coursePrepContainer) {
+        renderArticles(coursePrepArticles, 'coursePrepArticles');
     }
 
     // Logo Logic
