@@ -104,7 +104,7 @@ function formatDate(dateString) {
 // Function to render articles
 function renderArticles(articles, containerId) {
     const container = document.getElementById(containerId);
-    
+
     if (!container) {
         console.error(`Container ${containerId} not found`);
         return;
@@ -123,10 +123,10 @@ function renderArticles(articles, containerId) {
 }
 
 // Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Render JT News articles
     renderArticles(jtArticles, 'jtArticles');
-    
+
     // Render trending articles
     renderArticles(trendingArticles, 'trendingArticles');
 });
@@ -144,10 +144,10 @@ function handleLogoError(img) {
     const logoContainer = document.querySelector('.logo');
     const allLogos = logoContainer.querySelectorAll('.logo-img');
     const placeholder = logoContainer.querySelector('.logo-placeholder');
-    
+
     // Hide the failed image
     img.style.display = 'none';
-    
+
     // Try to find another logo format
     let foundLogo = false;
     allLogos.forEach(logo => {
@@ -156,7 +156,7 @@ function handleLogoError(img) {
             foundLogo = true;
         }
     });
-    
+
     // If no logo found, show placeholder
     if (!foundLogo && placeholder) {
         const allHidden = Array.from(allLogos).every(logo => logo.style.display === 'none' || !logo.complete || logo.naturalHeight === 0);
@@ -167,27 +167,27 @@ function handleLogoError(img) {
 }
 
 // Try to load logo on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const logoContainer = document.querySelector('.logo');
     const logos = logoContainer.querySelectorAll('.logo-img');
     const placeholder = logoContainer.querySelector('.logo-placeholder');
-    
+
     // Try each logo format (PNG first, then other formats)
     const logoFormats = ['logo.png', 'logo.svg', 'logo.jpg', 'logo.jpeg'];
     let logoIndex = 0;
-    
+
     function tryNextLogo() {
         if (logoIndex < logos.length) {
             const logo = logos[logoIndex];
             logo.style.display = 'block';
-            logo.onload = function() {
+            logo.onload = function () {
                 // Hide other logos and placeholder
                 logos.forEach((l, i) => {
                     if (i !== logoIndex) l.style.display = 'none';
                 });
                 if (placeholder) placeholder.style.display = 'none';
             };
-            logo.onerror = function() {
+            logo.onerror = function () {
                 logo.style.display = 'none';
                 logoIndex++;
                 tryNextLogo();
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (placeholder) placeholder.style.display = 'flex';
         }
     }
-    
+
     tryNextLogo();
 });
 
@@ -208,7 +208,7 @@ function handleSearch(event) {
     event.preventDefault();
     const searchInput = event.target.querySelector('.search-input');
     const searchTerm = searchInput.value.trim();
-    
+
     if (searchTerm) {
         // You can implement search functionality here
         console.log('Recherche:', searchTerm);
@@ -217,9 +217,151 @@ function handleSearch(event) {
     }
 }
 
+// Format Switcher Logic
+function toggleFormatMenu() {
+    const menu = document.getElementById('formatMenu');
+    menu.classList.toggle('show');
+}
+
+function setFormat(format) {
+    // Hide all formats
+    document.querySelectorAll('.format-content').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('active');
+    });
+
+    // Show selected format
+    const selected = document.getElementById(`format-${format}`);
+    if (selected) {
+        selected.style.display = 'block';
+        // Small delay to allow display:block to apply before adding active class for potential transitions
+        setTimeout(() => selected.classList.add('active'), 10);
+    }
+
+    // Close menu
+    document.getElementById('formatMenu').classList.remove('show');
+}
+
+// Fullscreen Logic
+function toggleFullscreen() {
+    const videoColumn = document.querySelector('.video-column');
+
+    if (!document.fullscreenElement) {
+        if (videoColumn.requestFullscreen) {
+            videoColumn.requestFullscreen();
+        } else if (videoColumn.webkitRequestFullscreen) { /* Safari */
+            videoColumn.webkitRequestFullscreen();
+        } else if (videoColumn.msRequestFullscreen) { /* IE11 */
+            videoColumn.msRequestFullscreen();
+        }
+        videoColumn.classList.add('fullscreen');
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { /* Safari */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE11 */
+            document.msExitFullscreen();
+        }
+        videoColumn.classList.remove('fullscreen');
+    }
+}
+
+// Listen for fullscreen change events (ESC key etc)
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+// Helper to update button icon
+function updateFullscreenButton(isFullscreen) {
+    const btn = document.querySelector('.fullscreen-btn');
+    const btnPath = btn ? btn.querySelector('svg path') : null;
+
+    const expandPath = "M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7";
+    const compressPath = "M4 14h6v6M10 14L3 21M20 10h-6V4M14 10l7-7";
+
+    if (isFullscreen) {
+        if (btnPath) btnPath.setAttribute('d', compressPath);
+        if (btn) btn.setAttribute('aria-label', 'Quitter plein écran');
+    } else {
+        if (btnPath) btnPath.setAttribute('d', expandPath);
+        if (btn) btn.setAttribute('aria-label', 'Plein écran');
+    }
+}
+
+// Fullscreen Logic
+function toggleFullscreen() {
+    const videoColumn = document.querySelector('.video-column');
+    const isFullscreen = document.fullscreenElement ||
+        document.webkitIsFullScreen ||
+        document.mozFullScreen ||
+        document.msFullscreenElement ||
+        videoColumn.classList.contains('fullscreen');
+
+    if (!isFullscreen) {
+        // Enter fullscreen
+        if (videoColumn.requestFullscreen) {
+            videoColumn.requestFullscreen().catch(err => {
+                // Fallback if requestFullscreen fails (e.g. user denied or not allowed)
+                console.log('Fullscreen API failed, using CSS fallback');
+            });
+        } else if (videoColumn.webkitRequestFullscreen) { /* Safari */
+            videoColumn.webkitRequestFullscreen();
+        } else if (videoColumn.msRequestFullscreen) { /* IE11 */
+            videoColumn.msRequestFullscreen();
+        }
+        // Always add class for CSS styling (and fallback)
+        videoColumn.classList.add('fullscreen');
+        updateFullscreenButton(true);
+    } else {
+        // Exit fullscreen
+        if (document.fullscreenElement || document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement) {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { /* Safari */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE11 */
+                document.msExitFullscreen();
+            }
+        }
+        // Always remove class
+        videoColumn.classList.remove('fullscreen');
+        updateFullscreenButton(false);
+    }
+}
+
+function handleFullscreenChange() {
+    const videoColumn = document.querySelector('.video-column');
+    const isApiFullscreen = document.fullscreenElement || document.webkitIsFullScreen || document.mozFullScreen || document.msFullscreenElement;
+
+    if (!isApiFullscreen && !videoColumn.classList.contains('fullscreen')) {
+        // Only reset if both API and class say we are not fullscreen
+        // But if API exited, we should probably sync the class
+        videoColumn.classList.remove('fullscreen');
+        updateFullscreenButton(false);
+    } else if (isApiFullscreen) {
+        videoColumn.classList.add('fullscreen');
+        updateFullscreenButton(true);
+    }
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function (event) {
+    const controls = document.querySelector('.format-controls');
+    const menu = document.getElementById('formatMenu');
+
+    if (controls && !controls.contains(event.target) && menu.classList.contains('show')) {
+        menu.classList.remove('show');
+    }
+});
+
 // Export functions for external use
 window.updateVideo = updateVideo;
 window.renderArticles = renderArticles;
 window.handleLogoError = handleLogoError;
 window.handleSearch = handleSearch;
+window.toggleFormatMenu = toggleFormatMenu;
+window.setFormat = setFormat;
+window.toggleFullscreen = toggleFullscreen;
 
