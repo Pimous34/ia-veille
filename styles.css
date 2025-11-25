@@ -3185,6 +3185,13 @@ body {
     }
 }
 
+/* Specific adjustment for exactly 767px */
+@media (min-width: 767px) and (max-width: 767px) {
+    .hero-section {
+        margin-top: 80px !important;
+    }
+}
+
 /* Specific adjustment for Tablet range (767px - 867px) */
 @media (min-width: 767px) and (max-width: 867px) {
     .shorts-container {
@@ -3392,6 +3399,22 @@ body {
 
     .short-img-3 {
         background-image: url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800');
+    }
+}
+
+/* Specific adjustment for logo centering (1200px - 1370px) */
+@media (min-width: 1200px) and (max-width: 1370px) {
+    .logo-link {
+        left: -100px !important;
+    }
+
+    .logo-img {
+        height: 100px !important;
+        margin-right: 60px !important;
+    }
+
+    .auth-button {
+        left: 105% !important;
     }
 }
 
