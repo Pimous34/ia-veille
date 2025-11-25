@@ -1,15 +1,12 @@
-
 // Toggle Mobile Menu
 function toggleMobileMenu() {
-    const nav = document.querySelector('.main-nav');
-    const overlay = document.getElementById('mobileMenuOverlay');
+    const menuContainer = document.getElementById('mobileMenuContainer');
 
-    if (nav && overlay) {
-        nav.classList.toggle('active');
-        overlay.classList.toggle('active');
+    if (menuContainer) {
+        menuContainer.classList.toggle('active');
 
         // Prevent body scroll when menu is open
-        if (nav.classList.contains('active')) {
+        if (menuContainer.classList.contains('active')) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = '';
@@ -17,14 +14,6 @@ function toggleMobileMenu() {
     }
 }
 
-// Close mobile menu when clicking on a link
-document.addEventListener('DOMContentLoaded', function () {
-    const navLinks = document.querySelectorAll('.main-nav .nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function () {
-            if (window.innerWidth <= 767) {
-                toggleMobileMenu();
-            }
-        });
-    });
-});
+// Close menu when clicking outside (optional, but good UX if we had a partial menu)
+// Since it's full screen, we rely on the close button and links.
+
