@@ -1374,8 +1374,10 @@ body {
         font-size: 1.25rem;
     }
 
-    .articles-section {
-        margin-bottom: 3rem;
+    .articles-section,
+    .categories-section,
+    .course-prep-section {
+        margin-bottom: 2rem !important;
     }
 
     /* Categories Mobile */
@@ -1431,6 +1433,17 @@ body {
 @media (min-width: 50px) and (max-width: 400px) {
     .video-section {
         margin-top: 140px;
+    }
+}
+
+/* Specific adjustment for range (480px - 770px) */
+@media (min-width: 480px) and (max-width: 770px) {
+    .section-title {
+        font-size: 1.5rem !important;
+    }
+
+    .articles-section.trending-articles {
+        margin-top: 0px !important;
     }
 }
 
@@ -3148,9 +3161,20 @@ body {
     }
 
     .articles-section,
+    .categories-section,
+    .course-prep-section,
     .shorts-container {
         margin-top: 0px !important;
-        margin-bottom: 2rem;
+        margin-bottom: 2rem !important;
+    }
+
+    .section-title {
+        font-size: 1.5rem !important;
+    }
+
+    /* Specific override as requested */
+    .articles-section.trending-articles {
+        margin-top: 0px !important;
     }
 }
 
@@ -3368,6 +3392,13 @@ body {
 
     .short-img-3 {
         background-image: url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800');
+    }
+}
+
+/* Specific adjustment for exactly 1370px */
+@media (min-width: 1370px) and (max-width: 1370px) {
+    .hero-section {
+        margin-top: 110px !important;
     }
 }
 
