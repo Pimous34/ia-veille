@@ -92,13 +92,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const direction = deltaX > 0 ? 1 : -1; // 1 = Right, -1 = Left
                 const endX = window.innerWidth * direction; // Fly off screen
 
-                card.style.transition = 'transform 0.5s ease-out';
-                card.style.transform = `translateX(${endX}px) rotate(${direction * 30}deg)`;
+                // Scroll to next card IMMEDIATELY
+                scrollToNextCard();
 
-                // Scroll to next card after short delay
+                // Animate card off screen
+                card.style.transition = 'transform 0.3s ease-out, opacity 0.2s ease-out';
+                card.style.transform = `translateX(${endX}px) rotate(${direction * 30}deg)`;
+                card.style.opacity = '0';
+
+                // Disable interaction with swiped card
                 setTimeout(() => {
-                    scrollToNextCard();
-                }, 300);
+                    card.style.pointerEvents = 'none';
+                }, 50);
+
+
 
             } else {
                 // RESET (Back to center)
@@ -119,14 +126,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function scrollToNextCard() {
-        // Find the current visible card
-        const currentScroll = container.scrollTop;
-        const cardHeight = window.innerHeight; // Assuming 100vh cards
-        const nextScroll = currentScroll + cardHeight;
+        // Find the next article element
+        const articles = document.querySelectorAll('.short-article');
+        const container = document.querySelector('.shorts-container');
 
-        container.scrollTo({
-            top: nextScroll,
-            behavior: 'smooth'
+        // Find which article is currently visible
+        let currentIndex = -1;
+        articles.forEach((article, index) => {
+            const rect = article.getBoundingClientRect();
+            // Check if article is in viewport
+            if (rect.top >= 0 && rect.top < window.innerHeight / 2) {
+                currentIndex = index;
+            }
         });
+
+        // Scroll to next article if it exists
+        if (currentIndex >= 0 && currentIndex < articles.length - 1) {
+            const nextArticle = articles[currentIndex + 1];
+            nextArticle.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
     }
 });
