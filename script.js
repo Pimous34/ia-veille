@@ -310,7 +310,7 @@ function createArticleCard(article) {
                         </svg>
                         ${formatDate(article.date)}
                     </span>
-                    <a href="article.html" class="article-link" onclick="event.stopPropagation()">
+                    <a href="article.html?id=${encodeURIComponent(article.title)}" class="article-link" onclick="event.stopPropagation()">
                         Lire →
                     </a>
                 </div>
