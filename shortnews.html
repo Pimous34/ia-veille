@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShortNews - OREEGAM'IA</title>
-    <link rel="stylesheet" href="styles.css?v=final_fix_28">
+    <link rel="stylesheet" href="styles.css?v=final_fix_30">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -123,6 +123,35 @@
             margin-top: auto !important;
             padding-top: 1rem !important;
             border-top: 1px solid #f0f0f0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 1rem !important;
+        }
+
+        /* Action buttons */
+        .short-actions {
+            display: flex !important;
+            gap: 0.5rem !important;
+        }
+
+        .action-btn {
+            background: none !important;
+            border: none !important;
+            padding: 8px !important;
+            cursor: pointer !important;
+            color: #64748b !important;
+            transition: all 0.2s ease !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .action-btn:hover {
+            color: #2563eb !important;
+            background-color: rgba(37, 99, 235, 0.1) !important;
+            transform: scale(1.1) !important;
         }
 
         /* Tag colors - AI tools with authentic brand colors */
@@ -176,30 +205,52 @@
             position: absolute;
             top: 15px;
             font-size: 1.5rem;
-            /* Smaller size */
             opacity: 1;
-            /* Not transparent */
             z-index: 100;
             pointer-events: none;
             transition: transform 0.2s ease, opacity 0.2s ease;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-            /* Better shadow for emojis */
         }
 
         .swipe-like {
             right: 15px;
-            /* Tucked in corner */
             left: auto;
             transform: rotate(0deg);
-            /* Straight by default */
         }
 
         .swipe-nope {
             left: 15px;
-            /* Tucked in corner */
             right: auto;
             transform: rotate(0deg);
-            /* Straight by default */
+        }
+
+        /* Toast notification for actions */
+        .action-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Active state for action buttons */
+        .action-btn.active {
+            color: #2563eb !important;
         }
     </style>
 </head>
@@ -299,6 +350,31 @@
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg> 23 Nov 2025</span>
+                        <div class="short-actions">
+                            <button class="action-btn" aria-label="Sauvegarder">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="À regarder plus tard">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="Partager">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                        </div>
                         <a href="#" class="short-link">Lire <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -327,6 +403,31 @@
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg> 22 Nov 2025</span>
+                        <div class="short-actions">
+                            <button class="action-btn" aria-label="Sauvegarder">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="À regarder plus tard">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="Partager">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                        </div>
                         <a href="#" class="short-link">Lire <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -355,6 +456,31 @@
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12 6 12 12 16 14"></polyline>
                             </svg> 21 Nov 2025</span>
+                        <div class="short-actions">
+                            <button class="action-btn" aria-label="Sauvegarder">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="À regarder plus tard">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="Partager">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                        </div>
                         <a href="#" class="short-link">Lire <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -399,6 +525,7 @@
     <script src="script.js"></script>
     <script src="search-toggle.js"></script>
     <script src="swipe-handlers.js"></script>
+    <script src="action-handlers.js"></script>
 </body>
 
 </html>
