@@ -27,7 +27,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: #64748b;
             margin-bottom: 2rem;
         }
@@ -71,10 +71,10 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem 1rem;
+            padding: 0.35rem 0.75rem;
             background: #f1f5f9;
             border-radius: 50px;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: #475569;
         }
@@ -86,7 +86,7 @@
         }
 
         .article-action-btn {
-            padding: 0.5rem 1rem;
+            padding: 0.35rem 0.75rem;
             background: #f1f5f9;
             border: none;
             border-radius: 8px;
@@ -95,7 +95,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 500;
             color: #475569;
         }
@@ -270,20 +270,34 @@
         }
 
         .article-tag {
-            padding: 0.5rem 1rem;
+            padding: 0.35rem 0.75rem;
             background: rgba(37, 99, 235, 0.1);
             color: #2563eb;
             border-radius: 50px;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.2s;`r`n            pointer-events: none;`r`n            cursor: default;
+            transition: all 0.2s;
+            pointer-events: none;
+            cursor: default;
         }
 
         .article-tag:hover {
             background: rgba(37, 99, 235, 0.1);
             transform: none;
         }
+
+        /* Tag colors - AI tools */
+        .article-tag.tag-chatgpt {
+            background: rgba(16, 163, 127, 0.12);
+            color: #10a37f;
+        }
+
+        .article-tag.tag-claude {
+            background: rgba(191, 144, 96, 0.12);
+            color: #bf9060;
+        }
+
         /* Tag colors - AI tools */
         .article-tag.tag-chatgpt {
             background: rgba(16, 163, 127, 0.12);
@@ -423,25 +437,13 @@
                 <a href="#" class="article-tag tag-chatgpt">ChatGPT</a>
                 <a href="#" class="article-tag tag-claude">Claude</a>
                 <a href="#" class="article-tag">Design</a>
-            </div></header>
+            </div>
+        </header>
 
         <!-- Featured Image -->
         <div class="article-featured-image">
             <!-- Image will be loaded dynamically or set as background -->
         </div>
-
-        <!-- Table of Contents -->
-        <aside class="article-toc">
-            <h3>📋 Sommaire</h3>
-            <ul>
-                <li><a href="#introduction">Introduction</a></li>
-                <li><a href="#revolution">La révolution de l'IA générative</a></li>
-                <li><a href="#outils">Les outils qui changent tout</a></li>
-                <li><a href="#impact">Impact sur les designers</a></li>
-                <li><a href="#conclusion">Conclusion</a></li>
-            </ul>
-        </aside>
-
         <!-- Article Content -->
         <article class="article-content">
             <h2 id="introduction">Introduction</h2>
