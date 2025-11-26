@@ -33,6 +33,42 @@
             font-weight: 500;
         }
 
+        /* Actions Bar Styling */
+        .short-actions-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0.6rem 0.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
+            background: white;
+            border-radius: 0 0 16px 16px;
+            margin-top: auto;
+            /* Push to bottom */
+        }
+
+        .short-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            padding: 0.4rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .short-action-btn:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+            color: #4B5563;
+        }
+
+        .short-action-btn.active {
+            color: #4CAF50;
+            /* Default active color, overridden by JS */
+        }
+
         /* Tag colors - AI tools */
         .tag-chatgpt {
             background: rgba(16, 163, 127, 0.15);
@@ -87,6 +123,8 @@
             .short-card-container {
                 height: 100% !important;
                 max-height: 75vh !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
 
             .short-image {
@@ -98,6 +136,8 @@
             .short-content {
                 flex: 1 !important;
                 padding: 0.9rem !important;
+                padding-bottom: 0 !important;
+                /* Remove bottom padding as actions bar is there */
                 gap: 0.6rem !important;
                 overflow-y: auto !important;
             }
@@ -134,6 +174,7 @@
             .short-meta {
                 font-size: 0.75rem !important;
                 margin-top: 0.6rem !important;
+                margin-bottom: 0.5rem !important;
             }
 
             .short-date {
@@ -142,6 +183,11 @@
 
             .short-link {
                 font-size: 0.75rem !important;
+            }
+
+            .short-actions-bar {
+                padding: 0.5rem !important;
+                min-height: 45px !important;
             }
         }
 
@@ -174,6 +220,8 @@
                 width: 100% !important;
                 height: 100% !important;
                 border-radius: 16px !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
 
             .short-image {
@@ -292,6 +340,30 @@
                             </svg></a>
                     </div>
                 </div>
+                <!-- Actions Bar -->
+                <div class="short-actions-bar">
+                    <button class="short-action-btn" data-action="save" aria-label="Sauvegarder">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.5 3H6.5c-1.1 0-2 .9-2 2v16l7.5-4.5L19.5 21V5c0-1.1-.9-2-2-2z"></path>
+                        </svg>
+                    </button>
+                    <button class="short-action-btn" data-action="share" aria-label="Partager">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button class="short-action-btn" data-action="later" aria-label="À regarder plus tard">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </article>
 
@@ -320,6 +392,30 @@
                             </svg></a>
                     </div>
                 </div>
+                <!-- Actions Bar -->
+                <div class="short-actions-bar">
+                    <button class="short-action-btn" data-action="save" aria-label="Sauvegarder">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.5 3H6.5c-1.1 0-2 .9-2 2v16l7.5-4.5L19.5 21V5c0-1.1-.9-2-2-2z"></path>
+                        </svg>
+                    </button>
+                    <button class="short-action-btn" data-action="share" aria-label="Partager">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button class="short-action-btn" data-action="later" aria-label="À regarder plus tard">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </article>
 
@@ -347,6 +443,30 @@
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg></a>
                     </div>
+                </div>
+                <!-- Actions Bar -->
+                <div class="short-actions-bar">
+                    <button class="short-action-btn" data-action="save" aria-label="Sauvegarder">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17.5 3H6.5c-1.1 0-2 .9-2 2v16l7.5-4.5L19.5 21V5c0-1.1-.9-2-2-2z"></path>
+                        </svg>
+                    </button>
+                    <button class="short-action-btn" data-action="share" aria-label="Partager">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <button class="short-action-btn" data-action="later" aria-label="À regarder plus tard">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </article>
@@ -386,6 +506,7 @@
     <script src="script.js"></script>
     <script src="search-toggle.js"></script>
     <script src="shortnews-swipe.js"></script>
+    <script src="shortnews-actions.js"></script>
 </body>
 
 </html>
