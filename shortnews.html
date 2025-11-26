@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShortNews - OREEGAM'IA</title>
-    <link rel="stylesheet" href="styles.css?v=final_fix_20">
+    <link rel="stylesheet" href="styles.css?v=final_fix_28">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -63,12 +63,18 @@
             z-index: 10 !important;
         }
 
-        /* Category badge below image */
-        body.shorts-page .short-category {
+        /* Category badge - matching article-category style */
+        body.shorts-page .category-badge {
+            display: inline-block !important;
             order: -1 !important;
-            margin-bottom: 0.25rem !important;
+            margin-bottom: 0.75rem !important;
             position: relative !important;
             z-index: 20 !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 20px !important;
         }
 
         /* Show tags with enhanced styling */
@@ -77,7 +83,7 @@
             flex-wrap: wrap !important;
             gap: 0.4rem !important;
             margin-bottom: 0.75rem !important;
-            order: -1 !important;
+            order: 0 !important;
         }
 
         body.shorts-page .short-tag {
@@ -119,42 +125,50 @@
             border-top: 1px solid #f0f0f0 !important;
         }
 
-        /* Tag colors - AI tools */
+        /* Tag colors - AI tools with authentic brand colors */
         .tag-chatgpt {
-            background: rgba(16, 163, 127, 0.15);
+            background: rgba(16, 163, 127, 0.12);
             color: #10a37f;
         }
 
         .tag-claude {
-            background: rgba(204, 143, 105, 0.15);
-            color: #cc8f69;
+            background: rgba(191, 144, 96, 0.12);
+            color: #bf9060;
         }
 
         .tag-gemini {
-            background: rgba(66, 133, 244, 0.15);
+            background: linear-gradient(135deg, rgba(66, 133, 244, 0.12), rgba(219, 68, 55, 0.12));
             color: #4285f4;
         }
 
-        /* Tag colors - No-Code tools */
+        /* Tag colors - No-Code tools with authentic brand colors */
         .tag-bubble {
-            background: rgba(0, 112, 243, 0.15);
+            background: rgba(0, 112, 243, 0.12);
             color: #0070f3;
         }
 
         .tag-webflow {
-            background: rgba(74, 85, 255, 0.15);
+            background: rgba(74, 85, 255, 0.12);
             color: #4a55ff;
         }
 
-        /* Tag colors - Automation tools */
+        /* Tag colors - Automation tools with authentic brand colors */
         .tag-zapier {
-            background: rgba(255, 74, 0, 0.15);
+            background: rgba(255, 74, 0, 0.12);
             color: #ff4a00;
         }
 
         .tag-make {
-            background: rgba(108, 73, 255, 0.15);
+            background: rgba(108, 73, 255, 0.12);
             color: #6c49ff;
+        }
+
+        /* Category badge colors - UNIFORM BLUE for all categories */
+        .cat-ia,
+        .cat-nocode,
+        .cat-auto {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
         }
     </style>
 </head>
@@ -240,7 +254,7 @@
             <div class="short-card-container">
                 <div class="short-image short-img-1"></div>
                 <div class="short-content">
-                    <span class="short-category cat-ia">IA</span>
+                    <span class="category-badge cat-ia">IA</span>
                     <div class="short-tags">
                         <span class="short-tag tag-chatgpt">ChatGPT</span>
                         <span class="short-tag tag-claude">Claude</span>
@@ -268,7 +282,7 @@
             <div class="short-card-container">
                 <div class="short-image short-img-2"></div>
                 <div class="short-content">
-                    <span class="short-category cat-nocode">No-Code</span>
+                    <span class="category-badge cat-nocode">No-Code</span>
                     <div class="short-tags">
                         <span class="short-tag tag-bubble">Bubble</span>
                         <span class="short-tag tag-webflow">Webflow</span>
@@ -296,7 +310,7 @@
             <div class="short-card-container">
                 <div class="short-image short-img-3"></div>
                 <div class="short-content">
-                    <span class="short-category cat-auto">Automatisation</span>
+                    <span class="category-badge cat-auto">Automatisation</span>
                     <div class="short-tags">
                         <span class="short-tag tag-zapier">Zapier</span>
                         <span class="short-tag tag-make">Make</span>

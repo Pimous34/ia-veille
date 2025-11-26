@@ -1041,22 +1041,7 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Category Gradients */
-.cat-ia {
-    background: linear-gradient(135deg, var(--logo-blue-dark), var(--logo-blue));
-}
-
-.cat-nocode {
-    background: linear-gradient(135deg, var(--logo-orange), var(--logo-pink));
-}
-
-.cat-auto {
-    background: linear-gradient(135deg, var(--logo-blue-light), var(--logo-purple));
-}
-
-.cat-vibe {
-    background: linear-gradient(135deg, var(--logo-yellow), var(--logo-pink), var(--logo-blue));
-}
+/* Category Gradients - REMOVED to allow uniform color from shortnews.html */
 
 /* Footer */
 .footer {
@@ -1677,17 +1662,7 @@ body.shorts-page .short-category {
     display: inline-block !important;
 }
 
-/* Category specific colors */
-.cat-ia {
-    background-color: #2563eb !important;
-}
-
-.cat-nocode {
-    background-color: #7c3aed !important;
-}
-
-.cat-auto {
-    background-color: #059669 !important;
+/* Category specific colors - REMOVED to allow uniform blue from shortnews.html */
 }
 
 .short-title {
