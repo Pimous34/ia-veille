@@ -1551,41 +1551,44 @@ body {
 /* ShortNews Page */
 /* ShortNews Page */
 .shorts-page {
-    /* Background inherited from body (main page style) */
-    /* Remove height/overflow constraints on body to avoid conflicts */
+    overflow: hidden !important;
+    height: 100vh;
+    background-color: #f3f4f6;
+}
+
+.shorts-page .main-content {
+    padding: 0 !important;
+    /* Remove padding that might shift layout */
+    height: 100vh;
 }
 
 .shorts-page .header {
     box-shadow: none !important;
+    pointer-events: none;
+    /* Let clicks pass through to scroll */
+}
+
+.shorts-page .header-container {
+    pointer-events: auto;
+    /* Re-enable clicks for buttons */
 }
 
 .shorts-container {
-    /* Strict Fixed Layout */
-    position: fixed;
-    top: 120px;
-    /* Start strictly below header */
-    bottom: 0;
-    /* Go to bottom of screen */
-    left: 50%;
-    transform: translateX(-50%);
-    /* Center horizontally */
-
+    height: 100vh;
+    height: 100dvh;
+    /* Dynamic viewport height for mobile */
     width: 100%;
-    max-width: 500px;
-    /* Restrict width */
-    height: auto;
-    /* Height defined by top/bottom */
-    margin: 0;
-
+    max-width: 600px;
+    margin: 0 auto;
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
-    scroll-behavior: smooth;
-
+    /* overscroll-behavior-y: contain; Removed */
+    /* Prevent scroll chaining */
     /* Hide scrollbar */
     scrollbar-width: none;
     -ms-overflow-style: none;
-
-    background-color: transparent;
+    padding: 0;
+    position: relative;
     z-index: 1;
 }
 
@@ -1594,14 +1597,260 @@ body {
 }
 
 .short-article {
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     width: 100%;
     scroll-snap-align: start;
+    scroll-snap-stop: always;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 1rem 0;
-    /* Vertical padding between cards */
+    padding: 80px 1rem 20px 1rem;
+    box-sizing: border-box;
+    margin-bottom: 100vh;
+    /* Maximum margin to force next card off screen */
+}
+
+/* The inner card container */
+.short-card-container {
+    width: 100%;
+    height: 100%;
+    background: #ffffff !important;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.short-image {
+    height: 55% !important;
+    min-height: 280px;
+    width: 100%;
+    background-size: cover;
+    background-position: center;
+    background-color: #e5e7eb;
+    border-radius: 24px 24px 0 0;
+    flex-shrink: 0;
+}
+
+/* Placeholder images for static content */
+.short-img-1 {
+    background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800');
+}
+
+.short-img-2 {
+    background-image: url('https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800');
+}
+
+.short-img-3 {
+    background-image: url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800');
+}
+
+.short-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.5rem 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.short-category {
+    position: absolute !important;
+    top: -15px !important;
+    left: 1.5rem !important;
+    background: #2563eb !important;
+    color: white !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 50px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    z-index: 2 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+    margin-bottom: 0 !important;
+    display: inline-block !important;
+}
+
+/* Category specific colors */
+.cat-ia {
+    background-color: #2563eb !important;
+}
+
+.cat-nocode {
+    background-color: #7c3aed !important;
+}
+
+.cat-auto {
+    background-color: #059669 !important;
+}
+
+.short-title {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.75rem !important;
+    margin-top: 0.5rem !important;
+    color: #1f2937 !important;
+}
+
+.short-excerpt {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    color: #6b7280 !important;
+    margin-bottom: auto !important;
+    flex-grow: 1 !important;
+}
+
+.short-meta {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-top: 1rem !important;
+    margin-top: 1rem !important;
+    border-top: 1px solid #e5e7eb !important;
+}
+
+.short-date {
+    font-size: 0.85rem !important;
+    color: #9ca3af !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+}
+
+.short-link {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: #2563eb !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.3rem !important;
+
+    display: inline-block !important;
+}
+
+.short-article .article-tags {
+    display: none !important;
+    /* Hide tags in ShortNews view */
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.short-article .article-tag {
+    display: none !important;
+    /* Hide individual tags */
+}
+
+.short-article .article-title {
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.75rem !important;
+    margin-top: 0.5rem !important;
+    color: #1f2937 !important;
+}
+
+.short-article .article-excerpt {
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+    color: #6b7280 !important;
+    margin-bottom: auto !important;
+    /* Push meta to bottom */
+    flex-grow: 1 !important;
+}
+
+.short-article .article-meta {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-top: 1rem !important;
+    margin-top: 1rem !important;
+    border-top: 1px solid #e5e7eb !important;
+}
+
+.short-article .article-date {
+    font-size: 0.85rem !important;
+    color: #9ca3af !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+}
+
+.short-article .article-date svg {
+    width: 14px !important;
+    height: 14px !important;
+    opacity: 0.7 !important;
+}
+
+.short-article .article-link {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: #2563eb !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.3rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.short-article .article-link:hover {
+    color: #1d4ed8 !important;
+    gap: 0.5rem !important;
+}
+
+.short-article .article-link svg {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+.short-article:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Swipe Overlays */
+.swipe-overlay {
+    position: absolute;
+    top: 40px;
+    padding: 0.5rem 1rem;
+    border: 4px solid;
+    border-radius: 8px;
+    font-size: 2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0;
+    z-index: 10;
+    transform: rotate(-15deg);
+    pointer-events: none;
+    /* Let clicks pass through */
+}
+
+.swipe-overlay.like {
+    left: 40px;
+    color: #4ade80;
+    /* Green */
+    border-color: #4ade80;
+    transform: rotate(-15deg);
+}
+
+.swipe-overlay.nope {
+    right: 40px;
+    color: #ef4444;
+    /* Red */
+    border-color: #ef4444;
+    transform: rotate(15deg);
 }
 
 /* Portrait Card Container */

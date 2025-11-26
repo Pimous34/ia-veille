@@ -619,4 +619,7 @@ window.handleSearch = handleSearch;
 window.toggleFormatMenu = toggleFormatMenu;
 window.setFormat = setFormat;
 window.toggleFullscreen = toggleFullscreen;
+window.jtArticles = jtArticles;
+window.trendingArticles = trendingArticles;
+window.coursePrepArticles = coursePrepArticles;
 
