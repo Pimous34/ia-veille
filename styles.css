@@ -1041,7 +1041,26 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Category Gradients - REMOVED to allow uniform color from shortnews.html */
+/* Category Gradients - Specific to Main Page Cards */
+.category-card.cat-ia {
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    /* Blue to Cyan */
+}
+
+.category-card.cat-nocode {
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    /* Purple to Pink */
+}
+
+.category-card.cat-auto {
+    background: linear-gradient(135deg, #ea580c, #f59e0b);
+    /* Orange to Amber */
+}
+
+.category-card.cat-vibe {
+    background: linear-gradient(135deg, #8b5cf6, #ec4899, #f43f5e);
+    /* Vibe Mix */
+}
 
 /* Footer */
 .footer {
