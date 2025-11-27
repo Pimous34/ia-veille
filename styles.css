@@ -4021,3 +4021,36 @@ body.shorts-page .short-category {
         min-width: auto !important;
     }
 }
+
+/* Article Content Width - Better readability */
+.article-content {
+    max-width: 800px;
+    margin-left: 0;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 1rem;
+}
+
+.article-content p,
+.article-content h2,
+.article-content h3,
+.article-content ul,
+.article-content ol,
+.article-content blockquote {
+    max-width: 100%;
+}
+
+/* Responsive adjustments for article content */
+@media (max-width: 768px) {
+    .article-content {
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .article-content {
+        max-width: 700px;
+    }
+}
