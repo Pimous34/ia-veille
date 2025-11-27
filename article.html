@@ -261,6 +261,113 @@
             height: 20px;
         }
 
+
+
+
+        /* Article Action Bar */
+        .article-action-bar {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 2rem 0;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
+            border: none;
+        }
+
+        .action-btn {
+            pointer-events: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.1);
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .action-btn:hover svg {
+            transform: scale(1.1);
+        }
+
+        .like-dislike-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-left: auto;
+        }
+
+        .like-btn {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+            border-color: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .like-btn:hover {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #10b981;
+            color: white;
+        }
+
+        .dislike-btn {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .dislike-btn:hover {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border-color: #ef4444;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .article-action-bar {
+                position: relative;
+                z-index: 10;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .like-dislike-group {
+                margin-left: 0;
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .action-btn {
+                pointer-events: auto;
+                flex: 1;
+                justify-content: center;
+            }
+        }
+
+
+
+
+
         /* Tags */
         .article-tags {
             display: flex;
@@ -444,6 +551,247 @@
         <div class="article-featured-image">
             <!-- Image will be loaded dynamically or set as background -->
         </div>
+
+        <!-- Article Actions -->
+        <div class="article-action-bar">
+            <button class="action-btn" onclick="saveArticle()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Sauvegarder
+            </button>
+            <button class="action-btn" onclick="watchLater()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                À regarder plus tard
+            </button>
+            <button class="action-btn" onclick="shareArticle()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Partager
+            </button>
+            <div class="like-dislike-group">
+                <button class="action-btn like-btn" onclick="likeArticle()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
+                        </path>
+                    </svg>
+                    J'aime
+                </button>
+                <button class="action-btn dislike-btn" onclick="dislikeArticle()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17">
+                        </path>
+                    </svg>
+                    J'aime pas
+                </button>
+            </div>
+        </div>
+
+        <!-- Article Content -->
+        <article class="article-content">
+            <h2 id="introduction">Introduction</h2>
+            <p>
+                L'intelligence artificielle générative transforme radicalement le paysage du design créatif.
+                En quelques mois seulement, des outils comme DALL-E, Midjourney et Stable Diffusion ont
+                révolutionné la façon dont nous créons des visuels.
+            </p>
+
+            <blockquote>
+                "L'IA ne remplace pas les designers, elle les libère pour qu'ils se concentrent sur ce qui
+                compte vraiment : la créativité et la stratégie."
+            </blockquote>
+
+            <h2 id="revolution">La révolution de l'IA générative</h2>
+            <p>
+                Les modèles d'IA générative ont atteint un niveau de sophistication impressionnant.
+                Ils peuvent désormais créer des images photoréalistes, des illustrations artistiques,
+                et même des designs de produits en quelques secondes.
+            </p>
+
+            <h3>Les avantages clés</h3>
+            <ul>
+                <li>Gain de temps considérable dans la phase de conception</li>
+                <li>Exploration rapide de multiples concepts créatifs</li>
+                <li>Accessibilité pour les non-designers</li>
+                <li>Coûts réduits pour les prototypes visuels</li>
+            </ul>
+
+            <h2 id="outils">Les outils qui changent tout</h2>
+            <p>
+                Plusieurs plateformes se distinguent dans le domaine de l'IA générative pour le design :
+            </p>
+
+            <h3>ChatGPT & DALL-E</h3>
+            <p>
+                OpenAI a révolutionné le secteur avec ses modèles capables de comprendre et de générer
+                du contenu visuel à partir de descriptions textuelles simples.
+            </p>
+
+            <h3>Midjourney</h3>
+            <p>
+                Reconnu pour ses capacités artistiques exceptionnelles, Midjourney excelle dans la création
+                d'images stylisées et conceptuelles.
+            </p>
+
+            <h2 id="impact">Impact sur les designers</h2>
+            <p>
+                L'arrivée de l'IA générative soulève des questions importantes sur l'avenir du métier de designer.
+                Plutôt que de remplacer les créatifs, ces outils deviennent des assistants puissants qui
+                augmentent leurs capacités.
+            </p>
+
+            <h2 id="conclusion">Conclusion</h2>
+            <p>
+                L'IA générative n'est pas une menace pour les designers, mais une opportunité extraordinaire
+                d'explorer de nouvelles frontières créatives. Les professionnels qui sauront intégrer ces
+                outils dans leur workflow seront les leaders de demain.
+            </p>
+        </article>
+
+        <!-- Source Link -->
+        <div class="article-source">
+            <h3>📰 Lire l'article original</h3>
+            <p>Cet article est un résumé. Consultez la source complète pour plus de détails.</p>
+            <a href="https://example.com/article-original" class="article-source-btn" target="_blank"
+                rel="noopener noreferrer">
+                Accéder à la source
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            </a>
+        </div>
+    </main>
+
+    <!-- Mobile Menu Container -->
+    <div class="mobile-menu-container" id="mobileMenuContainer">
+        <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Fermer le menu">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+
+        <form class="mobile-search-form" onsubmit="handleSearch(event)">
+            <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
+            <button type="submit" aria-label="Rechercher">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </button>
+        </form>
+
+        <nav class="mobile-nav">
+            <a href="index.html#jtnews" class="nav-link" onclick="toggleMobileMenu()">JTNews</a>
+            <a href="index.html#categories" class="nav-link" onclick="toggleMobileMenu()">Catégories</a>
+            <a href="index.html#actualite" class="nav-link" onclick="toggleMobileMenu()">Actualité</a>
+            <a href="index.html#courseprep" class="nav-link" onclick="toggleMobileMenu()">Cours</a>
+            <a href="shortnews.html" class="nav-link" onclick="toggleMobileMenu()">ShortNews</a>
+        </nav>
+    </div>
+
+    <script src="mobile-menu.js"></script>
+    </button>
+    <button type="button" class="search-overlay-close" onclick="toggleSearch()" aria-label="Fermer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </button>
+    </form>
+    </div>
+    </div>
+
+    <!-- Article Content -->
+    <main class="article-container">
+        <!-- Breadcrumb -->
+        <nav class="article-breadcrumb">
+            <a href="index.html">Accueil</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="index.html#actualite">Actualité</a>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span>Article</span>
+        </nav>
+
+        <!-- Article Header -->
+        <header class="article-header">
+            <h1 class="article-title">L'IA générative révolutionne le design</h1>
+
+            <div class="article-tags">
+                <a href="#" class="article-tag">IA</a>
+                <a href="#" class="article-tag tag-chatgpt">ChatGPT</a>
+                <a href="#" class="article-tag tag-claude">Claude</a>
+                <a href="#" class="article-tag">Design</a>
+            </div>
+        </header>
+
+        <!-- Featured Image -->
+        <div class="article-featured-image">
+            <!-- Image will be loaded dynamically or set as background -->
+        </div>
+
+        <!-- Article Actions -->
+        <div class="article-action-bar">
+            <button class="action-btn" onclick="saveArticle()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Sauvegarder
+            </button>
+            <button class="action-btn" onclick="watchLater()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                À regarder plus tard
+            </button>
+            <button class="action-btn" onclick="shareArticle()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+                Partager
+            </button>
+            <div class="like-dislike-group">
+                <button class="action-btn like-btn" onclick="likeArticle()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
+                        </path>
+                    </svg>
+                    J'aime
+                </button>
+                <button class="action-btn dislike-btn" onclick="dislikeArticle()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17">
+                        </path>
+                    </svg>
+                    J'aime pas
+                </button>
+            </div>
+        </div>
+
         <!-- Article Content -->
         <article class="article-content">
             <h2 id="introduction">Introduction</h2>
@@ -553,7 +901,166 @@
     <script src="mobile-menu.js"></script>
     <script src="script.js"></script>
     <script src="search-toggle.js"></script>
-    <script src=" article-loader.js\></script>
+    <script src="article-loader.js"></script>
+
+
+    <script>
+        // Gestion des actions sur les articles (Sauvegarder, Like, Partager, etc.)
+        function saveArticle() {
+            const btn = document.querySelector('button[onclick="saveArticle()"]');
+            const icon = btn.querySelector('svg');
+
+            // Toggle state
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+                btn.style.color = '#667eea';
+                icon.style.fill = 'none';
+                showToast('Article retiré des sauvegardes');
+            } else {
+                btn.classList.add('active');
+                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                btn.style.color = 'white';
+                icon.style.fill = 'currentColor';
+                showToast('Article sauvegardé !');
+            }
+        }
+
+        function watchLater() {
+            const btn = document.querySelector('button[onclick="watchLater()"]');
+            const icon = btn.querySelector('svg');
+
+            if (btn.classList.contains('active')) {
+                btn.classList.remove('active');
+                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+                btn.style.color = '#667eea';
+                // On garde fill à none pour l'horloge
+                icon.style.fill = 'none';
+                showToast('Retiré de "À regarder plus tard"');
+            } else {
+                btn.classList.add('active');
+                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                btn.style.color = 'white';
+                // IMPORTANT: On ne remplit PAS l'horloge, on laisse fill à none
+                icon.style.fill = 'none';
+                showToast('Ajouté à "À regarder plus tard"');
+            }
+        }
+
+        function shareArticle() {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.title,
+                    text: 'Découvrez cet article sur OREEGAM\'IA !',
+                    url: window.location.href,
+                })
+                    .then(() => console.log('Partage réussi'))
+                    .catch((error) => console.log('Erreur de partage', error));
+            } else {
+                // Fallback: copier le lien
+                navigator.clipboard.writeText(window.location.href);
+                showToast('Lien copié dans le presse-papier !');
+            }
+        }
+
+        function likeArticle() {
+            const likeBtn = document.querySelector('.like-btn');
+            const dislikeBtn = document.querySelector('.dislike-btn');
+
+            // Reset dislike if active
+            if (dislikeBtn.classList.contains('active')) {
+                dislikeBtn.classList.remove('active');
+                dislikeBtn.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
+                dislikeBtn.style.color = '#ef4444';
+                dislikeBtn.querySelector('svg').style.fill = 'none';
+            }
+
+            // Toggle like
+            if (likeBtn.classList.contains('active')) {
+                likeBtn.classList.remove('active');
+                likeBtn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
+                likeBtn.style.color = '#10b981';
+                likeBtn.querySelector('svg').style.fill = 'none';
+            } else {
+                likeBtn.classList.add('active');
+                likeBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                likeBtn.style.color = 'white';
+                likeBtn.querySelector('svg').style.fill = 'currentColor';
+                showToast('Vous aimez cet article !');
+            }
+        }
+
+        function dislikeArticle() {
+            const likeBtn = document.querySelector('.like-btn');
+            const dislikeBtn = document.querySelector('.dislike-btn');
+
+            // Reset like if active
+            if (likeBtn.classList.contains('active')) {
+                likeBtn.classList.remove('active');
+                likeBtn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
+                likeBtn.style.color = '#10b981';
+                likeBtn.querySelector('svg').style.fill = 'none';
+            }
+
+            // Toggle dislike
+            if (dislikeBtn.classList.contains('active')) {
+                dislikeBtn.classList.remove('active');
+                dislikeBtn.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
+                dislikeBtn.style.color = '#ef4444';
+                dislikeBtn.querySelector('svg').style.fill = 'none';
+            } else {
+                dislikeBtn.classList.add('active');
+                dislikeBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                dislikeBtn.style.color = 'white';
+                dislikeBtn.querySelector('svg').style.fill = 'currentColor';
+                showToast('Vous n\'aimez pas cet article');
+            }
+        }
+
+        // Fonction utilitaire pour afficher un toast notification
+        function showToast(message) {
+            // Créer le toast s'il n'existe pas
+            let toast = document.getElementById('toast-notification');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast-notification';
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(100px);
+                    background: rgba(15, 23, 42, 0.9);
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 50px;
+                    font-size: 0.9rem;
+                    font-weight: 500;
+                    z-index: 1000;
+                    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+                document.body.appendChild(toast);
+            }
+
+            // Mettre à jour le message
+            toast.textContent = message;
+
+            // Afficher
+            requestAnimationFrame(() => {
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            });
+
+            // Cacher après 3 secondes
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.style.transform = 'translateX(-50%) translateY(100px)';
+            }, 3000);
+        }
+    </script>
+
 </body>
 
 </html>
