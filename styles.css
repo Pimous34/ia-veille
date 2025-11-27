@@ -4022,6 +4022,12 @@ body.shorts-page .short-category {
     }
 }
 
+/* Article Meta Info - Date and Source */
+.article-meta-info {
+    margin-bottom: -1rem !important;
+    margin-top: 1rem;
+}
+
 /* Article Content Width - Better readability */
 .article-content {
     max-width: 800px;
@@ -4046,6 +4052,10 @@ body.shorts-page .short-category {
         max-width: 100%;
         padding-left: 0;
         padding-right: 1.5rem;
+    }
+
+    .article-meta-info {
+        margin-bottom: -1rem !important;
     }
 }
 
