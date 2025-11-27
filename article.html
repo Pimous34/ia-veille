@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -120,34 +120,20 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .article-featured-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Article content */
-        .article-content {
-            font-size: 1.125rem;
-            line-height: 1.8;
-            color: #334155;
-        }
-
-        .article-content p {
-            margin: 0 0 1.5rem 0;
-        }
+        .article-featured-image img {}
 
         .article-content h2 {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
-            margin: 3rem 0 1.5rem 0;
+            margin: 2.5rem 0 1.25rem 0;
             color: #0f172a;
+            line-height: 1.3;
         }
 
         .article-content h3 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 600;
-            margin: 2rem 0 1rem 0;
+            margin: 1.75rem 0 0.75rem 0;
             color: #0f172a;
         }
 
@@ -162,8 +148,8 @@
         }
 
         .article-content blockquote {
-            margin: 2rem 0;
-            padding: 1.5rem 2rem;
+            margin: 1.5rem 0;
+            padding: 1.25rem 1.5rem;
             background: #f8fafc;
             border-left: 4px solid #2563eb;
             border-radius: 8px;
@@ -411,6 +397,28 @@
             color: #bf9060;
         }
 
+        /* Article Meta Info (Date & Source) */
+        .article-meta-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 3rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .article-meta-info a {
+            color: #64748b;
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        .article-meta-info a:hover {
+            color: #2563eb;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .article-container {
@@ -592,6 +600,13 @@
             </div>
         </div>
 
+        <!-- Article Meta Info -->
+        <div class="article-meta-info">
+            <span>Publié le 24 Novembre 2025</span>
+            <span>•</span>
+            <span>Source : <a href="https://example.com" target="_blank" rel="noopener noreferrer">TechCrunch</a></span>
+        </div>
+
         <!-- Article Content -->
         <article class="article-content">
             <h2 id="introduction">Introduction</h2>
@@ -697,133 +712,133 @@
             <button type="submit" class="search-overlay-submit" aria-label="Rechercher">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"></circle>
-    <script src="mobile-menu.js"></script>
-    <script src="script.js"></script>
-    <script src="search-toggle.js"></script>
-    <script src="article-loader.js"></script>
+                    <script src="mobile-menu.js"></script>
+                    <script src="script.js"></script>
+                    <script src="search-toggle.js"></script>
+                    <script src="article-loader.js"></script>
 
 
-    <script>
-        // Gestion des actions sur les articles (Sauvegarder, Like, Partager, etc.)
-        function saveArticle() {
-            const btn = document.querySelector('button[onclick="saveArticle()"]');
-            const icon = btn.querySelector('svg');
+                    <script>
+                        // Gestion des actions sur les articles (Sauvegarder, Like, Partager, etc.)
+                        function saveArticle() {
+                            const btn = document.querySelector('button[onclick="saveArticle()"]');
+                            const icon = btn.querySelector('svg');
 
-            // Toggle state
-            if (btn.classList.contains('active')) {
-                btn.classList.remove('active');
-                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
-                btn.style.color = '#667eea';
-                icon.style.fill = 'none';
-                showToast('Article retiré des sauvegardes');
-            } else {
-                btn.classList.add('active');
-                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                btn.style.color = 'white';
-                icon.style.fill = 'currentColor';
-                showToast('Article sauvegardé !');
-            }
-        }
+                            // Toggle state
+                            if (btn.classList.contains('active')) {
+                                btn.classList.remove('active');
+                                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+                                btn.style.color = '#667eea';
+                                icon.style.fill = 'none';
+                                showToast('Article retiré des sauvegardes');
+                            } else {
+                                btn.classList.add('active');
+                                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                                btn.style.color = 'white';
+                                icon.style.fill = 'currentColor';
+                                showToast('Article sauvegardé !');
+                            }
+                        }
 
-        function watchLater() {
-            const btn = document.querySelector('button[onclick="watchLater()"]');
-            const icon = btn.querySelector('svg');
+                        function watchLater() {
+                            const btn = document.querySelector('button[onclick="watchLater()"]');
+                            const icon = btn.querySelector('svg');
 
-            if (btn.classList.contains('active')) {
-                btn.classList.remove('active');
-                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
-                btn.style.color = '#667eea';
-                // On garde fill à none pour l'horloge
-                icon.style.fill = 'none';
-                showToast('Retiré de "À regarder plus tard"');
-            } else {
-                btn.classList.add('active');
-                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                btn.style.color = 'white';
-                // IMPORTANT: On ne remplit PAS l'horloge, on laisse fill à none
-                icon.style.fill = 'none';
-                showToast('Ajouté à "À regarder plus tard"');
-            }
-        }
+                            if (btn.classList.contains('active')) {
+                                btn.classList.remove('active');
+                                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)';
+                                btn.style.color = '#667eea';
+                                // On garde fill à none pour l'horloge
+                                icon.style.fill = 'none';
+                                showToast('Retiré de "À regarder plus tard"');
+                            } else {
+                                btn.classList.add('active');
+                                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                                btn.style.color = 'white';
+                                // IMPORTANT: On ne remplit PAS l'horloge, on laisse fill à none
+                                icon.style.fill = 'none';
+                                showToast('Ajouté à "À regarder plus tard"');
+                            }
+                        }
 
-        function shareArticle() {
-            if (navigator.share) {
-                navigator.share({
-                    title: document.title,
-                    text: 'Découvrez cet article sur OREEGAM\'IA !',
-                    url: window.location.href,
-                })
-                    .then(() => console.log('Partage réussi'))
-                    .catch((error) => console.log('Erreur de partage', error));
-            } else {
-                // Fallback: copier le lien
-                navigator.clipboard.writeText(window.location.href);
-                showToast('Lien copié dans le presse-papier !');
-            }
-        }
+                        function shareArticle() {
+                            if (navigator.share) {
+                                navigator.share({
+                                    title: document.title,
+                                    text: 'Découvrez cet article sur OREEGAM\'IA !',
+                                    url: window.location.href,
+                                })
+                                    .then(() => console.log('Partage réussi'))
+                                    .catch((error) => console.log('Erreur de partage', error));
+                            } else {
+                                // Fallback: copier le lien
+                                navigator.clipboard.writeText(window.location.href);
+                                showToast('Lien copié dans le presse-papier !');
+                            }
+                        }
 
-        function likeArticle() {
-            const likeBtn = document.querySelector('.like-btn');
-            const dislikeBtn = document.querySelector('.dislike-btn');
+                        function likeArticle() {
+                            const likeBtn = document.querySelector('.like-btn');
+                            const dislikeBtn = document.querySelector('.dislike-btn');
 
-            // Reset dislike if active
-            if (dislikeBtn.classList.contains('active')) {
-                dislikeBtn.classList.remove('active');
-                dislikeBtn.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
-                dislikeBtn.style.color = '#ef4444';
-                dislikeBtn.querySelector('svg').style.fill = 'none';
-            }
+                            // Reset dislike if active
+                            if (dislikeBtn.classList.contains('active')) {
+                                dislikeBtn.classList.remove('active');
+                                dislikeBtn.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
+                                dislikeBtn.style.color = '#ef4444';
+                                dislikeBtn.querySelector('svg').style.fill = 'none';
+                            }
 
-            // Toggle like
-            if (likeBtn.classList.contains('active')) {
-                likeBtn.classList.remove('active');
-                likeBtn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
-                likeBtn.style.color = '#10b981';
-                likeBtn.querySelector('svg').style.fill = 'none';
-            } else {
-                likeBtn.classList.add('active');
-                likeBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                likeBtn.style.color = 'white';
-                likeBtn.querySelector('svg').style.fill = 'currentColor';
-                showToast('Vous aimez cet article !');
-            }
-        }
+                            // Toggle like
+                            if (likeBtn.classList.contains('active')) {
+                                likeBtn.classList.remove('active');
+                                likeBtn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
+                                likeBtn.style.color = '#10b981';
+                                likeBtn.querySelector('svg').style.fill = 'none';
+                            } else {
+                                likeBtn.classList.add('active');
+                                likeBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                                likeBtn.style.color = 'white';
+                                likeBtn.querySelector('svg').style.fill = 'currentColor';
+                                showToast('Vous aimez cet article !');
+                            }
+                        }
 
-        function dislikeArticle() {
-            const likeBtn = document.querySelector('.like-btn');
-            const dislikeBtn = document.querySelector('.dislike-btn');
+                        function dislikeArticle() {
+                            const likeBtn = document.querySelector('.like-btn');
+                            const dislikeBtn = document.querySelector('.dislike-btn');
 
-            // Reset like if active
-            if (likeBtn.classList.contains('active')) {
-                likeBtn.classList.remove('active');
-                likeBtn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
-                likeBtn.style.color = '#10b981';
-                likeBtn.querySelector('svg').style.fill = 'none';
-            }
+                            // Reset like if active
+                            if (likeBtn.classList.contains('active')) {
+                                likeBtn.classList.remove('active');
+                                likeBtn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)';
+                                likeBtn.style.color = '#10b981';
+                                likeBtn.querySelector('svg').style.fill = 'none';
+                            }
 
-            // Toggle dislike
-            if (dislikeBtn.classList.contains('active')) {
-                dislikeBtn.classList.remove('active');
-                dislikeBtn.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
-                dislikeBtn.style.color = '#ef4444';
-                dislikeBtn.querySelector('svg').style.fill = 'none';
-            } else {
-                dislikeBtn.classList.add('active');
-                dislikeBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                dislikeBtn.style.color = 'white';
-                dislikeBtn.querySelector('svg').style.fill = 'currentColor';
-                showToast('Vous n\'aimez pas cet article');
-            }
-        }
+                            // Toggle dislike
+                            if (dislikeBtn.classList.contains('active')) {
+                                dislikeBtn.classList.remove('active');
+                                dislikeBtn.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)';
+                                dislikeBtn.style.color = '#ef4444';
+                                dislikeBtn.querySelector('svg').style.fill = 'none';
+                            } else {
+                                dislikeBtn.classList.add('active');
+                                dislikeBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                                dislikeBtn.style.color = 'white';
+                                dislikeBtn.querySelector('svg').style.fill = 'currentColor';
+                                showToast('Vous n\'aimez pas cet article');
+                            }
+                        }
 
-        // Fonction utilitaire pour afficher un toast notification
-        function showToast(message) {
-            // Créer le toast s'il n'existe pas
-            let toast = document.getElementById('toast-notification');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'toast-notification';
-                toast.style.cssText = `
+                        // Fonction utilitaire pour afficher un toast notification
+                        function showToast(message) {
+                            // Créer le toast s'il n'existe pas
+                            let toast = document.getElementById('toast-notification');
+                            if (!toast) {
+                                toast = document.createElement('div');
+                                toast.id = 'toast-notification';
+                                toast.style.cssText = `
                     position: fixed;
                     bottom: 20px;
                     left: 50%;
@@ -841,24 +856,24 @@
                     align-items: center;
                     gap: 8px;
                 `;
-                document.body.appendChild(toast);
-            }
+                                document.body.appendChild(toast);
+                            }
 
-            // Mettre à jour le message
-            toast.textContent = message;
+                            // Mettre à jour le message
+                            toast.textContent = message;
 
-            // Afficher
-            requestAnimationFrame(() => {
-                toast.style.transform = 'translateX(-50%) translateY(0)';
-            });
+                            // Afficher
+                            requestAnimationFrame(() => {
+                                toast.style.transform = 'translateX(-50%) translateY(0)';
+                            });
 
-            // Cacher après 3 secondes
-            clearTimeout(window.toastTimeout);
-            window.toastTimeout = setTimeout(() => {
-                toast.style.transform = 'translateX(-50%) translateY(100px)';
-            }, 3000);
-        }
-    </script>
+                            // Cacher après 3 secondes
+                            clearTimeout(window.toastTimeout);
+                            window.toastTimeout = setTimeout(() => {
+                                toast.style.transform = 'translateX(-50%) translateY(100px)';
+                            }, 3000);
+                        }
+                    </script>
 
 </body>
 
