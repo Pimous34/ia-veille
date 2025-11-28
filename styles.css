@@ -647,31 +647,33 @@ body {
 /* Horizontal Card Style for List */
 .articles-column .article-card {
     flex-direction: row;
-    height: 120px;
-    /* Fixed height for consistency */
-    align-items: center;
+    min-height: 80px;
+    /* Minimum height for consistency, allows expansion */
+    align-items: stretch;
 }
 
 .articles-column .article-image {
-    width: 140px;
-    height: 100%;
+    width: 180px;
+    min-height: 80px;
     border-radius: 20px 0 0 20px;
     /* Rounded left corners only */
+    object-fit: cover;
 }
 
 .articles-column .article-content {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     justify-content: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
 .articles-column .article-title {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-    display: -webkit-box;
-    line-clamp: 2;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    margin-bottom: 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .articles-column .article-excerpt {
@@ -682,13 +684,14 @@ body {
 .articles-column .article-meta {
     padding-top: 0;
     border-top: none;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    margin-top: 0;
 }
 
 .articles-column .article-category {
-    margin-bottom: 0.25rem;
-    font-size: 0.7rem;
-    padding: 0.15rem 0.5rem;
+    margin-bottom: 0.2rem;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
 }
 
 /* Articles Section */
