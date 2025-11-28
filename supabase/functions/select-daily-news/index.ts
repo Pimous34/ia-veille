@@ -127,11 +127,14 @@ serve(async (req) => {
 
     // Déclencher la génération de la vidéo
     const generateVideoUrl = `${supabaseUrl}/functions/v1/generate-daily-jt`;
+    // Utiliser la clé de service pour les appels internes entre fonctions
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const generateResponse = await fetch(generateVideoUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Authorization': `Bearer ${serviceRoleKey}`,
         'Content-Type': 'application/json',
+        'apikey': serviceRoleKey,
       },
       body: JSON.stringify({
         date: today,
@@ -160,7 +163,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Error in daily news selection:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

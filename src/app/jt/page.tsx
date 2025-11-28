@@ -76,10 +76,10 @@ export default function JTListPage() {
       <main className="container mx-auto px-4 pt-24 pb-12">
         <div className="mb-12 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Le Journal Télévisé de l'IA
+            Le Journal Télévisé de l&apos;IA
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Retrouvez tous les épisodes de notre JT quotidien pour ne rien manquer de l'actualité de l'intelligence artificielle.
+            Retrouvez tous les épisodes de notre JT quotidien pour ne rien manquer de l&apos;actualité de l&apos;intelligence artificielle.
           </p>
         </div>
 

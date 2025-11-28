@@ -1,9 +1,12 @@
 // Edge Function: generate-daily-jt
 // Génère un JT vidéo de 3 minutes avec D-ID à partir des articles sélectionnés
+// Intègre le jingle vidéo avant chaque JT
 // Appelé automatiquement après select-daily-news
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
+
+console.log("Function generate-daily-jt loaded");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +20,30 @@ interface Article {
   image_url: string;
   url: string;
   published_at: string;
+}
+
+interface DIDStatusResponse {
+  id: string;
+  status: 'created' | 'started' | 'done' | 'error' | 'rejected';
+  result_url?: string;
+  source_url?: string;
+  duration?: number;
+
+  error?: unknown;
+
+  [key: string]: unknown;
+}
+
+// Nettoie le texte pour la synthèse vocale (enlève les URLs et balises HTML)
+function cleanTextForSpeech(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/<[^>]*>/g, '') // Enlève les balises HTML complètes
+    .replace(/[<>]/g, ' ') // Enlève les chevrons restants pour éviter l'interprétation SSML
+    .replace(/https?:\/\/[^\s]+/g, '') // Enlève les URLs
+    .replace(/&[a-z]+;/g, '') // Enlève les entités HTML basiques
+    .replace(/\s+/g, ' ') // Normalise les espaces
+    .trim();
 }
 
 // Génère le script du JT à partir des articles
@@ -36,13 +63,16 @@ function generateJTScript(articles: Article[], date: string): string {
     const articleNumber = index + 1;
     
     // Introduction de l'article
+    const cleanTitle = cleanTextForSpeech(article.title);
     script += `Article numéro ${articleNumber}. `;
-    script += `${article.title}. `;
+    script += `${cleanTitle}. `;
     
     // Résumé de l'article
     if (article.excerpt) {
+      // Nettoyer d'abord, puis limiter
+      const cleanExcerpt = cleanTextForSpeech(article.excerpt);
       // Limiter l'extrait à ~150 caractères pour garder un rythme dynamique
-      const shortExcerpt = article.excerpt.substring(0, 150).trim();
+      const shortExcerpt = cleanExcerpt.substring(0, 150).trim();
       script += `${shortExcerpt}${shortExcerpt.length >= 150 ? '...' : ''}. `;
     }
     
@@ -57,8 +87,9 @@ function generateJTScript(articles: Article[], date: string): string {
 }
 
 // Crée une vidéo avec D-ID
-async function createDIDVideo(script: string, presenterImageUrl: string): Promise<any> {
-  const dIdApiKey = Deno.env.get('D_ID_API_KEY');
+async function createDIDVideo(script: string, presenterImageUrl: string): Promise<DIDStatusResponse> {
+  // Temporaire : hardcoder la clé pour tester
+  const dIdApiKey = 'Basic YmVuamFtaW4ucmlnb3VzdGVAZ21haWwuY29t:fFfUrKUkym7Annpy8z2fp';
   
   if (!dIdApiKey) {
     throw new Error('D_ID_API_KEY not configured');
@@ -68,7 +99,7 @@ async function createDIDVideo(script: string, presenterImageUrl: string): Promis
   const response = await fetch('https://api.d-id.com/talks', {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${dIdApiKey}`,
+      'Authorization': dIdApiKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -104,13 +135,13 @@ async function createDIDVideo(script: string, presenterImageUrl: string): Promis
 }
 
 // Vérifie le statut d'une vidéo D-ID
-async function checkDIDVideoStatus(talkId: string): Promise<any> {
-  const dIdApiKey = Deno.env.get('D_ID_API_KEY');
+async function checkDIDVideoStatus(talkId: string): Promise<DIDStatusResponse> {
+  const dIdApiKey = 'Basic YmVuamFtaW4ucmlnb3VzdGVAZ21haWwuY29t:fFfUrKUkym7Annpy8z2fp';
   
   const response = await fetch(`https://api.d-id.com/talks/${talkId}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Basic ${dIdApiKey}`,
+      'Authorization': dIdApiKey,
     },
   });
 
@@ -122,7 +153,137 @@ async function checkDIDVideoStatus(talkId: string): Promise<any> {
   return await response.json();
 }
 
-serve(async (req) => {
+// Télécharge une vidéo depuis une URL
+async function downloadVideo(url: string): Promise<Uint8Array> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to download video: ${response.statusText}`);
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+// Upload une vidéo vers Supabase Storage
+async function uploadVideoToStorage(
+  videoUrl: string,
+  fileName: string,
+  supabase: SupabaseClient
+): Promise<string> {
+  console.log('⬇️ Downloading video from D-ID...');
+  const response = await fetch(videoUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to download video: ${response.statusText}`);
+  }
+  const videoBlob = await response.blob();
+
+  console.log('📤 Uploading video to Supabase Storage...');
+  const { error: uploadError } = await supabase.storage
+    .from('jt-assets')
+    .upload(`videos/${fileName}`, videoBlob, {
+      contentType: 'video/mp4',
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload video: ${uploadError.message}`);
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('jt-assets')
+    .getPublicUrl(`videos/${fileName}`);
+
+  return publicUrl;
+}
+
+
+
+// Concatène le jingle avec la vidéo principale et upload sur Supabase Storage
+export async function _mergeVideosAndUpload(
+  jingleUrl: string,
+  mainVideoUrl: string,
+  outputFileName: string,
+  supabase: SupabaseClient
+): Promise<string> {
+  console.log('🎬 Downloading jingle video...');
+  const jingleData = await downloadVideo(jingleUrl);
+  
+  console.log('🎬 Downloading main video...');
+  const mainVideoData = await downloadVideo(mainVideoUrl);
+  
+  // Créer des fichiers temporaires
+  const jinglePath = `/tmp/jingle_${Date.now()}.mp4`;
+  const mainVideoPath = `/tmp/main_${Date.now()}.mp4`;
+  const outputPath = `/tmp/output_${Date.now()}.mp4`;
+  const concatListPath = `/tmp/concat_${Date.now()}.txt`;
+  
+  await Deno.writeFile(jinglePath, jingleData);
+  await Deno.writeFile(mainVideoPath, mainVideoData);
+  
+  // Créer le fichier de liste pour ffmpeg concat
+  const concatList = `file '${jinglePath}'\nfile '${mainVideoPath}'`;
+  await Deno.writeTextFile(concatListPath, concatList);
+  
+  console.log('🎬 Merging videos with FFmpeg...');
+  
+  // Utiliser FFmpeg pour concaténer les vidéos
+  const ffmpegProcess = new Deno.Command('ffmpeg', {
+    args: [
+      '-f', 'concat',
+      '-safe', '0',
+      '-i', concatListPath,
+      '-c', 'copy',
+      '-y',
+      outputPath
+    ],
+    stdout: 'piped',
+    stderr: 'piped',
+  });
+  
+  const { code, stderr } = await ffmpegProcess.output();
+  
+  if (code !== 0) {
+    const errorText = new TextDecoder().decode(stderr);
+    console.error('FFmpeg error:', errorText);
+    throw new Error(`FFmpeg failed with code ${code}`);
+  }
+  
+  console.log('✅ Videos merged successfully');
+  
+  // Lire le fichier de sortie
+  const mergedVideoData = await Deno.readFile(outputPath);
+  
+  // Upload sur Supabase Storage
+  console.log('📤 Uploading merged video to Supabase Storage...');
+  const { error: uploadError } = await supabase.storage
+    .from('jt-assets')
+    .upload(`videos/${outputFileName}`, mergedVideoData, {
+      contentType: 'video/mp4',
+      upsert: true,
+    });
+  
+  if (uploadError) {
+    throw new Error(`Failed to upload merged video: ${uploadError.message}`);
+  }
+  
+  // Obtenir l'URL publique
+  const { data: urlData } = supabase.storage
+    .from('jt-assets')
+    .getPublicUrl(`videos/${outputFileName}`);
+  
+  // Nettoyer les fichiers temporaires
+  try {
+    await Deno.remove(jinglePath);
+    await Deno.remove(mainVideoPath);
+    await Deno.remove(outputPath);
+    await Deno.remove(concatListPath);
+  } catch (e) {
+    console.warn('Warning: Failed to clean up temp files:', e);
+  }
+  
+  console.log(`✅ Merged video uploaded: ${urlData.publicUrl}`);
+  return urlData.publicUrl;
+}
+
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -191,13 +352,14 @@ serve(async (req) => {
 
     console.log('🎥 Creating video with D-ID...');
 
-    // URL de l'image du présentateur (à configurer)
-    const presenterImageUrl = Deno.env.get('JT_PRESENTER_IMAGE_URL') || 
-      'https://create-images-results.d-id.com/default_presenter.jpg';
+    // URL de l'image du présentateur depuis Supabase Storage
+    const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/gretta-jt.jpg';
+    
+    console.log(`Using presenter image: ${fullPresenterImageUrl}`);
 
     try {
       // Créer la vidéo avec D-ID
-      const didResponse = await createDIDVideo(script, presenterImageUrl);
+      const didResponse = await createDIDVideo(script, fullPresenterImageUrl);
       
       console.log(`✅ D-ID talk created: ${didResponse.id}`);
 
@@ -214,7 +376,7 @@ serve(async (req) => {
       let attempts = 0;
       const maxAttempts = 60; // 5 minutes max (5 secondes * 60)
       let videoReady = false;
-      let finalResult: any = null;
+      let finalResult: DIDStatusResponse | null = null;
 
       while (attempts < maxAttempts && !videoReady) {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Attendre 5 secondes
@@ -232,17 +394,38 @@ serve(async (req) => {
         attempts++;
       }
 
-      if (!videoReady) {
+      if (!videoReady || !finalResult) {
         throw new Error('Video generation timeout');
       }
 
       console.log('✅ Video ready!');
 
-      // Mettre à jour avec l'URL de la vidéo
+      // URL du jingle (sera géré par le frontend)
+      // const jingleUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/assets/jingle.mp4';
+      
+      // Nom du fichier final
+      const videoFileName = `jt_${date}_${didResponse.id}.mp4`;
+      let finalVideoUrl = '';
+      
+      if (finalResult.result_url) {
+        // Télécharger et uploader la vidéo D-ID sur Supabase Storage pour la persistance
+        // Note: La fusion avec le jingle se fera côté client car ffmpeg n'est pas dispo sur Edge Runtime
+        console.log('⬇️ Downloading and persisting D-ID Video...');
+        finalVideoUrl = await uploadVideoToStorage(
+          finalResult.result_url,
+          videoFileName,
+          supabase
+        );
+        console.log(`✅ Video uploaded to storage: ${finalVideoUrl}`);
+      } else {
+        throw new Error('No result URL from D-ID');
+      }
+
+      // Mettre à jour avec l'URL de la vidéo finale
       const { data: updatedJT } = await supabase
         .from('daily_news_videos')
         .update({
-          video_url: finalResult.result_url,
+          video_url: finalVideoUrl,
           thumbnail_url: finalResult.source_url,
           duration: finalResult.duration,
           status: 'completed',
@@ -253,11 +436,13 @@ serve(async (req) => {
         .select()
         .single();
 
+      console.log(`✅ JT completed: ${finalVideoUrl}`);
+
       return new Response(
         JSON.stringify({
           message: 'JT generated successfully',
           jt: updatedJT,
-          video_url: finalResult.result_url,
+          video_url: finalVideoUrl,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -265,25 +450,28 @@ serve(async (req) => {
         }
       );
 
-    } catch (didError) {
+    } catch (didError: unknown) {
       console.error('❌ D-ID error:', didError);
       
+      const errorMessage = didError instanceof Error ? didError.message : String(didError);
+
       // Mettre à jour le statut en échec
       await supabase
         .from('daily_news_videos')
         .update({
           status: 'failed',
-          error_message: didError.message,
+          error_message: errorMessage,
         })
         .eq('id', jtRecord.id);
 
       throw didError;
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Error in JT generation:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

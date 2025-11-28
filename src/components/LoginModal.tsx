@@ -89,7 +89,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-indigo-600 mt-0.5">🔔</span>
-                      <span>Recevez des notifications personnalisées sur l'IA</span>
+                      <span>Recevez des notifications personnalisées sur l&apos;IA</span>
                     </li>
                   </ul>
                 </div>

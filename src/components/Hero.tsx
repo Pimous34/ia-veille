@@ -8,47 +8,26 @@ import 'video.js/dist/video-js.css';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import LoginModal from './LoginModal';
-const PLAYLIST = [
-  {
-    src: '/video/video%20pour%20appli.mp4',
-    poster: '/videos/hero-phone-poster.jpg',
-    news: {
-      imageSrc: '/images/news-placeholder.jpg',
-      title: "Google lance sa meilleure IA : ce qu'il faut retenir",
-    }
-  },
-  {
-    src: '/video/video%20pour%20appli.mp4', // Placeholder: use same video for demo
-    poster: '/videos/hero-phone-poster.jpg',
-    news: {
-      imageSrc: '/images/news-placeholder.jpg',
-      title: "OpenAI : La mise à jour tant attendue",
-    }
-  },
-  {
-    src: '/video/video%20pour%20appli.mp4', // Placeholder
-    poster: '/videos/hero-phone-poster.jpg',
-    news: {
-      imageSrc: '/images/news-placeholder.jpg',
-      title: "Le futur de l'IA générative en 2025",
-    }
-  }
-];
 
-const NEWS_ITEMS = [
-  {
-    title: "Google lance sa meilleure IA : ce qu'il faut retenir",
-    url: "#"
-  },
-  {
-    title: "OpenAI : La mise à jour tant attendue",
-    url: "#"
-  },
-  {
-    title: "Le futur de l'IA générative en 2025",
-    url: "#"
-  }
-];
+interface DailyNewsVideo {
+  id: string;
+  date: string;
+  title: string;
+  video_url: string;
+  thumbnail_url: string | null;
+  article_ids: string[];
+}
+
+interface PlaylistItem {
+  src: string;
+  poster: string;
+  news: {
+    imageSrc: string;
+    title: string;
+  };
+}
+
+
 
 const Hero = () => {
   const [videoUnavailable, setVideoUnavailable] = useState(false);
@@ -58,6 +37,9 @@ const Hero = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
+  const [newsItems, setNewsItems] = useState<Array<{title: string; url: string}>>([]);
+  const [isLoadingJT, setIsLoadingJT] = useState(true);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<Player | null>(null);
@@ -66,7 +48,7 @@ const Hero = () => {
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const supabase = createClient();
 
-  const currentVideo = PLAYLIST[currentVideoIndex];
+  const currentVideo = playlist.length > 0 ? playlist[currentVideoIndex] : null;
 
   const showShareFeedback = (message: string) => {
     setShareFeedback(message);
@@ -77,6 +59,55 @@ const Hero = () => {
       setShareFeedback(null);
     }, 2500);
   };
+
+  // Charger les JT depuis Supabase
+  useEffect(() => {
+    const loadDailyJT = async () => {
+      try {
+        setIsLoadingJT(true);
+        
+        // Récupérer les JT complétés, triés par date décroissante
+        const { data: jts, error } = await supabase
+          .from('daily_news_videos')
+          .select('*')
+          .eq('status', 'completed')
+          .order('date', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('Error loading JT videos:', error);
+          return;
+        }
+
+        if (jts && jts.length > 0) {
+          // Convertir les JT en format playlist
+          const jtPlaylist: PlaylistItem[] = jts.map((jt: DailyNewsVideo) => ({
+            src: jt.video_url,
+            poster: jt.thumbnail_url || '/videos/hero-phone-poster.jpg',
+            news: {
+              imageSrc: jt.thumbnail_url || '/images/news-placeholder.jpg',
+              title: jt.title,
+            }
+          }));
+          
+          setPlaylist(jtPlaylist);
+
+          // Créer les news items pour la liste
+          const news = jts.map((jt: DailyNewsVideo) => ({
+            title: jt.title,
+            url: `/jt/${jt.id}`,
+          }));
+          setNewsItems(news);
+        }
+      } catch (error) {
+        console.error('Error in loadDailyJT:', error);
+      } finally {
+        setIsLoadingJT(false);
+      }
+    };
+
+    loadDailyJT();
+  }, [supabase]);
 
   useEffect(() => {
     // Check for user
@@ -93,7 +124,15 @@ const Hero = () => {
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
+  const currentVideoRef = useRef(currentVideo);
+
   useEffect(() => {
+    currentVideoRef.current = currentVideo;
+  }, [currentVideo]);
+
+  useEffect(() => {
+    const jingleUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/assets/jingle.mp4';
+
     if (!videoRef.current) return;
 
     // Re-initialize player if needed or just update src
@@ -102,21 +141,55 @@ const Hero = () => {
         controls: true,
         autoplay: true,
         muted: true,
-        loop: true, // Loop individual video, scroll to change
+        loop: false, // Disable default loop to handle jingle sequence
         preload: 'auto',
         fill: true,
+        sources: [{ type: 'video/mp4', src: jingleUrl }] // Initialize with Jingle
       });
       playerRef.current = player;
-      player.on('error', () => setVideoUnavailable(true));
-    } else {
-      playerRef.current.src({ type: 'video/mp4', src: currentVideo.src });
-      playerRef.current.play();
+
+      player.on('error', () => {
+        const error = player.error();
+        console.error('Video player error:', error);
+        setVideoUnavailable(true);
+      });
+
+      // Handle Jingle -> Main Video sequence
+      player.on('ended', () => {
+        const currentPlayer = playerRef.current;
+        if (currentPlayer) {
+          const currentSrc = currentPlayer.currentSrc();
+          
+          // Check if we just finished the jingle
+          // Use includes to be safer against slight URL variations
+          if (currentSrc === jingleUrl || currentSrc.includes('jingle.mp4')) {
+            const nextVideo = currentVideoRef.current;
+            if (nextVideo && nextVideo.src) {
+                currentPlayer.src({ type: 'video/mp4', src: nextVideo.src });
+                currentPlayer.loop(true); // Loop the main video
+                currentPlayer.load(); // Ensure the new source is loaded
+                currentPlayer.play()?.catch(e => console.error('Error playing main video:', e));
+            }
+          }
+        }
+      });
+    }
+
+    // When current video changes (e.g. scroll), start with Jingle
+    const player = playerRef.current;
+    if (player) {
+      // Reset loop state for jingle
+      player.loop(false);
+      
+      // Play Jingle first
+      player.src({ type: 'video/mp4', src: jingleUrl });
+      player.play()?.catch(e => console.log('Autoplay prevented:', e));
     }
 
     return () => {
       // Don't dispose here to allow smooth transitions, dispose on unmount only
     };
-  }, [currentVideoIndex, currentVideo.src]);
+  }, [currentVideoIndex, currentVideo?.src, playlist]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -140,7 +213,7 @@ const Hero = () => {
       const nextIndex = currentVideoIndex + direction;
 
       // Check bounds
-      if (nextIndex >= 0 && nextIndex < PLAYLIST.length) {
+      if (nextIndex >= 0 && nextIndex < playlist.length) {
         setIsTransitioning(true);
         setCurrentVideoIndex(nextIndex);
         
@@ -156,7 +229,7 @@ const Hero = () => {
     return () => {
       container.removeEventListener('wheel', handleWheel);
     };
-  }, [currentVideoIndex, isTransitioning]);
+  }, [currentVideoIndex, isTransitioning, playlist.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -275,6 +348,14 @@ const Hero = () => {
     }
   };
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
     <section className="pt-20 md:pt-24 pb-0 mt-0">
       <LoginModal 
@@ -284,7 +365,7 @@ const Hero = () => {
       <div className="w-full px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 max-w-7xl mx-auto items-center">
           <div className="md:col-span-5 lg:col-span-4 lg:col-start-3 flex flex-col items-center md:items-end">
-            {!videoUnavailable ? (
+            {!videoUnavailable && currentVideo ? (
               <div
                 ref={videoContainerRef}
                 className="hero-video relative w-full min-h-[320px] sm:min-h-[480px] overflow-hidden rounded-none sm:rounded-3xl shadow-2xl transition-opacity duration-300"
@@ -321,7 +402,7 @@ const Hero = () => {
                   poster={currentVideo.poster}
                   playsInline
                 >
-                  <source src={currentVideo.src} type="video/mp4" />
+                  {/* Source is handled by videojs init */}
                   Votre navigateur ne supporte pas la vidéo HTML5.
                 </video>
                 <div className="pointer-events-none absolute inset-x-2 bottom-16 flex flex-wrap items-end justify-center gap-2">
@@ -359,11 +440,14 @@ const Hero = () => {
               </div>
             ) : (
               <div className="w-full h-[calc(100dvh-4rem)] sm:h-auto flex flex-col items-center justify-center bg-gray-900 text-gray-200 px-6 text-sm rounded-none sm:rounded-3xl">
-                <p className="font-semibold mb-2">Vidéo manquante</p>
-                <p>
-                  Ajoutez votre démo 9:16 dans <code>public/video/video pour appli.mp4</code> (poster optionnel :
-                  hero-phone-poster.jpg).
-                </p>
+                {isLoadingJT ? (
+                  <p className="font-semibold mb-2">Chargement du JT...</p>
+                ) : (
+                  <>
+                    <p className="font-semibold mb-2">Aucun JT disponible</p>
+                    <p>Revenez plus tard pour les actualités du jour.</p>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -374,14 +458,25 @@ const Hero = () => {
               News du jour
             </h2>
             <div className="space-y-4 max-w-2xl">
-              {NEWS_ITEMS.map((item, index) => (
-                <a key={index} href={item.url} className="block p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 group hover:-translate-y-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors">{item.title}</h3>
-                    <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">→</span>
-                  </div>
-                </a>
-              ))}
+              {isLoadingJT ? (
+                <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
+                  <p className="text-gray-500 dark:text-gray-400">Chargement des JT quotidiens...</p>
+                </div>
+              ) : newsItems.length > 0 ? (
+                newsItems.map((item, index) => (
+                  <a key={index} href={item.url} className="block p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700 group hover:-translate-y-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors">{item.title}</h3>
+                      <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">→</span>
+                    </div>
+                  </a>
+                ))
+              ) : (
+                <div className="p-6 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
+                  <p className="text-gray-500 dark:text-gray-400">Aucun JT disponible pour le moment.</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Les JT quotidiens seront générés automatiquement chaque jour à 18h UTC.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

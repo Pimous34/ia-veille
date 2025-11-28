@@ -159,7 +159,7 @@ const Navbar = () => {
           )}
 
           {/* Search Section */}
-          <div className="ml-4 flex-shrink-0 flex items-center gap-2">
+          <div className="ml-4 shrink-0 flex items-center gap-2">
             {/* Mobile Search Icon */}
             <button 
               className="md:hidden p-2 text-gray-600 hover:text-indigo-600 transition-colors" 
@@ -185,7 +185,7 @@ const Navbar = () => {
           </div>
 
           {/* User Section */}
-          <div className="ml-4 flex-shrink-0">
+          <div className="ml-4 shrink-0">
             {user ? (
               <div className="relative" ref={menuRef}>
                 <button
