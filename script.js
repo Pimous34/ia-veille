@@ -623,3 +623,203 @@ window.jtArticles = jtArticles;
 window.trendingArticles = trendingArticles;
 window.coursePrepArticles = coursePrepArticles;
 
+// Auth State Management
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof _supabase !== 'undefined') {
+        // Listen for auth changes
+        _supabase.auth.onAuthStateChange((event, session) => {
+            updateAuthUI(session);
+        });
+        
+        // Check initial session
+        _supabase.auth.getSession().then(({ data: { session } }) => {
+            updateAuthUI(session);
+        });
+    }
+});
+
+function updateAuthUI(session) {
+    const authButton = document.querySelector('.auth-button');
+    const authText = document.querySelector('.auth-text');
+    
+    if (!authButton) return;
+
+    if (session) {
+        // User is logged in
+        const user = session.user;
+        const displayName = user.user_metadata.full_name || user.user_metadata.name || user.email;
+        
+        if (authText) authText.textContent = displayName;
+        
+        // Change button behavior to logout (simple version)
+        // In a real app, this would open a dropdown menu
+        authButton.href = '#';
+        authButton.onclick = (e) => {
+            e.preventDefault();
+            if (confirm(`Voulez-vous vous déconnecter de ${displayName} ?`)) {
+                _supabase.auth.signOut().then(() => {
+                    window.location.reload();
+                });
+            }
+        };
+    } else {
+        // User is logged out
+        if (authText) authText.textContent = 'S\'inscrire / Se connecter';
+        authButton.href = 'auth.html';
+        authButton.onclick = null;
+    }
+}
+
+// Function to load the latest JT video from Supabase
+async function loadLatestJT() {
+    if (typeof _supabase === 'undefined') {
+        console.warn('Supabase not initialized, cannot load JT');
+        return;
+    }
+
+    try {
+        const { data, error } = await _supabase
+            .from('daily_news_videos')
+            .select('*')
+            .eq('status', 'completed')
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.video_url) {
+            console.log('Latest JT found:', data);
+            
+            const videoPlayer = document.querySelector('.video-player');
+            if (videoPlayer) {
+                // Update video source
+                videoPlayer.src = data.video_url;
+                
+                // Update poster if thumbnail exists
+                if (data.thumbnail_url) {
+                    videoPlayer.poster = data.thumbnail_url;
+                }
+
+                // Update title if possible
+                const titleElement = document.querySelector('.section-title');
+                if (titleElement) {
+                    const date = new Date(data.date).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                    titleElement.textContent = `JT News du ${date} : ${data.title}`;
+                }
+            }
+        } else {
+            console.log('No JT video found');
+        }
+    } catch (err) {
+        console.error('Error loading latest JT:', err);
+    }
+}
+
+// Function to load daily articles from Supabase
+async function loadDailyArticles() {
+    if (typeof _supabase === 'undefined') {
+        return;
+    }
+
+    try {
+        const { data, error } = await _supabase
+            .from('articles')
+            .select('*')
+            .order('published_at', { ascending: false })
+            .limit(12);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            console.log('Articles loaded:', data);
+            
+            // Fallback images (Unsplash)
+            const fallbackImages = [
+                "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800", // AI Brain
+                "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800", // AI Chip
+                "https://images.unsplash.com/photo-1676299080923-6c98c0cf4e48?w=800", // AI Robot Hand
+                "https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800", // Coding
+                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800", // Circuit
+                "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800", // Matrix code
+                "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800", // Robot
+                "https://images.unsplash.com/photo-1531297461136-82lw9b21d94b?w=800"  // Tech abstract
+            ];
+
+            // Keywords for auto-tagging
+            const tagKeywords = {
+                'ChatGPT': ['chatgpt', 'openai', 'gpt'],
+                'Gemini': ['gemini', 'google', 'bard'],
+                'Claude': ['claude', 'anthropic'],
+                'Midjourney': ['midjourney'],
+                'DALL-E': ['dall-e', 'dalle'],
+                'Mistral': ['mistral'],
+                'Llama': ['llama', 'meta'],
+                'Microsoft': ['microsoft', 'copilot', 'bing'],
+                'Apple': ['apple', 'siri'],
+                'Bubble': ['bubble'],
+                'Webflow': ['webflow'],
+                'Make': ['make', 'integromat'],
+                'Zapier': ['zapier'],
+                'n8n': ['n8n'],
+                'FlutterFlow': ['flutterflow'],
+                'Cursor': ['cursor'],
+                'Replit': ['replit'],
+                'Bolt': ['bolt'],
+                'V0': ['v0'],
+                'Windsurf': ['windsurf']
+            };
+
+            function generateTagsFromTitle(title) {
+                const tags = [];
+                const lowerTitle = title.toLowerCase();
+                
+                for (const [tag, keywords] of Object.entries(tagKeywords)) {
+                    if (keywords.some(keyword => lowerTitle.includes(keyword))) {
+                        tags.push(tag);
+                    }
+                }
+                return tags;
+            }
+
+            // Map Supabase articles to our format
+            const mappedArticles = data.map((article, index) => {
+                // Pick a random image based on index to be consistent but varied
+                const randomImage = fallbackImages[index % fallbackImages.length];
+                
+                // Use existing tags or generate from title
+                let displayTags = article.tags && article.tags.length > 0 ? article.tags : generateTagsFromTitle(article.title);
+                
+                return {
+                    id: article.id,
+                    title: article.title,
+                    excerpt: article.excerpt || '',
+                    category: 'IA', // Default category
+                    tags: displayTags,
+                    date: article.published_at,
+                    link: article.url,
+                    image: article.image_url || randomImage
+                };
+            });
+
+            // Update JT Articles (Side column) - Take first 3
+            renderArticles(mappedArticles.slice(0, 3), 'jtArticles');
+
+            // Update Trending Articles (Main section) - Take all or next ones
+            renderArticles(mappedArticles, 'trendingArticles');
+        }
+    } catch (err) {
+        console.error('Error loading articles:', err);
+    }
+}
+
+// Call functions on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadLatestJT();
+    loadDailyArticles();
+});
+
