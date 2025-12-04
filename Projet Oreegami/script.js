@@ -122,6 +122,31 @@ const categoryTags = {
 
 // ... (createArticleCard, formatDate, renderArticles functions remain same)
 
+const globalFallbackImages = [
+    "images/placeholders/placeholder_0.jpg",
+    "images/placeholders/placeholder_1.jpg",
+    "images/placeholders/placeholder_2.jpg",
+    "images/placeholders/placeholder_3.jpg",
+    "images/placeholders/placeholder_4.jpg",
+    "images/placeholders/placeholder_5.jpg",
+    "images/placeholders/placeholder_6.jpg",
+    "images/placeholders/placeholder_7.jpg",
+    "images/placeholders/placeholder_8.jpg",
+    "images/placeholders/placeholder_9.jpg",
+    "images/placeholders/placeholder_11.jpg",
+    "images/placeholders/placeholder_12.jpg"
+];
+
+// Helper to get a deterministic random image based on string input
+function getDeterministicImage(inputString) {
+    let hash = 0;
+    for (let i = 0; i < inputString.length; i++) {
+        hash = inputString.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % globalFallbackImages.length;
+    return globalFallbackImages[index];
+}
+
 // Try to load logo on page load
 document.addEventListener('DOMContentLoaded', function () {
     // Category Page Logic
@@ -561,7 +586,7 @@ function toggleFullscreen() {
         if (videoColumn.requestFullscreen) {
             videoColumn.requestFullscreen().catch(err => {
                 // Fallback if requestFullscreen fails (e.g. user denied or not allowed)
-                console.log('Fullscreen API failed, using CSS fallback');
+                console.log('Fullscreen API failed, using CSS fallback', err);
             });
         } else if (videoColumn.webkitRequestFullscreen) { /* Safari */
             videoColumn.webkitRequestFullscreen();
@@ -779,7 +804,7 @@ async function loadLatestJT() {
                 if (data.article_ids && data.article_ids.length > 0) {
                     const { data: articles, error: articlesError } = await _supabase
                         .from('articles')
-                        .select('id, title, image_url')
+                        .select('id, title, image_url, url')
                         .in('id', data.article_ids)
                         .limit(5);
 
@@ -792,15 +817,24 @@ async function loadLatestJT() {
                                 card.className = 'vignette-card';
                                 card.style.cursor = 'pointer';
                                 
-                                const bgImage = article.image_url || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400';
+                                let bgImage = article.image_url;
+                                if (!bgImage || bgImage === 'null' || bgImage === 'undefined' || (typeof bgImage === 'string' && bgImage.trim() === '')) {
+                                    bgImage = getDeterministicImage(article.title);
+                                }
+                                
+                                console.log(`Article: ${article.title}, Image: ${bgImage}`);
                                 
                                 card.innerHTML = `
-                                    <div class="vignette-image" style="background-image: url('${bgImage}');"></div>
+                                    <img src="${bgImage}" class="vignette-image" alt="${article.title}" onerror="this.onerror=null; this.src='${getDeterministicImage(article.title)}';">
                                     <div class="vignette-info">${article.title}</div>
                                 `;
                                 
                                 card.addEventListener('click', () => {
-                                    window.location.href = `article.html?id=${article.id}`;
+                                    if (article.url) {
+                                        window.open(article.url, '_blank');
+                                    } else {
+                                        console.warn('No URL for article:', article.title);
+                                    }
                                 });
 
                                 jtColumn.appendChild(card);
@@ -815,6 +849,29 @@ async function loadLatestJT() {
     } catch (err) {
         console.error('Error loading latest JT:', err);
     }
+}
+
+// Helper to generate tags from title
+function generateTagsFromTitle(title) {
+    const tags = [];
+    const lowerTitle = title.toLowerCase();
+    
+    const tagKeywords = {
+        'ChatGPT': ['chatgpt', 'openai', 'gpt'],
+        'Gemini': ['gemini', 'google', 'bard'],
+        'Claude': ['claude', 'anthropic'],
+        'Midjourney': ['midjourney'],
+        'No-Code': ['no-code', 'nocode', 'bubble', 'make', 'zapier', 'n8n'],
+        'Dev': ['python', 'javascript', 'code', 'dev'],
+        'Business': ['business', 'startup', 'levée', 'rachat']
+    };
+    
+    for (const [tag, keywords] of Object.entries(tagKeywords)) {
+        if (keywords.some(keyword => lowerTitle.includes(keyword))) {
+            tags.push(tag);
+        }
+    }
+    return tags;
 }
 
 // Function to load daily articles from Supabase
@@ -835,44 +892,9 @@ async function loadDailyArticles() {
         if (data && data.length > 0) {
             console.log('Articles loaded:', data.length);
             
-            // Fallback images (Unsplash)
-            const fallbackImages = [
-                "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800",
-                "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800",
-                "https://images.unsplash.com/photo-1676299080923-6c98c0cf4e48?w=800",
-                "https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800",
-                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800",
-                "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800",
-                "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800",
-                "https://images.unsplash.com/photo-1531297461136-82lw9b21d94b?w=800"
-            ];
-
-            // Helper to generate tags from title
-            function generateTagsFromTitle(title) {
-                const tags = [];
-                const lowerTitle = title.toLowerCase();
-                
-                const tagKeywords = {
-                    'ChatGPT': ['chatgpt', 'openai', 'gpt'],
-                    'Gemini': ['gemini', 'google', 'bard'],
-                    'Claude': ['claude', 'anthropic'],
-                    'Midjourney': ['midjourney'],
-                    'No-Code': ['no-code', 'nocode', 'bubble', 'make', 'zapier', 'n8n'],
-                    'Dev': ['python', 'javascript', 'code', 'dev'],
-                    'Business': ['business', 'startup', 'levée', 'rachat']
-                };
-                
-                for (const [tag, keywords] of Object.entries(tagKeywords)) {
-                    if (keywords.some(keyword => lowerTitle.includes(keyword))) {
-                        tags.push(tag);
-                    }
-                }
-                return tags;
-            }
-
             // Map Supabase articles
-            let mappedArticles = data.map((article, index) => {
-                const randomImage = fallbackImages[index % fallbackImages.length];
+            let mappedArticles = data.map((article) => {
+                const randomImage = getDeterministicImage(article.title + article.id); // Combine for uniqueness
                 let displayTags = article.tags && article.tags.length > 0 ? article.tags : generateTagsFromTitle(article.title);
                 
                 let imageUrl = article.image_url;
@@ -944,14 +966,19 @@ async function loadDailyArticles() {
                     const hotBadge = article.score > 20 ? '<span style="position:absolute; top:5px; right:5px; background:red; color:white; font-size:0.7em; padding:2px 6px; border-radius:10px;">HOT</span>' : '';
 
                     card.innerHTML = `
-                        <div class="vignette-image" style="background-image: url('${article.image}');; position:relative;">${hotBadge}</div>
+                        <div style="position: relative;">
+                            <img src="${article.image}" class="vignette-image" alt="${article.title}" onerror="this.onerror=null; this.src='${getDeterministicImage(article.title)}';">
+                            ${hotBadge}
+                        </div>
                         <div class="vignette-info">
                             <div style="font-weight: bold; margin-bottom: 4px;">${article.title}</div>
                         </div>
                     `;
                     
                     card.addEventListener('click', () => {
-                        window.location.href = `article.html?id=${article.id}`;
+                        if (article.link) {
+                            window.open(article.link, '_blank');
+                        }
                     });
 
                     newsColumn.appendChild(card);
@@ -1018,7 +1045,7 @@ async function loadTutorials() {
                     }
                     
                     card.innerHTML = `
-                        <div class="vignette-image" style="background-image: url('${bgImage}');"></div>
+                        <img src="${bgImage}" class="vignette-image" alt="${tuto.software}" onerror="this.onerror=null; this.src='${getDeterministicImage(tuto.software || 'tuto')}';">
                         <div class="vignette-info">
                             <div style="font-weight: 900; font-size: 1.1em; color: #000; margin-bottom: 4px;">${tuto.software || 'Tuto'}</div>
                             <div style="font-size: 0.9em; color: #666;">${tuto.channel_name || ''}</div>

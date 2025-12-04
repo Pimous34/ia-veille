@@ -87,25 +87,47 @@ async function generateScriptWithGemini(
   ).join('\n\n');
 
   // 2. Construire le Prompt Système complet
-  const systemPrompt = `
-Vous êtes un présentateur de journal télévisé (JT) IA, spécialisé dans la veille technologique et l'informatique, sous l'apparence de l'avatar de ${nomPersonnalite}. Votre style est sympathique, synthétique et engageant, avec une touche d'humanité et d'humour.
+  // 2. Récupérer et construire le Prompt Système
+  let promptTemplate = '';
+  
+  try {
+    const { data: promptData, error: promptError } = await supabase
+      .from('system_prompts')
+      .select('content')
+      .eq('id', 'jt_script_generation')
+      .single();
+
+    if (promptError || !promptData) {
+      console.warn('⚠️ Could not fetch system prompt from DB, using fallback.', promptError);
+    } else {
+      promptTemplate = promptData.content;
+      console.log('✅ Loaded system prompt from DB');
+    }
+  } catch (e) {
+    console.warn('⚠️ Error fetching system prompt:', e);
+  }
+
+  // Fallback si la DB échoue ou est vide
+  if (!promptTemplate) {
+    promptTemplate = `
+Vous êtes un présentateur de journal télévisé (JT) IA, spécialisé dans la veille technologique et l'informatique, sous l'apparence de l'avatar de {{NOM_PERSONNALITE}}. Votre style est sympathique, synthétique et engageant, avec une touche d'humanité et d'humour.
 
 Votre tâche est de générer le script du flash info quotidien en utilisant **strictement** la structure de sortie JSON demandée ci-dessous.
 
 ### DONNÉES INJECTÉES
-* NOM_PERSONNALITE : ${nomPersonnalite}
-* CONTRIBUTION_AVATAR : ${contributionAvatar}
+* NOM_PERSONNALITE : {{NOM_PERSONNALITE}}
+* CONTRIBUTION_AVATAR : {{CONTRIBUTION_AVATAR}}
 * NOM_UTILISATEUR : Chers Oreegamiens
-* LIEU_BACKGROUND : ${lieuBackground}
-* DATE_DU_JOUR : ${dateFormatted}
+* LIEU_BACKGROUND : {{LIEU_BACKGROUND}}
+* DATE_DU_JOUR : {{DATE_DU_JOUR}}
 * ARTICLES_SELECTIONNÉS : 
-${articlesList}
+{{ARTICLES_LIST}}
 * AGENDA_DEMAIN : 
-${agendaDemain}
+{{AGENDA_DEMAIN}}
 
 ### INSTRUCTION DE GÉNÉRATION DU SCRIPT
 1.  **TONALITÉ :** Le ton général est **Ambiant/Amical**.
-2.  **INTRODUCTION :** Saluez le public ("tous les Oreegamiens"), présentez-vous en tant que ${nomPersonnalite} (avec votre contribution), et présentez le lieu (${lieuBackground}).
+2.  **INTRODUCTION :** Saluez le public ("tous les Oreegamiens"), présentez-vous en tant que {{NOM_PERSONNALITE}} (avec votre contribution), et présentez le lieu ({{LIEU_BACKGROUND}}).
 3.  **NEWS :** Pour chaque article, créez une description courte et vivante. Assurez des transitions fluides. Intégrez le **Chiffre Clé** le plus marquant si disponible.
 4.  **NETTOYAGE AUDIO :** Ne prononcez JAMAIS les URL (ex: "http..."), les identifiants techniques (ex: "ID 404"), ou les noms de fichiers. Remplacez-les par des descriptions naturelles (ex: "sur le site officiel", "dans le rapport").
 5.  **AGENDA :** Faites une transition fluide vers l'agenda.
@@ -128,6 +150,16 @@ ${agendaDemain}
   "agenda_texte": "String",
   "conclusion_finale": "String"
 }`;
+  }
+
+  // Remplacer les variables
+  const systemPrompt = promptTemplate
+    .replace(/{{NOM_PERSONNALITE}}/g, nomPersonnalite)
+    .replace(/{{CONTRIBUTION_AVATAR}}/g, contributionAvatar)
+    .replace(/{{LIEU_BACKGROUND}}/g, lieuBackground)
+    .replace(/{{DATE_DU_JOUR}}/g, dateFormatted)
+    .replace(/{{ARTICLES_LIST}}/g, articlesList)
+    .replace(/{{AGENDA_DEMAIN}}/g, agendaDemain);
 
   // 3. Appeler Gemini
   console.log('🤖 Calling Gemini API...');
@@ -185,7 +217,7 @@ async function generateJTScript(articles: Article[], date: string, supabase: Sup
 }
 
 // Crée une vidéo avec D-ID
-async function createDIDVideo(script: string, presenterImageUrl: string): Promise<DIDStatusResponse> {
+async function createDIDVideo(_script: string, presenterImageUrl: string): Promise<DIDStatusResponse> {
   // Temporaire : hardcoder la clé pour tester
   const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:KYyhkUnfem_YTkJi-9RkW';
   

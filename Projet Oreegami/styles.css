@@ -4294,8 +4294,9 @@ body.shorts-page .short-category {
 .vignette-image {
     width: 100%;
     height: 80px;
-    background-size: cover;
-    background-position: center;
+    object-fit: cover;
+    display: block;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); /* Loading placeholder */
 }
 
 .vignette-info {
