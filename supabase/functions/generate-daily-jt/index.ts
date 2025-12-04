@@ -187,54 +187,62 @@ async function generateJTScript(articles: Article[], date: string, supabase: Sup
 // Crée une vidéo avec D-ID
 async function createDIDVideo(script: string, presenterImageUrl: string): Promise<DIDStatusResponse> {
   // Temporaire : hardcoder la clé pour tester
-  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:--Rk4AbY8ppnYwnewyw0c';
+  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:KYyhkUnfem_YTkJi-9RkW';
   
   if (!dIdApiKey) {
     throw new Error('D_ID_API_KEY not configured');
   }
 
   // Créer le talk avec D-ID
+  const requestBody = {
+    source_url: presenterImageUrl,
+    script: {
+      type: 'text',
+      input: "Ceci est un test court pour vérifier les crédits. Bonjour à tous.", // script,
+      provider: {
+        type: 'microsoft',
+        voice_id: 'fr-FR-DeniseNeural', // Voix française féminine professionnelle
+      },
+    },
+    config: {
+      result_format: 'mp4',
+      fluent: true,
+      pad_audio: 0,
+      stitch: true, // Pour combiner plusieurs segments si nécessaire
+      driver_expressions: {
+        expressions: [
+          { start_frame: 0, expression: 'neutral', intensity: 1.0 },
+        ],
+      },
+    },
+  };
+
+  console.log('🚀 Sending request to D-ID:', JSON.stringify(requestBody, null, 2));
+
   const response = await fetch('https://api.d-id.com/talks', {
     method: 'POST',
     headers: {
       'Authorization': dIdApiKey,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      source_url: presenterImageUrl,
-      script: {
-        type: 'text',
-        input: script,
-        provider: {
-          type: 'microsoft',
-          voice_id: 'fr-FR-DeniseNeural', // Voix française féminine professionnelle
-        },
-      },
-      config: {
-        result_format: 'mp4',
-        fluent: true,
-        pad_audio: 0,
-        stitch: true, // Pour combiner plusieurs segments si nécessaire
-        driver_expressions: {
-          expressions: [
-            { start_frame: 0, expression: 'neutral', intensity: 1.0 },
-          ],
-        },
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`D-ID API error: ${error}`);
+    const errorText = await response.text();
+    console.error(`❌ D-ID API Error Status: ${response.status} ${response.statusText}`);
+    console.error(`❌ D-ID API Error Body: ${errorText}`);
+    throw new Error(`D-ID API error: ${errorText}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log('✅ D-ID API Success:', JSON.stringify(result, null, 2));
+  return result;
 }
 
 // Vérifie le statut d'une vidéo D-ID
 async function checkDIDVideoStatus(talkId: string): Promise<DIDStatusResponse> {
-  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:--Rk4AbY8ppnYwnewyw0c';
+  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:KYyhkUnfem_YTkJi-9RkW';
   
   const response = await fetch(`https://api.d-id.com/talks/${talkId}`, {
     method: 'GET',
@@ -357,12 +365,14 @@ serve(async (req: Request) => {
 
     // URL de l'image du présentateur depuis Supabase Storage
     // IMPORTANT: Assurez-vous que cette image existe dans votre bucket 'jt-assets/presenter'
-    const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/ophelie-leccia.jpg';
+    // const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/ophelie-leccia.jpg';
+    const fullPresenterImageUrl = 'https://d-id-public-bucket.s3.amazonaws.com/alice.jpg';
     
     console.log(`Using presenter image: ${fullPresenterImageUrl}`);
 
     try {
       // Créer la vidéo avec D-ID
+      console.log('📝 Script sent to D-ID:', script);
       const didResponse = await createDIDVideo(script, fullPresenterImageUrl);
       
       console.log(`✅ D-ID talk created: ${didResponse.id}`);

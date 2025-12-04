@@ -180,8 +180,13 @@ serve(async (req) => {
 
     // Déclencher la génération de la vidéo
     const generateVideoUrl = `${supabaseUrl}/functions/v1/generate-daily-jt`;
-    // Utiliser la clé de service pour les appels internes entre fonctions
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    // Utiliser la clé service role fournie par l'utilisateur pour contourner les problèmes d'env
+    const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpybGVjYWVweW9pdnRwbHB2d29lIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTU3NDI4NiwiZXhwIjoyMDc3MTUwMjg2fQ.rzzfmguz5maKd2Jd9RknA9cYcbvw3MDa8Mzos-RXGvE';
+    
+    if (!serviceRoleKey) {
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY is missing!');
+      throw new Error('Internal configuration error: missing service role key');
+    }
     
     console.log(`🚀 Triggering video generation at ${generateVideoUrl}`);
     
@@ -196,6 +201,13 @@ serve(async (req) => {
         article_ids: selectedArticles.map(a => a.id),
       }),
     });
+
+    if (!generateResponse.ok) {
+      const errorText = await generateResponse.text();
+      console.error(`❌ Error triggering generate-daily-jt: ${generateResponse.status} ${generateResponse.statusText}`);
+      console.error(`❌ Error details: ${errorText}`);
+      throw new Error(`Failed to trigger generate-daily-jt: ${generateResponse.status} ${errorText}`);
+    }
 
     const generateResult = await generateResponse.json();
 
