@@ -44,120 +44,150 @@ function cleanTextForSpeech(text: string): string {
     .trim();
 }
 
-// Génère le script du JT à partir des articles et du planning
-async function generateJTScript(articles: Article[], date: string, supabase: SupabaseClient): Promise<string> {
+// Appel à l'API Gemini pour générer le script
+async function generateScriptWithGemini(
+  articles: Article[], 
+  date: string, 
+  supabase: SupabaseClient
+): Promise<string> {
+  const GEMINI_API_KEY = 'AIzaSyDJxCanT0LzBpeZw2XTZ8oBSxN59O80RKs';
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  // 1. Préparer les données de contexte
   const dateObj = new Date(date);
-  const dateFormatted = dateObj.toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const dateFormatted = dateObj.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  
+  // Récupérer le planning (Agenda)
+  const startOfDay = new Date(dateObj); startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(dateObj); endOfDay.setHours(23, 59, 59, 999);
+  
+  const { data: events } = await supabase
+      .from('planning_cours')
+      .select('title, start_date')
+      .gte('start_date', startOfDay.toISOString())
+      .lte('start_date', endOfDay.toISOString());
+
+  const agendaDemain = events && events.length > 0 
+      ? events.map(e => `- ${e.title} à ${new Date(e.start_date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}`).join('\n')
+      : "Aucun événement majeur prévu.";
+
+  // Récupérer un lieu et une personnalité (Simulé pour l'instant ou récupéré depuis la DB si implémenté)
+  // Pour l'instant on utilise Ophélie comme demandé précédemment, mais le prompt demande une célébrité.
+  // On va adapter pour utiliser Ophélie Leccia comme "Avatar" principal.
+  const nomPersonnalite = "Ophélie Leccia";
+  const contributionAvatar = "Déléguée naturelle du groupe PBNC et experte autodidacte en automatisation (Make/n8n)";
+  const lieuBackground = "Bureaux d'Oreegami Paris, Centre de formation dans les nouvelles technologies de l'IA, créé par Yann Gabay";
+
+  // Préparer la liste des articles pour le prompt
+  const articlesList = articles.map((a, i) => 
+      `Article ${i+1}:
+      - Titre: ${a.title}
+      - Résumé: ${a.excerpt || 'Pas de résumé'}
+      - Source: ${a.url}`
+  ).join('\n\n');
+
+  // 2. Construire le Prompt Système complet
+  const systemPrompt = `
+Vous êtes un présentateur de journal télévisé (JT) IA, spécialisé dans la veille technologique et l'informatique, sous l'apparence de l'avatar de ${nomPersonnalite}. Votre style est sympathique, synthétique et engageant, avec une touche d'humanité et d'humour.
+
+Votre tâche est de générer le script du flash info quotidien en utilisant **strictement** la structure de sortie JSON demandée ci-dessous.
+
+### DONNÉES INJECTÉES
+* NOM_PERSONNALITE : ${nomPersonnalite}
+* CONTRIBUTION_AVATAR : ${contributionAvatar}
+* NOM_UTILISATEUR : Chers Oreegamiens
+* LIEU_BACKGROUND : ${lieuBackground}
+* DATE_DU_JOUR : ${dateFormatted}
+* ARTICLES_SELECTIONNÉS : 
+${articlesList}
+* AGENDA_DEMAIN : 
+${agendaDemain}
+
+### INSTRUCTION DE GÉNÉRATION DU SCRIPT
+1.  **TONALITÉ :** Le ton général est **Ambiant/Amical**.
+2.  **INTRODUCTION :** Saluez le public ("tous les Oreegamiens"), présentez-vous en tant que ${nomPersonnalite} (avec votre contribution), et présentez le lieu (${lieuBackground}).
+3.  **NEWS :** Pour chaque article, créez une description courte et vivante. Assurez des transitions fluides. Intégrez le **Chiffre Clé** le plus marquant si disponible.
+4.  **NETTOYAGE AUDIO :** Ne prononcez JAMAIS les URL (ex: "http..."), les identifiants techniques (ex: "ID 404"), ou les noms de fichiers. Remplacez-les par des descriptions naturelles (ex: "sur le site officiel", "dans le rapport").
+5.  **AGENDA :** Faites une transition fluide vers l'agenda.
+6.  **CONCLUSION/CTA :** Concluez par une note positive liée à l'apprentissage/entraide.
+
+### FORMAT DE SORTIE EXIGÉ (JSON STRICT, pas de markdown autour)
+{
+  "metadata_jt": {
+    "avatar_nom": "String",
+    "avatar_contribution_courte": "String",
+    "background_lieu": "String",
+    "score_final": 85
+  },
+  "titre_journal": "String",
+  "introduction": "String",
+  "segments_news": [
+    { "segment_id": 1, "texte": "String" }
+  ],
+  "transition_agenda": "String",
+  "agenda_texte": "String",
+  "conclusion_finale": "String"
+}`;
+
+  // 3. Appeler Gemini
+  console.log('🤖 Calling Gemini API...');
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{ text: systemPrompt }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        responseMimeType: "application/json"
+      }
+    })
   });
 
-  let script = `Bonjour et bienvenue dans votre journal de l'IA du ${dateFormatted}. `;
-
-  // --- LOGIQUE PLANNING ---
-  // Récupérer les événements du jour
-  const startOfDay = new Date(dateObj);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(dateObj);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  // Vérifier si c'est le week-end (Samedi = 6, Dimanche = 0)
-  const dayOfWeek = dateObj.getDay();
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-  if (isWeekend) {
-      script += `C'est le week-end ! Il est toujours intéressant de profiter de ces jours off pour développer ses connaissances et compétences. `;
-  } else {
-      const { data: events } = await supabase
-          .from('planning_cours')
-          .select('title, detected_topic, organizer_email')
-          .gte('start_date', startOfDay.toISOString())
-          .lte('start_date', endOfDay.toISOString());
-
-      let hasAutonomyEvent = false;
-      let specificTopic = null;
-      let organizerName = null;
-
-      if (events && events.length > 0) {
-          console.log('📅 Events found for today:', events);
-          for (const event of events) {
-              const titleLower = event.title.toLowerCase();
-              if (titleLower.includes('p auto') || titleLower.includes('hackaton') || titleLower.includes('fil rouge') || titleLower.includes('ia quick feed') || titleLower.includes('autonomie')) {
-                  hasAutonomyEvent = true;
-              }
-              if (event.detected_topic) {
-                  specificTopic = event.detected_topic;
-                  // Essayer d'extraire le nom de l'organisateur depuis l'email
-                  if (event.organizer_email) {
-                      // Format attendu: prenom.nom@domaine.com
-                      const emailParts = event.organizer_email.split('@')[0].split('.');
-                      if (emailParts.length >= 2) {
-                          // Capitalize first letters
-                          const firstName = emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1);
-                          const lastName = emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1);
-                          organizerName = `${firstName} ${lastName}`;
-                      }
-                  }
-              }
-          }
-      }
-
-      if (hasAutonomyEvent) {
-          script += `Aujourd'hui, c'est une journée en totale autonomie. Bon courage pour vos projets ! `;
-          script += `N'oubliez pas que l'auto-formation est la clé pour devenir un excellent chef de projet digital. `;
-          script += `Soyez curieux, testez de nouvelles solutions. `;
-          script += `Je vous recommande vivement de suivre des chaînes comme Shubham Sharma, Micode, ou Underscore, qui sont des mines d'or pour rester à jour et motivé. `;
-          script += `Prenez le temps chaque jour de faire votre veille, c'est indispensable. `;
-      } else if (specificTopic) {
-          script += `Aujourd'hui, focus sur ${specificTopic}. `;
-          if (organizerName) {
-              script += `Le cours sera assuré par ${organizerName}. `;
-          }
-          script += `Profitez de cette journée pour approfondir vos connaissances sur cet outil. `;
-      } else {
-          script += `J'espère que vous êtes en forme pour cette nouvelle journée. `;
-      }
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API Error: ${response.status} - ${errText}`);
   }
 
-  script += `Passons maintenant aux actualités de l'IA. `;
-  script += `Nous avons sélectionné pour vous ${articles.length} sujets majeurs. `;
-  script += `\n\n`;
+  const data = await response.json();
+  const generatedText = data.candidates[0].content.parts[0].text;
 
-  articles.forEach((article, index) => {
-    const articleNumber = index + 1;
+  // 4. Parser le JSON et reconstruire le script linéaire pour D-ID
+  try {
+    const jsonScript = JSON.parse(generatedText);
     
-    // Introduction de l'article
-    const cleanTitle = cleanTextForSpeech(article.title);
-    script += `Sujet numéro ${articleNumber}. `;
-    script += `${cleanTitle}. `;
+    let fullScript = "";
+    fullScript += jsonScript.introduction + " ";
     
-    // Résumé de l'article
-    if (article.excerpt) {
-      // Nettoyer d'abord, puis limiter
-      const cleanExcerpt = cleanTextForSpeech(article.excerpt);
-      // Limiter l'extrait à ~150 caractères pour garder un rythme dynamique
-      const shortExcerpt = cleanExcerpt.substring(0, 150).trim();
-      script += `${shortExcerpt}${shortExcerpt.length >= 150 ? '...' : ''}. `;
+    if (jsonScript.segments_news && Array.isArray(jsonScript.segments_news)) {
+        jsonScript.segments_news.forEach((seg: { texte: string }) => {
+            fullScript += seg.texte + " ";
+        });
     }
     
-    script += `\n\n`;
-  });
+    fullScript += jsonScript.transition_agenda + " ";
+    fullScript += jsonScript.agenda_texte + " ";
+    fullScript += jsonScript.conclusion_finale;
 
-  script += `C'est tout pour aujourd'hui. `;
-  if (hasAutonomyEvent) {
-      script += `Allez, au travail, et montrez-nous de quoi vous êtes capables ! `;
+    return cleanTextForSpeech(fullScript);
+
+  } catch (error) {
+    console.error("Failed to parse Gemini JSON response:", error);
+    // Fallback: retourner le texte brut si le parsing échoue (peu probable avec responseMimeType)
+    return cleanTextForSpeech(generatedText);
   }
-  script += `À demain pour un nouveau point sur l'actualité de l'intelligence artificielle !`;
+}
 
-  return script;
+// Wrapper pour garder la compatibilité avec l'appel existant
+async function generateJTScript(articles: Article[], date: string, supabase: SupabaseClient): Promise<string> {
+    return await generateScriptWithGemini(articles, date, supabase);
 }
 
 // Crée une vidéo avec D-ID
 async function createDIDVideo(script: string, presenterImageUrl: string): Promise<DIDStatusResponse> {
   // Temporaire : hardcoder la clé pour tester
-  const dIdApiKey = 'Basic YmVuamFtaW4ucmlnb3VzdGVAZ21haWwuY29t:fFfUrKUkym7Annpy8z2fp';
+  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:--Rk4AbY8ppnYwnewyw0c';
   
   if (!dIdApiKey) {
     throw new Error('D_ID_API_KEY not configured');
@@ -204,7 +234,7 @@ async function createDIDVideo(script: string, presenterImageUrl: string): Promis
 
 // Vérifie le statut d'une vidéo D-ID
 async function checkDIDVideoStatus(talkId: string): Promise<DIDStatusResponse> {
-  const dIdApiKey = 'Basic YmVuamFtaW4ucmlnb3VzdGVAZ21haWwuY29t:fFfUrKUkym7Annpy8z2fp';
+  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:--Rk4AbY8ppnYwnewyw0c';
   
   const response = await fetch(`https://api.d-id.com/talks/${talkId}`, {
     method: 'GET',
@@ -221,14 +251,7 @@ async function checkDIDVideoStatus(talkId: string): Promise<DIDStatusResponse> {
   return await response.json();
 }
 
-// Télécharge une vidéo depuis une URL
-async function downloadVideo(url: string): Promise<Uint8Array> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.statusText}`);
-  }
-  return new Uint8Array(await response.arrayBuffer());
-}
+
 
 // Upload une vidéo vers Supabase Storage
 async function uploadVideoToStorage(
@@ -334,7 +357,7 @@ serve(async (req: Request) => {
 
     // URL de l'image du présentateur depuis Supabase Storage
     // IMPORTANT: Assurez-vous que cette image existe dans votre bucket 'jt-assets/presenter'
-    const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/ophelie-jt.jpg';
+    const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/ophelie-leccia.jpg';
     
     console.log(`Using presenter image: ${fullPresenterImageUrl}`);
 

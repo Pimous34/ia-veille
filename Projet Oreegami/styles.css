@@ -662,7 +662,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    max-height: 400px; /* Adjust height as needed */
+    max-height: 710px; /* Match video height (approx 400px width * 16/9 ratio) */
     overflow-y: auto;
     padding-right: 5px; /* Space for scrollbar */
     pointer-events: auto; /* Ensure mouse events work */
