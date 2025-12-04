@@ -28,9 +28,7 @@ interface DIDStatusResponse {
   result_url?: string;
   source_url?: string;
   duration?: number;
-
   error?: unknown;
-
   [key: string]: unknown;
 }
 
@@ -46,9 +44,10 @@ function cleanTextForSpeech(text: string): string {
     .trim();
 }
 
-// Génère le script du JT à partir des articles
-function generateJTScript(articles: Article[], date: string): string {
-  const dateFormatted = new Date(date).toLocaleDateString('fr-FR', {
+// Génère le script du JT à partir des articles et du planning
+async function generateJTScript(articles: Article[], date: string, supabase: SupabaseClient): Promise<string> {
+  const dateObj = new Date(date);
+  const dateFormatted = dateObj.toLocaleDateString('fr-FR', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -56,7 +55,74 @@ function generateJTScript(articles: Article[], date: string): string {
   });
 
   let script = `Bonjour et bienvenue dans votre journal de l'IA du ${dateFormatted}. `;
-  script += `Aujourd'hui, nous avons sélectionné pour vous ${articles.length} actualités majeures dans le monde de l'intelligence artificielle. `;
+
+  // --- LOGIQUE PLANNING ---
+  // Récupérer les événements du jour
+  const startOfDay = new Date(dateObj);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(dateObj);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Vérifier si c'est le week-end (Samedi = 6, Dimanche = 0)
+  const dayOfWeek = dateObj.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  if (isWeekend) {
+      script += `C'est le week-end ! Il est toujours intéressant de profiter de ces jours off pour développer ses connaissances et compétences. `;
+  } else {
+      const { data: events } = await supabase
+          .from('planning_cours')
+          .select('title, detected_topic, organizer_email')
+          .gte('start_date', startOfDay.toISOString())
+          .lte('start_date', endOfDay.toISOString());
+
+      let hasAutonomyEvent = false;
+      let specificTopic = null;
+      let organizerName = null;
+
+      if (events && events.length > 0) {
+          console.log('📅 Events found for today:', events);
+          for (const event of events) {
+              const titleLower = event.title.toLowerCase();
+              if (titleLower.includes('p auto') || titleLower.includes('hackaton') || titleLower.includes('fil rouge') || titleLower.includes('ia quick feed') || titleLower.includes('autonomie')) {
+                  hasAutonomyEvent = true;
+              }
+              if (event.detected_topic) {
+                  specificTopic = event.detected_topic;
+                  // Essayer d'extraire le nom de l'organisateur depuis l'email
+                  if (event.organizer_email) {
+                      // Format attendu: prenom.nom@domaine.com
+                      const emailParts = event.organizer_email.split('@')[0].split('.');
+                      if (emailParts.length >= 2) {
+                          // Capitalize first letters
+                          const firstName = emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1);
+                          const lastName = emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1);
+                          organizerName = `${firstName} ${lastName}`;
+                      }
+                  }
+              }
+          }
+      }
+
+      if (hasAutonomyEvent) {
+          script += `Aujourd'hui, c'est une journée en totale autonomie. Bon courage pour vos projets ! `;
+          script += `N'oubliez pas que l'auto-formation est la clé pour devenir un excellent chef de projet digital. `;
+          script += `Soyez curieux, testez de nouvelles solutions. `;
+          script += `Je vous recommande vivement de suivre des chaînes comme Shubham Sharma, Micode, ou Underscore, qui sont des mines d'or pour rester à jour et motivé. `;
+          script += `Prenez le temps chaque jour de faire votre veille, c'est indispensable. `;
+      } else if (specificTopic) {
+          script += `Aujourd'hui, focus sur ${specificTopic}. `;
+          if (organizerName) {
+              script += `Le cours sera assuré par ${organizerName}. `;
+          }
+          script += `Profitez de cette journée pour approfondir vos connaissances sur cet outil. `;
+      } else {
+          script += `J'espère que vous êtes en forme pour cette nouvelle journée. `;
+      }
+  }
+
+  script += `Passons maintenant aux actualités de l'IA. `;
+  script += `Nous avons sélectionné pour vous ${articles.length} sujets majeurs. `;
   script += `\n\n`;
 
   articles.forEach((article, index) => {
@@ -64,7 +130,7 @@ function generateJTScript(articles: Article[], date: string): string {
     
     // Introduction de l'article
     const cleanTitle = cleanTextForSpeech(article.title);
-    script += `Article numéro ${articleNumber}. `;
+    script += `Sujet numéro ${articleNumber}. `;
     script += `${cleanTitle}. `;
     
     // Résumé de l'article
@@ -79,9 +145,11 @@ function generateJTScript(articles: Article[], date: string): string {
     script += `\n\n`;
   });
 
-  script += `Voilà pour les actualités du jour. `;
-  script += `Retrouvez tous ces articles en détail sur notre plateforme. `;
-  script += `À très bientôt pour de nouvelles actualités de l'intelligence artificielle !`;
+  script += `C'est tout pour aujourd'hui. `;
+  if (hasAutonomyEvent) {
+      script += `Allez, au travail, et montrez-nous de quoi vous êtes capables ! `;
+  }
+  script += `À demain pour un nouveau point sur l'actualité de l'intelligence artificielle !`;
 
   return script;
 }
@@ -194,95 +262,6 @@ async function uploadVideoToStorage(
   return publicUrl;
 }
 
-
-
-// Concatène le jingle avec la vidéo principale et upload sur Supabase Storage
-export async function _mergeVideosAndUpload(
-  jingleUrl: string,
-  mainVideoUrl: string,
-  outputFileName: string,
-  supabase: SupabaseClient
-): Promise<string> {
-  console.log('🎬 Downloading jingle video...');
-  const jingleData = await downloadVideo(jingleUrl);
-  
-  console.log('🎬 Downloading main video...');
-  const mainVideoData = await downloadVideo(mainVideoUrl);
-  
-  // Créer des fichiers temporaires
-  const jinglePath = `/tmp/jingle_${Date.now()}.mp4`;
-  const mainVideoPath = `/tmp/main_${Date.now()}.mp4`;
-  const outputPath = `/tmp/output_${Date.now()}.mp4`;
-  const concatListPath = `/tmp/concat_${Date.now()}.txt`;
-  
-  await Deno.writeFile(jinglePath, jingleData);
-  await Deno.writeFile(mainVideoPath, mainVideoData);
-  
-  // Créer le fichier de liste pour ffmpeg concat
-  const concatList = `file '${jinglePath}'\nfile '${mainVideoPath}'`;
-  await Deno.writeTextFile(concatListPath, concatList);
-  
-  console.log('🎬 Merging videos with FFmpeg...');
-  
-  // Utiliser FFmpeg pour concaténer les vidéos
-  const ffmpegProcess = new Deno.Command('ffmpeg', {
-    args: [
-      '-f', 'concat',
-      '-safe', '0',
-      '-i', concatListPath,
-      '-c', 'copy',
-      '-y',
-      outputPath
-    ],
-    stdout: 'piped',
-    stderr: 'piped',
-  });
-  
-  const { code, stderr } = await ffmpegProcess.output();
-  
-  if (code !== 0) {
-    const errorText = new TextDecoder().decode(stderr);
-    console.error('FFmpeg error:', errorText);
-    throw new Error(`FFmpeg failed with code ${code}`);
-  }
-  
-  console.log('✅ Videos merged successfully');
-  
-  // Lire le fichier de sortie
-  const mergedVideoData = await Deno.readFile(outputPath);
-  
-  // Upload sur Supabase Storage
-  console.log('📤 Uploading merged video to Supabase Storage...');
-  const { error: uploadError } = await supabase.storage
-    .from('jt-assets')
-    .upload(`videos/${outputFileName}`, mergedVideoData, {
-      contentType: 'video/mp4',
-      upsert: true,
-    });
-  
-  if (uploadError) {
-    throw new Error(`Failed to upload merged video: ${uploadError.message}`);
-  }
-  
-  // Obtenir l'URL publique
-  const { data: urlData } = supabase.storage
-    .from('jt-assets')
-    .getPublicUrl(`videos/${outputFileName}`);
-  
-  // Nettoyer les fichiers temporaires
-  try {
-    await Deno.remove(jinglePath);
-    await Deno.remove(mainVideoPath);
-    await Deno.remove(outputPath);
-    await Deno.remove(concatListPath);
-  } catch (e) {
-    console.warn('Warning: Failed to clean up temp files:', e);
-  }
-  
-  console.log(`✅ Merged video uploaded: ${urlData.publicUrl}`);
-  return urlData.publicUrl;
-}
-
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -325,8 +304,9 @@ serve(async (req: Request) => {
 
     console.log(`📝 Generating script for ${articles.length} articles...`);
 
-    // Générer le script
-    const script = generateJTScript(articles, date);
+    // Générer le script avec la logique de planning
+    const script = await generateJTScript(articles, date, supabase);
+    
     const title = `JT IA - ${new Date(date).toLocaleDateString('fr-FR', { 
       day: 'numeric', 
       month: 'long', 
@@ -353,7 +333,8 @@ serve(async (req: Request) => {
     console.log('🎥 Creating video with D-ID...');
 
     // URL de l'image du présentateur depuis Supabase Storage
-    const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/gretta-jt.jpg';
+    // IMPORTANT: Assurez-vous que cette image existe dans votre bucket 'jt-assets/presenter'
+    const fullPresenterImageUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/presenter/ophelie-jt.jpg';
     
     console.log(`Using presenter image: ${fullPresenterImageUrl}`);
 
@@ -400,16 +381,12 @@ serve(async (req: Request) => {
 
       console.log('✅ Video ready!');
 
-      // URL du jingle (sera géré par le frontend)
-      // const jingleUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/assets/jingle.mp4';
-      
       // Nom du fichier final
       const videoFileName = `jt_${date}_${didResponse.id}.mp4`;
       let finalVideoUrl = '';
       
       if (finalResult.result_url) {
         // Télécharger et uploader la vidéo D-ID sur Supabase Storage pour la persistance
-        // Note: La fusion avec le jingle se fera côté client car ffmpeg n'est pas dispo sur Edge Runtime
         console.log('⬇️ Downloading and persisting D-ID Video...');
         finalVideoUrl = await uploadVideoToStorage(
           finalResult.result_url,

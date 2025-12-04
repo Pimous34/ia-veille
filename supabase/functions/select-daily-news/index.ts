@@ -98,18 +98,71 @@ serve(async (req) => {
 
     console.log(`📊 Analyzing ${articles.length} articles...`);
 
-    // Calculer les scores de pertinence
-    const scoredArticles = articles.map((article: Article) => ({
-      ...article,
-      relevance_score: calculateRelevanceScore(article, now),
-    }));
+    // 0. Regrouper les articles similaires (Clustering basique par titre)
+    // On considère que si > 50% des mots du titre sont communs, c'est le même sujet
+    const clusters: { [key: string]: Article[] } = {};
+    const processedIds = new Set<string>();
 
-    // Trier par score décroissant
-    scoredArticles.sort((a, b) => b.relevance_score - a.relevance_score);
+    for (const article of articles) {
+      if (processedIds.has(article.id)) continue;
 
-    // Sélectionner les 5-7 meilleurs articles (pour un JT de ~3 minutes)
-    // Environ 25-30 secondes par article
-    const selectedArticles = scoredArticles.slice(0, 6);
+      // Créer un nouveau cluster avec cet article comme chef de file
+      const clusterId = article.id;
+      clusters[clusterId] = [article];
+      processedIds.add(article.id);
+
+      const titleWords = article.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+
+      // Chercher des articles similaires dans le reste de la liste
+      for (const otherArticle of articles) {
+        if (processedIds.has(otherArticle.id)) continue;
+
+        const otherTitleWords = otherArticle.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+        
+        // Compter les mots communs
+        const commonWords = titleWords.filter((w: string) => otherTitleWords.includes(w));
+        const similarity = commonWords.length / Math.max(titleWords.length, otherTitleWords.length);
+
+        // Seuil de similarité (ex: 40% de mots communs)
+        if (similarity > 0.4) {
+          clusters[clusterId].push(otherArticle);
+          processedIds.add(otherArticle.id);
+        }
+      }
+    }
+
+    console.log(`🧩 Grouped ${articles.length} articles into ${Object.keys(clusters).length} clusters`);
+
+    // Calculer les scores de pertinence pour chaque cluster
+    // Le score d'un cluster est le score du meilleur article + bonus de popularité (taille du cluster)
+    const scoredClusters = Object.values(clusters).map(clusterArticles => {
+      // Trouver le meilleur article du cluster (le plus complet/récent)
+      // On score chaque article individuellement d'abord
+      const scoredClusterArticles = clusterArticles.map(a => ({
+        ...a,
+        base_score: calculateRelevanceScore(a, now)
+      }));
+      
+      // Trier pour trouver le "représentant" du cluster
+      scoredClusterArticles.sort((a, b) => b.base_score - a.base_score);
+      const representative = scoredClusterArticles[0];
+
+      // Bonus de "Buzz" : +15 points par doublon (max 45 points)
+      // Si 3 sources en parlent, c'est probablement important !
+      const buzzBonus = Math.min(45, (clusterArticles.length - 1) * 15);
+      
+      return {
+        ...representative,
+        relevance_score: representative.base_score + buzzBonus, // Use 'relevance_score' to match expected property later
+        cluster_size: clusterArticles.length
+      };
+    });
+
+    // Trier les clusters par score final décroissant
+    scoredClusters.sort((a, b) => b.relevance_score - a.relevance_score);
+
+    // Sélectionner les 5-7 meilleurs sujets
+    const selectedArticles = scoredClusters.slice(0, 6);
 
     console.log(`✅ Selected ${selectedArticles.length} articles for daily news`);
 
@@ -129,12 +182,14 @@ serve(async (req) => {
     const generateVideoUrl = `${supabaseUrl}/functions/v1/generate-daily-jt`;
     // Utiliser la clé de service pour les appels internes entre fonctions
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    console.log(`🚀 Triggering video generation at ${generateVideoUrl}`);
+    
     const generateResponse = await fetch(generateVideoUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${serviceRoleKey}`,
         'Content-Type': 'application/json',
-        'apikey': serviceRoleKey,
       },
       body: JSON.stringify({
         date: today,

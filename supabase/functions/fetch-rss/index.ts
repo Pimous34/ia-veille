@@ -70,6 +70,10 @@ serve(async (req) => {
 
     console.log(`📡 Found ${sources.length} active RSS sources`);
 
+    const MAX_ARTICLES_PER_RUN = 50;
+    const limitPerSource = Math.max(3, Math.floor(MAX_ARTICLES_PER_RUN / sources.length));
+    console.log(`🎯 Target limit: ${MAX_ARTICLES_PER_RUN} total, ~${limitPerSource} per source`);
+
     // Step 2: Initialize RSS parser
     const parser = new Parser({
       timeout: 10000,
@@ -83,6 +87,12 @@ serve(async (req) => {
 
     // Step 3: Process each source
     for (const source of sources as Source[]) {
+      // Check global limit
+      if (totalArticlesAdded >= MAX_ARTICLES_PER_RUN) {
+        console.log('🛑 Global article limit reached for this run.');
+        break;
+      }
+
       try {
         console.log(`📰 Fetching: ${source.name} (${source.rss_url})`);
 
@@ -94,6 +104,11 @@ serve(async (req) => {
 
         // Step 4: Process each item in the feed
         for (const item of feed.items) {
+          // Check per-source limit
+          if (articlesToInsert.length >= limitPerSource) {
+            break;
+          }
+
           if (!item.link || !item.title) {
             console.log('⚠️ Skipping item without link or title');
             continue;
