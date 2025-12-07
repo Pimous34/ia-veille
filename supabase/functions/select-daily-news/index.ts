@@ -88,10 +88,29 @@ serve(async (req) => {
       throw new Error(`Failed to fetch articles: ${articlesError.message}`);
     }
 
-    if (!articles || articles.length === 0) {
-      console.log('⚠️ No articles found for today');
+    let candidateArticles = articles || [];
+
+    // Fallback: Si pas d'articles frais (24h), on regarde sur 72h (Week-end / Jours fériés)
+    if (candidateArticles.length === 0) {
+      console.log('⚠️ No articles found for last 24h. Trying fallback (last 72h)...');
+      const threeDaysAgo = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+      
+      const { data: fallbackArticles, error: fallbackError } = await supabase
+        .from('articles')
+        .select('*')
+        .gte('published_at', threeDaysAgo.toISOString())
+        .order('published_at', { ascending: false });
+
+      if (!fallbackError && fallbackArticles && fallbackArticles.length > 0) {
+        console.log(`✅ Fallback successful: found ${fallbackArticles.length} articles from last 3 days.`);
+        candidateArticles = fallbackArticles;
+      }
+    }
+
+    if (candidateArticles.length === 0) {
+      console.log('❌ No articles found even after fallback.');
       return new Response(
-        JSON.stringify({ message: 'No articles found', selected_count: 0 }),
+        JSON.stringify({ message: 'No articles found (checked last 72h)', selected_count: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -103,7 +122,7 @@ serve(async (req) => {
     const clusters: { [key: string]: Article[] } = {};
     const processedIds = new Set<string>();
 
-    for (const article of articles) {
+    for (const article of candidateArticles) {
       if (processedIds.has(article.id)) continue;
 
       // Créer un nouveau cluster avec cet article comme chef de file
@@ -114,7 +133,7 @@ serve(async (req) => {
       const titleWords = article.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
 
       // Chercher des articles similaires dans le reste de la liste
-      for (const otherArticle of articles) {
+      for (const otherArticle of candidateArticles) {
         if (processedIds.has(otherArticle.id)) continue;
 
         const otherTitleWords = otherArticle.title.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
@@ -131,7 +150,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`🧩 Grouped ${articles.length} articles into ${Object.keys(clusters).length} clusters`);
+    console.log(`🧩 Grouped ${candidateArticles.length} articles into ${Object.keys(clusters).length} clusters`);
 
     // Calculer les scores de pertinence pour chaque cluster
     // Le score d'un cluster est le score du meilleur article + bonus de popularité (taille du cluster)

@@ -19,6 +19,7 @@ interface Source {
   type: string;
   is_active: boolean;
   last_fetch_date: string | null;
+  fetch_error_count?: number;
 }
 
 interface Article {
@@ -33,6 +34,14 @@ interface Article {
   published_at: string;
   author?: string;
   image_url?: string;
+}
+
+interface FetchResult {
+  source: string;
+  articles_found?: number;
+  articles_added?: number;
+  status: string;
+  error?: string;
 }
 
 serve(async (req) => {
@@ -83,7 +92,7 @@ serve(async (req) => {
     });
 
     let totalArticlesAdded = 0;
-    const results: any[] = [];
+    const results: FetchResult[] = [];
 
     // Step 3: Process each source
     for (const source of sources as Source[]) {
@@ -114,6 +123,17 @@ serve(async (req) => {
             continue;
           }
 
+          // Enhanced Image Extraction (YouTube & others)
+          let imageUrl = item.enclosure?.url;
+          
+          if (!imageUrl && item.link.includes('youtube.com/watch')) {
+            const url = new URL(item.link);
+            const videoId = url.searchParams.get('v');
+            if (videoId) {
+              imageUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            }
+          }
+
           // Prepare article data
           const article: Article = {
             title: item.title.substring(0, 500), // Limit to 500 chars
@@ -126,7 +146,7 @@ serve(async (req) => {
             source_url: source.url,
             published_at: item.pubDate || item.isoDate || new Date().toISOString(),
             author: item.creator || item.author || undefined,
-            image_url: item.enclosure?.url || undefined,
+            image_url: imageUrl,
           };
 
           articlesToInsert.push(article);
@@ -149,7 +169,7 @@ serve(async (req) => {
             await supabase
               .from('sources')
               .update({
-                fetch_error_count: (source as any).fetch_error_count + 1,
+                fetch_error_count: (source.fetch_error_count || 0) + 1,
                 last_error_message: insertError.message,
               })
               .eq('id', source.id);
@@ -191,15 +211,15 @@ serve(async (req) => {
         await supabase
           .from('sources')
           .update({
-            fetch_error_count: ((source as any).fetch_error_count || 0) + 1,
-            last_error_message: error.message,
+            fetch_error_count: (source.fetch_error_count || 0) + 1,
+            last_error_message: (error as Error).message,
           })
           .eq('id', source.id);
 
         results.push({
           source: source.name,
           status: 'error',
-          error: error.message,
+          error: (error as Error).message,
         });
       }
     }
@@ -221,7 +241,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Fatal error in RSS fetch:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

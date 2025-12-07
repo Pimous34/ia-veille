@@ -6,3 +6,12 @@
   - [x] Add DIDStatusResponse interface
   - [x] Create deno.json for Deno environment configuration
   - [x] Configure VS Code for Deno (settings.json)
+- [ ] Configurer CORS Supabase pour localhost:8080 (Project Settings > API)
+- [x] Mettre à jour la clé API D-ID et générer le JT (User Request)
+- [x] Dupliquer le projet Supabase
+    - [x] Migrer le schéma de base de données
+    - [x] Déployer les Edge Functions
+    - [x] Migrer les données (sources, articles, daily_news_videos)
+    - [x] Migrer les fichiers Storage (vidéos, assets)
+    - [x] Corriger les URLs dans la base de données
+- [ ] Corriger le scénario Make (champ `type` -> "rss")

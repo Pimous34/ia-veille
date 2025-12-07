@@ -33,11 +33,12 @@ interface DIDStatusResponse {
 }
 
 // Nettoie le texte pour la synthèse vocale (enlève les URLs et balises HTML)
+// Nettoie le texte pour la synthèse vocale (enlève les URLs et balises HTML sauf break)
 function cleanTextForSpeech(text: string): string {
   if (!text) return '';
   return text
-    .replace(/<[^>]*>/g, '') // Enlève les balises HTML complètes
-    .replace(/[<>]/g, ' ') // Enlève les chevrons restants pour éviter l'interprétation SSML
+    .replace(/<(?!\/?break)[^>]*>/g, '') // Enlève les balises HTML complètes sauf <break>
+    .replace(/[<>]/g, (match) => { return match === '<' || match === '>' ? match : ' ' }) // Garde les chevrons pour les tags valides, sinon nettoie
     .replace(/https?:\/\/[^\s]+/g, '') // Enlève les URLs
     .replace(/&[a-z]+;/g, '') // Enlève les entités HTML basiques
     .replace(/\s+/g, ' ') // Normalise les espaces
@@ -71,6 +72,15 @@ async function generateScriptWithGemini(
       ? events.map(e => `- ${e.title} à ${new Date(e.start_date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}`).join('\n')
       : "Aucun événement majeur prévu.";
 
+  // Récupérer le message du formateur
+  const { data: messageData } = await supabase
+      .from('daily_messages')
+      .select('content')
+      .eq('date', date)
+      .single();
+
+  const messageFormateur = messageData ? messageData.content : "";
+
   // Récupérer un lieu et une personnalité (Simulé pour l'instant ou récupéré depuis la DB si implémenté)
   // Pour l'instant on utilise Ophélie comme demandé précédemment, mais le prompt demande une célébrité.
   // On va adapter pour utiliser Ophélie Leccia comme "Avatar" principal.
@@ -90,6 +100,7 @@ async function generateScriptWithGemini(
   // 2. Récupérer et construire le Prompt Système
   let promptTemplate = '';
   
+  /* 
   try {
     const { data: promptData, error: promptError } = await supabase
       .from('system_prompts')
@@ -106,15 +117,17 @@ async function generateScriptWithGemini(
   } catch (e) {
     console.warn('⚠️ Error fetching system prompt:', e);
   }
+  */
 
   // Fallback si la DB échoue ou est vide
   if (!promptTemplate) {
     promptTemplate = `
-Vous êtes un présentateur de journal télévisé (JT) IA, spécialisé dans la veille technologique et l'informatique, sous l'apparence de l'avatar de {{NOM_PERSONNALITE}}. Votre style est sympathique, synthétique et engageant, avec une touche d'humanité et d'humour.
+Vous êtes un présentateur de journal télévisé (JT) IA, spécialisé dans la veille technologique et l'informatique, sous l'apparence de l'avatar d'un personnage célèbre de l'informatique. Votre style est sympathique, synthétique et engageant, avec une touche d'humanité et d'humour.
 
 Votre tâche est de générer le script du flash info quotidien en utilisant **strictement** la structure de sortie JSON demandée ci-dessous.
 
-### DONNÉES INJECTÉES
+---
+### DONNÉES INJECTÉES PAR L'APPLICATION (à intégrer dans le JSON)
 * NOM_PERSONNALITE : {{NOM_PERSONNALITE}}
 * CONTRIBUTION_AVATAR : {{CONTRIBUTION_AVATAR}}
 * NOM_UTILISATEUR : Chers Oreegamiens
@@ -122,34 +135,48 @@ Votre tâche est de générer le script du flash info quotidien en utilisant **s
 * DATE_DU_JOUR : {{DATE_DU_JOUR}}
 * ARTICLES_SELECTIONNÉS : 
 {{ARTICLES_LIST}}
+* MESSAGE_FORMATEUR : {{MESSAGE_FORMATEUR}}
 * AGENDA_DEMAIN : 
 {{AGENDA_DEMAIN}}
+* SCORE_JOURNAL : 95
 
 ### INSTRUCTION DE GÉNÉRATION DU SCRIPT
-1.  **TONALITÉ :** Le ton général est **Ambiant/Amical**.
-2.  **INTRODUCTION :** Saluez le public ("tous les Oreegamiens"), présentez-vous en tant que {{NOM_PERSONNALITE}} (avec votre contribution), et présentez le lieu ({{LIEU_BACKGROUND}}).
-3.  **NEWS :** Pour chaque article, créez une description courte et vivante. Assurez des transitions fluides. Intégrez le **Chiffre Clé** le plus marquant si disponible.
-4.  **NETTOYAGE AUDIO :** Ne prononcez JAMAIS les URL (ex: "http..."), les identifiants techniques (ex: "ID 404"), ou les noms de fichiers. Remplacez-les par des descriptions naturelles (ex: "sur le site officiel", "dans le rapport").
-5.  **AGENDA :** Faites une transition fluide vers l'agenda.
-6.  **CONCLUSION/CTA :** Concluez par une note positive liée à l'apprentissage/entraide.
 
-### FORMAT DE SORTIE EXIGÉ (JSON STRICT, pas de markdown autour)
+1.  **TONALITÉ :** Le ton général est **Ambiant/Amical**.
+2.  **INTRODUCTION :** Saluez le public ("tous les Oreegamiens"), présentez-vous en tant que {{NOM_PERSONNALITE}} (avec votre {{CONTRIBUTION_AVATAR}}), et présentez le lieu où vous vous situez ({{LIEU_BACKGROUND}}), en expliquant brièvement sa contribution dans l'informatique.
+3.  **MESSAGE DU FORMATEUR :** Insérez le message du formateur ici : "{{MESSAGE_FORMATEUR}}". Si le message est vide, passez cette étape. Annoncez-le comme un message important.
+4.  **NEWS :** Pour chaque article, créez une description courte et vivante. Assurez des transitions fluides. Intégrez le **Chiffre Clé** le plus marquant de la journée pour ancrer l'information. S'il y a des personnalités célèbres mentionnées dans l'article, faites-y référence de manière pertinente.
+5.  **AGENDA :** Faites une transition fluide vers l'agenda. Annoncez : "Demain nous allons faire...". Si la liste [AGENDA_DEMAIN] est vide et que la date du jour est Vendredi, concluez sur un bon week-end. Sinon, présentez l'agenda de manière succincte.
+6.  **CONCLUSION/CTA :** Concluez par une note positive liée à l'apprentissage/entraide. Intégrez un appel à l'action invitant à utiliser une fonctionnalité de la plateforme (ex: "sauvegarder l'article le plus important").
+
+### FORMAT DE SORTIE EXIGÉ (JSON STRICT)
+
+\`\`\`json
 {
   "metadata_jt": {
-    "avatar_nom": "String",
-    "avatar_contribution_courte": "String",
-    "background_lieu": "String",
-    "score_final": 85
+    "avatar_nom": "{{NOM_PERSONNALITE}}",
+    "avatar_contribution_courte": "{{CONTRIBUTION_AVATAR}}",
+    "background_lieu": "{{LIEU_BACKGROUND}}",
+    "score_final": 95
   },
-  "titre_journal": "String",
-  "introduction": "String",
+  "titre_journal": "Flash Info IA : [Sujet le plus marquant des 5 articles]",
+  "introduction": "[Texte de bienvenue et de présentation fusionnant l'avatar et le lieu.]",
+  "message_formateur": "[Le message du formateur reformulé si nécessaire, ou vide si aucun message]",
   "segments_news": [
-    { "segment_id": 1, "texte": "String" }
+    {
+      "segment_id": 1,
+      "texte": "[Texte du premier article. Intégrer l'alerte/le chiffre clé ici.]"
+    },
+    {
+      "segment_id": 2,
+      "texte": "[Texte de l'article 2. Assurer la transition.]"
+    }
   ],
-  "transition_agenda": "String",
-  "agenda_texte": "String",
-  "conclusion_finale": "String"
-}`;
+  "transition_agenda": "[Texte de transition fluide vers l'agenda.]",
+  "agenda_texte": "[Présentation des événements ou message de week-end.]",
+  "conclusion_finale": "[Note positive et Appel à l'Action spécifique à la fin.]"
+}
+\`\`\``;
   }
 
   // Remplacer les variables
@@ -159,7 +186,8 @@ Votre tâche est de générer le script du flash info quotidien en utilisant **s
     .replace(/{{LIEU_BACKGROUND}}/g, lieuBackground)
     .replace(/{{DATE_DU_JOUR}}/g, dateFormatted)
     .replace(/{{ARTICLES_LIST}}/g, articlesList)
-    .replace(/{{AGENDA_DEMAIN}}/g, agendaDemain);
+    .replace(/{{AGENDA_DEMAIN}}/g, agendaDemain)
+    .replace(/{{MESSAGE_FORMATEUR}}/g, messageFormateur);
 
   // 3. Appeler Gemini
   console.log('🤖 Calling Gemini API...');
@@ -190,16 +218,21 @@ Votre tâche est de générer le script du flash info quotidien en utilisant **s
     const jsonScript = JSON.parse(generatedText);
     
     let fullScript = "";
-    fullScript += jsonScript.introduction + " ";
+    fullScript += jsonScript.introduction + ' <break time="1s" /> ';
+    
+    // Ajout du message formateur
+    if (jsonScript.message_formateur && jsonScript.message_formateur.length > 5) {
+        fullScript += jsonScript.message_formateur + ' <break time="1s" /> ';
+    }
     
     if (jsonScript.segments_news && Array.isArray(jsonScript.segments_news)) {
         jsonScript.segments_news.forEach((seg: { texte: string }) => {
-            fullScript += seg.texte + " ";
+            fullScript += seg.texte + ' <break time="500ms" /> '; // Petite pause entre les news
         });
     }
     
-    fullScript += jsonScript.transition_agenda + " ";
-    fullScript += jsonScript.agenda_texte + " ";
+    fullScript += ' <break time="1s" /> ' + jsonScript.transition_agenda + " ";
+    fullScript += jsonScript.agenda_texte + ' <break time="1s" /> ';
     fullScript += jsonScript.conclusion_finale;
 
     return cleanTextForSpeech(fullScript);
@@ -219,7 +252,8 @@ async function generateJTScript(articles: Article[], date: string, supabase: Sup
 // Crée une vidéo avec D-ID
 async function createDIDVideo(_script: string, presenterImageUrl: string): Promise<DIDStatusResponse> {
   // Temporaire : hardcoder la clé pour tester
-  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:KYyhkUnfem_YTkJi-9RkW';
+  // Updated key provided by user (Benjamin Rigouste)
+  const dIdApiKey = 'Basic ' + btoa('YmVuamFtaW4ucmlnb3VzdGVAZ21haWwuY29t:CMjU9HelCOpjmwN87eEgj');
   
   if (!dIdApiKey) {
     throw new Error('D_ID_API_KEY not configured');
@@ -230,7 +264,7 @@ async function createDIDVideo(_script: string, presenterImageUrl: string): Promi
     source_url: presenterImageUrl,
     script: {
       type: 'text',
-      input: "Ceci est un test court pour vérifier les crédits. Bonjour à tous.", // script,
+      input: _script,
       provider: {
         type: 'microsoft',
         voice_id: 'fr-FR-DeniseNeural', // Voix française féminine professionnelle
@@ -274,7 +308,7 @@ async function createDIDVideo(_script: string, presenterImageUrl: string): Promi
 
 // Vérifie le statut d'une vidéo D-ID
 async function checkDIDVideoStatus(talkId: string): Promise<DIDStatusResponse> {
-  const dIdApiKey = 'Basic YmVuamkubXRwQGdtYWlsLmNvbQ:KYyhkUnfem_YTkJi-9RkW';
+  const dIdApiKey = 'Basic ' + btoa('YmVuamFtaW4ucmlnb3VzdGVAZ21haWwuY29t:CMjU9HelCOpjmwN87eEgj');
   
   const response = await fetch(`https://api.d-id.com/talks/${talkId}`, {
     method: 'GET',
@@ -464,7 +498,8 @@ serve(async (req: Request) => {
       }
 
       // Mettre à jour avec l'URL de la vidéo finale
-      const { data: updatedJT } = await supabase
+      // Mettre à jour avec l'URL de la vidéo finale
+      const { data: updatedJT, error: updateError } = await supabase
         .from('daily_news_videos')
         .update({
           video_url: finalVideoUrl,
@@ -477,6 +512,19 @@ serve(async (req: Request) => {
         .eq('id', jtRecord.id)
         .select()
         .single();
+
+      if (updateError) {
+        console.error(`❌ Failed to update JT status to completed: ${updateError.message}`);
+        throw new Error(`Failed to update JT status: ${updateError.message}`);
+      }
+
+      if (!updatedJT) {
+        console.error('❌ Updated JT record is null, but no error reported. Partial update?');
+        // On ne throw pas ici car la vidéo est générée et uploadée, c'est le plus important.
+        // Mais on loggue l'anomalie.
+      } else {
+        console.log(`✅ JT completed and DB updated: ${finalVideoUrl}`);
+      }
 
       console.log(`✅ JT completed: ${finalVideoUrl}`);
 
