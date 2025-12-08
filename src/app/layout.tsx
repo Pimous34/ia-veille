@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Patrick_Hand } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import ToastProvider from "@/components/ToastProvider";
@@ -14,21 +14,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const patrickHand = Patrick_Hand({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-patrick-hand",
+});
+
 export const metadata: Metadata = {
-  title: "IA Veille - Votre Veille Technologique IA Personnalisée",
-  description: "La seule plateforme qui filtre le bruit pour vous livrer la veille technologique IA qui vous correspond. Newsletters personnalisées, classification intelligente et podcast audio.",
-  keywords: ["IA", "Intelligence Artificielle", "Veille", "Machine Learning", "LLM", "Newsletter", "Technologie"],
-  authors: [{ name: "IA Veille" }],
+  title: "OREEGAM'IA - Veille IA & No-Code",
+  description: "Veille technologique IA et No-Code personnalisée. Newsletters, JT vidéo et classification intelligente.",
+  keywords: ["IA", "No-Code", "Veille", "Automatisation", "Newsletter", "Technologie"],
+  authors: [{ name: "OREEGAM'IA" }],
+  icons: {
+    icon: "/logo.png",
+  },
   openGraph: {
-    title: "IA Veille - Votre Veille Technologique IA Personnalisée",
-    description: "Ne recevez que l'essentiel : les avancées, les modèles et les analyses qui font progresser votre secteur.",
+    title: "OREEGAM'IA - Veille IA & No-Code",
+    description: "Découvrez l'essentiel de l'actu IA & No-Code.",
     type: "website",
     locale: "fr_FR",
   },
   twitter: {
     card: "summary_large_image",
-    title: "IA Veille - Votre Veille Technologique IA Personnalisée",
-    description: "Ne recevez que l'essentiel : les avancées, les modèles et les analyses qui font progresser votre secteur.",
+    title: "OREEGAM'IA - Veille IA & No-Code",
+    description: "Découvrez l'essentiel de l'actu IA & No-Code.",
   },
 };
 
@@ -40,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${patrickHand.variable} antialiased`}
       >
         {children}
         <CookieBanner />

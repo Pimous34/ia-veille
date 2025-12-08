@@ -74,7 +74,7 @@ export default function ParametresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <main className="container mx-auto px-4 py-24">
         <div className="max-w-2xl mx-auto">
