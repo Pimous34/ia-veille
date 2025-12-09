@@ -1291,8 +1291,8 @@ body {
 
     /* Stabilize position: Margin is 125px, center is 62.5px */
     .auth-button {
-        right: -62.5px !important;
-        left: auto !important;
+        /* right: -62.5px !important; */
+        /* left: auto !important; */
         margin-left: 0 !important;
     }
 }
@@ -1598,21 +1598,26 @@ body {
 }
 
 /* Auth Button */
+/* Positioning class for the auth element (button or container) */
+.auth-position {
+    z-index: 101;
+    position: absolute;
+    /* Anchor to the right edge of the header container */
+    left: 100%;
+    /* Move to the center of the 250px margin */
+    margin-left: 10px;
+    top: 50%;
+    /* Center the element on that point */
+    transform: translate(0, -50%);
+}
+
 .auth-button {
     text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 101;
-    position: absolute;
-    /* Center in right margin (Margin is 250px, center is 125px) */
-    right: -125px;
-    left: auto;
-    margin-left: 0;
-    top: 50%;
-    transform: translate(50%, -50%);
-
+    
     /* Glassmorphism Style (Logo Gradient) */
     background: linear-gradient(135deg, rgba(255, 107, 157, 0.2) 0%, rgba(156, 39, 176, 0.2) 50%, rgba(33, 150, 243, 0.2) 100%);
     backdrop-filter: blur(16px);
@@ -1626,17 +1631,26 @@ body {
     border-bottom: 1px solid rgba(33, 150, 243, 0.5);
     border-right: 1px solid rgba(33, 150, 243, 0.5);
 
-    padding: 0.5rem 1.5rem;
+    padding: 0.375rem 0.75rem;
     border-radius: 50px;
     color: var(--logo-blue-dark);
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.3s ease;
     white-space: nowrap;
+    
+    width: fit-content;
+    overflow: hidden;
+}
+
+/* Specific constraint for logged-in profile button */
+.group .auth-button {
+    max-width: 145px;
+    padding: 0.375rem 0.5rem; /* Compact padding */
 }
 
 .auth-button:hover {
-    transform: translate(50%, -50%) translateY(-2px);
+    transform: translateY(-2px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
@@ -1654,7 +1668,7 @@ body {
     }
 
     .auth-text {
-        display: none;
+        display: none !important;
     }
 
     .auth-icon {
@@ -1665,8 +1679,9 @@ body {
 /* Large screens: Ensure consistent positioning */
 @media (min-width: 1500px) {
     .auth-button {
-        right: -125px;
-        left: auto;
+        /* right: -125px; */
+        left: 100%;
+        margin-left: 10px;
     }
 }
 

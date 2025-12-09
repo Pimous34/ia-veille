@@ -15,3 +15,4 @@
     - [x] Migrer les fichiers Storage (vidéos, assets)
     - [x] Corriger les URLs dans la base de données
 - [ ] Corriger le scénario Make (champ `type` -> "rss")
+- [x] Fix lint errors in src/app/auth/page.tsx (Quotes escaping and Next/Image tags)

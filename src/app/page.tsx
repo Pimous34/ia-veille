@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/utils/supabase/client';
+import Image from 'next/image';
 import Link from 'next/link';
+import OreegamiMessages from '@/components/OreegamiMessages';
 
 // --- Types ---
 interface Article {
@@ -67,6 +69,24 @@ function formatDate(dateString: string) {
   const date = new Date(dateString);
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
   return date.toLocaleDateString('fr-FR', options);
+}
+
+function getJtDateLabel(dateString: string) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  // Reset hours to compare dates only
+  date.setHours(0,0,0,0);
+  today.setHours(0,0,0,0);
+  yesterday.setHours(0,0,0,0);
+
+  if (date.getTime() === today.getTime()) return "Aujourd'hui";
+  if (date.getTime() === yesterday.getTime()) return "Hier";
+  
+  return `JT du ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
 }
 
 // --- Hardcoded Fallback Data ---
@@ -137,8 +157,10 @@ const fallbackCoursePrepArticles: Article[] = [
 ];
 
 // --- Main Component ---
+
+// --- Main Component ---
 export default function Home() {
-  const supabase = createClientComponentClient();
+  const [supabase] = useState(() => createClient());
   
   // UI State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -148,9 +170,12 @@ export default function Home() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Data State
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [user, setUser] = useState<any>(null);
   const [jtVideo, setJtVideo] = useState<JtVideo | null>(null);
+  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([]);
+  const [currentJtIndex, setCurrentJtIndex] = useState(0);
   const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
-  const [buzzArticles, setBuzzArticles] = useState<Article[]>([]);
   const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -158,6 +183,22 @@ export default function Home() {
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const isNavigatingRef = useRef(false);
+
+  // Fetch Session on Mount
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+    getUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   // Helper to close format menu when clicking outside
   useEffect(() => {
@@ -174,36 +215,45 @@ export default function Home() {
   // Fetch Data
    useEffect(() => {
     async function fetchData() {
-      // 1. Fetch Latest JT
-      const { data: jtData } = await supabase
+      // 0. Get User and Promo Config
+      const { data: { user } } = await supabase.auth.getUser();
+      let promoConfig: { tuto_sources?: string[], video_tags?: string[] } = {};
+
+      if (user && user.email) {
+          const { data: studentData } = await supabase
+              .from('students')
+              .select('promos!inner(tuto_config, video_config)')
+              .eq('email', user.email)
+              .single();
+          
+          if (studentData && studentData.promos) {
+              const promosRaw = studentData.promos;
+              // Handle case where it might be array or object due to joined query
+              const p = Array.isArray(promosRaw) ? promosRaw[0] : promosRaw;
+              
+              if (p) {
+                  promoConfig = {
+                      tuto_sources: p.tuto_config?.sources || [],
+                      video_tags: p.video_config?.tags || []
+                  };
+              }
+          }
+      }
+
+      // 1. Fetch Latest JTs (History)
+      // If we have video tags config, we could try to filter, but current JTs might not have explicit tags in DB easily queryable. 
+      // For now, we assume "Vidéos" column is just the history.
+      const { data: jtDataList } = await supabase
         .from('daily_news_videos')
         .select('*')
         .eq('status', 'completed')
         .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(10);
 
-      if (jtData) {
-        setJtVideo(jtData);
-        // Fetch JT Subjects
-        if (jtData.article_ids && jtData.article_ids.length > 0) {
-          const { data: articles } = await supabase
-            .from('articles')
-            .select('id, title, image_url, url, published_at')
-            .in('id', jtData.article_ids)
-            .limit(5);
-          
-          if (articles) {
-            setJtSubjects(articles.map((a: { id: number; title: string; image_url: string; url: string; published_at: string }) => ({
-              id: a.id,
-              title: a.title,
-              image: a.image_url || getDeterministicImage(a.title),
-              link: a.url,
-              date: a.published_at,
-              category: 'JT'
-            })));
-          }
-        }
+      if (jtDataList && jtDataList.length > 0) {
+        setJtVideosList(jtDataList);
+        setJtVideo(jtDataList[0]);
+        setCurrentJtIndex(0);
       }
 
       // 2. Fetch Articles for Buzz & Trending
@@ -244,21 +294,45 @@ export default function Home() {
         mapped.sort((a, b) => (b.score || 0) - (a.score || 0));
 
         setTrendingArticles(mapped.slice(0, 15));
-        setBuzzArticles(mapped.slice(0, 6));
+        // setBuzzArticles(mapped.slice(0, 6)); // Removed
       } else {
         // Fallback if no data
         setTrendingArticles(fallbackJtArticles); 
       }
 
-      // 3. Fetch Tutorials
-      const { data: tutoData } = await supabase
+      // 3. Fetch Tutorials with filtering
+      let tutoQuery = supabase
         .from('tutorials')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .order('created_at', { ascending: false });
+      
+      if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
+          // Construct an OR filter for channel_name ILIKE any source or custom logic
+          // Simplification: We fetch 20 and filter in JS if simple query fails.
+          tutoQuery = tutoQuery.limit(20);
+      } else {
+          tutoQuery = tutoQuery.limit(5);
+      }
+
+      const { data: tutoData } = await tutoQuery;
 
       if (tutoData) {
-        const parsedTutos = tutoData.map((tuto: { id: number; image_url: string; software: string; channel_name: string; url: string }) => {
+        let filteredTutos = tutoData;
+        
+        // Client-side filtering for flexibility
+        if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
+             const lowerSources = promoConfig.tuto_sources.map(s => s.toLowerCase());
+             filteredTutos = tutoData.filter((t: { channel_name?: string; software?: string }) => {
+                 const c = (t.channel_name || '').toLowerCase();
+                 const s = (t.software || '').toLowerCase();
+                 return lowerSources.some(src => c.includes(src) || s.includes(src));
+             });
+        }
+        
+        // Take top 5 after filtering
+        const limitedTutos = filteredTutos.slice(0, 5);
+
+        const parsedTutos = limitedTutos.map((tuto: { id: number; image_url: string; software: string; channel_name: string; url: string }) => {
             let bgImage = tuto.image_url;
             if (bgImage && typeof bgImage === 'string' && (bgImage.startsWith('{') || bgImage.startsWith('['))) {
                 try {
@@ -280,6 +354,52 @@ export default function Home() {
     fetchData();
   }, [supabase]);
 
+  // Fetch JT Subjects whenever jtVideo changes
+  useEffect(() => {
+    async function fetchSubjects() {
+        if (!jtVideo?.article_ids || jtVideo.article_ids.length === 0) {
+            setJtSubjects([]);
+            return;
+        }
+        
+        const { data: articles } = await supabase
+            .from('articles')
+            .select('id, title, image_url, url, published_at')
+            .in('id', jtVideo.article_ids)
+            .limit(5);
+            
+        if (articles) {
+             setJtSubjects(articles.map((a: { id: number; title: string; image_url: string; url: string; published_at: string }) => ({
+              id: a.id,
+              title: a.title,
+              image: a.image_url || getDeterministicImage(a.title),
+              link: a.url,
+              date: a.published_at,
+              category: 'JT'
+            })));
+        }
+    }
+    fetchSubjects();
+  }, [jtVideo, supabase]);
+
+  const handlePrevJt = () => {
+    if (currentJtIndex < jtVideosList.length - 1) {
+        isNavigatingRef.current = true;
+        const newIndex = currentJtIndex + 1;
+        setCurrentJtIndex(newIndex);
+        setJtVideo(jtVideosList[newIndex]);
+    }
+  };
+
+  const handleNextJt = () => {
+    if (currentJtIndex > 0) {
+        isNavigatingRef.current = true;
+        const newIndex = currentJtIndex - 1;
+        setCurrentJtIndex(newIndex);
+        setJtVideo(jtVideosList[newIndex]);
+    }
+  };
+
   // Video Jingle Logic
   useEffect(() => {
     const video = videoRef.current;
@@ -288,18 +408,15 @@ export default function Home() {
     const jingleUrl = '/video/Jingle.mp4';
     const mainVideoUrl = jtVideo.video_url;
 
-    video.src = jingleUrl;
-    video.playsInline = true;
-    video.muted = true; // Start muted for autoplay
-    
-    // Play attempt
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay failed
-      });
+    // Handle Unmute
+    const handleUnmute = () => {
+        if (video.muted) {
+            video.muted = false;
+        }
     }
+    video.addEventListener('click', handleUnmute);
 
+    // Jingle transition handler
     const handleEnded = () => {
       if (video.src.includes('Jingle.mp4')) {
         video.src = mainVideoUrl;
@@ -307,15 +424,29 @@ export default function Home() {
         video.play().catch(console.error);
       }
     };
-    
-    const handleUnmute = () => {
-        if (video.muted) {
-            video.muted = false;
+
+    if (isNavigatingRef.current) {
+        // Skip jingle if navigating
+        video.src = mainVideoUrl;
+        video.muted = false; // Unmute for user-initiated navigation
+        video.play().catch(console.error);
+        isNavigatingRef.current = false;
+    } else {
+        // Play jingle for initial load
+        video.src = jingleUrl;
+        video.playsInline = true;
+        video.muted = true; // Start muted for autoplay
+        
+        video.addEventListener('ended', handleEnded);
+        
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Autoplay failed
+            });
         }
     }
 
-    video.addEventListener('ended', handleEnded);
-    video.addEventListener('click', handleUnmute);
     return () => {
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('click', handleUnmute);
@@ -355,7 +486,7 @@ export default function Home() {
                 <div className="logo">
                     <div className="logo-wrapper">
                          {/* Showing SVG logo as default since we copied it */}
-                        <img src="/logo.svg" alt="OREEGAM'IA Logo" className="logo-img" style={{display: 'block'}} />
+                        <Image src="/logo.svg" alt="OREEGAM'IA Logo" width={32} height={32} className="logo-img" style={{display: 'block'}} unoptimized />
                     </div>
                     <div className="logo-placeholder" style={{display: 'none'}}>
                         <span className="logo-text">OREEGAM&apos;IA</span>
@@ -380,13 +511,71 @@ export default function Home() {
                 </button>
             </div>
 
-            <Link href="/auth" className="auth-button">
-                <span className="auth-text hidden sm:inline">S&apos;inscrire / Se connecter</span>
-                <svg className="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-            </Link>
+            {user ? (
+              <div className="auth-position group">
+                <button className="auth-button flex items-center gap-2 p-1.5 focus:outline-none">
+                  {user.user_metadata?.avatar_url ? (
+                     <div className="relative w-8 h-8 rounded-full border border-gray-200 overflow-hidden">
+                       <Image 
+                          src={user.user_metadata.avatar_url} 
+                          alt="Profile" 
+                          fill
+                          className="object-cover"
+                          unoptimized
+                       />
+                     </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
+                        <span className="font-bold text-xs">{user.email?.charAt(0).toUpperCase() || 'U'}</span>
+                    </div>
+                  )}
+                  <span className="auth-text hidden sm:inline font-medium text-black truncate max-w-[60px]">
+                      {user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || 'Mon Profil'}
+                  </span>
+                </button>
+                <div className="absolute right-0 top-[calc(100%+10px)] w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 hidden group-hover:block z-9999 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-3 border-b border-gray-100 mb-1">
+                    <p className="text-sm font-bold text-gray-900 truncate">
+                        {user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  
+                  {/* Admin / Trainer Menu */}
+                  {(user.email?.toLowerCase().includes('benjamin') || user.email?.toLowerCase().includes('oreegami')) && (
+                      <Link href="/teacher" className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        Espace formateur
+                      </Link>
+                  )}
+                  <button
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      window.location.reload();
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"
+                  >
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Se déconnecter
+                  </button>
+                </div>
+              </div>
+            ) : (
+                <Link href="/auth" className="auth-button auth-position">
+                    <span className="auth-text hidden sm:inline">S&apos;inscrire / Se connecter</span>
+                    <svg className="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </Link>
+            )}
           </div>
         </header>
 
@@ -491,9 +680,14 @@ export default function Home() {
                                         poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
                                         style={{width: '100%', height: '100%', objectFit: 'cover', background: 'black'}}
                                     >
-                                        <source src="" type="video/mp4" />
+                                        {jtVideo?.video_url && (
+                                            <source src="/video/Jingle.mp4" type="video/mp4" />
+                                        )}
+                                        {/* Fallback managed by JS via video.src */}
                                         Votre navigateur ne supporte pas la lecture de vidéos.
                                     </video>
+
+                                    
                                 </div>
                                 <div id="format-podcast" className={`format-content ${activeFormat === 'podcast' ? 'active' : ''}`} style={activeFormat !== 'podcast' ? {display: 'none'} : {}}>
                                     <div className="placeholder-content">
@@ -517,6 +711,40 @@ export default function Home() {
                                     </div>
                                 </div>
                             </div>
+                        
+                        {/* JT Navigation Controls - Moved outside wrapper to avoid overflow clipping */}
+                        {activeFormat === 'video' && (
+                            <div className="flex items-center justify-center gap-6 mt-4 pb-2 select-none">
+                                <button 
+                                    onClick={handlePrevJt} 
+                                    disabled={currentJtIndex >= jtVideosList.length - 1}
+                                    className={`p-2 rounded-full transition-colors flex items-center justify-center group ${currentJtIndex >= jtVideosList.length - 1 ? 'opacity-30 cursor-not-allowed text-gray-400' : 'hover:bg-gray-200 text-black'}`}
+                                    aria-label="JT Précédent"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:-translate-x-1 transition-transform">
+                                        <polyline points="15 18 9 12 15 6"></polyline>
+                                    </svg>
+                                </button>
+
+                                <div className="text-lg font-bold text-black min-w-[150px] text-center">
+                                    {jtVideo ? getJtDateLabel(jtVideo.date) : "Chargement..."}
+                                </div>
+
+                                <div className="min-w-[40px]">
+                                    {currentJtIndex > 0 && (
+                                        <button 
+                                            onClick={handleNextJt} 
+                                            className="p-2 rounded-full hover:bg-gray-200 text-black transition-colors flex items-center justify-center group"
+                                            aria-label="JT Suivant"
+                                        >
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         </div>
 
                         <div className="articles-column">
@@ -527,11 +755,15 @@ export default function Home() {
                                     <div className="vignettes-list">
                                         {jtSubjects.length > 0 ? jtSubjects.map(article => (
                                             <div key={article.id} className="vignette-card" onClick={() => article.link && window.open(article.link, '_blank')}>
-                                                <img 
-                                                    src={article.image} 
-                                                    className="vignette-image" 
-                                                    alt={article.title} 
-                                                />
+                                                <div className="relative w-full h-[120px]">
+                                                    <Image 
+                                                        src={article.image} 
+                                                        className="vignette-image object-cover" 
+                                                        alt={article.title} 
+                                                        fill
+                                                        unoptimized
+                                                    />
+                                                </div>
                                                 <div className="vignette-info">{article.title}</div>
                                             </div>
                                         )) : (
@@ -540,43 +772,62 @@ export default function Home() {
                                     </div>
                                 </div>
 
-                                {/* News Column */}
+                                {/* Vidéos Column (formerly Tutos) */}
                                 <div className="vignette-column">
-                                    <h3 className="vignette-title">News</h3>
+                                    <h3 className="vignette-title">Vidéos</h3>
                                     <div className="vignettes-list">
-                                        {buzzArticles.map(article => (
-                                            <div key={article.id} className="vignette-card" onClick={() => article.link && window.open(article.link, '_blank')}>
-                                                <div style={{position: 'relative'}}>
-                                                    <img src={article.image} className="vignette-image" alt={article.title} />
-                                                    {article.score && article.score > 20 && (
-                                                        <span style={{position:'absolute', top:'5px', right:'5px', background:'red', color:'white', fontSize:'0.7em', padding:'2px 6px', borderRadius:'10px'}}>HOT</span>
-                                                    )}
+                                        {jtVideosList.map((video, index) => (
+                                            <div key={video.id || index} className="vignette-card" onClick={() => {
+                                                setJtVideo(video);
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}>
+                                                <div className="relative w-full h-[120px]">
+                                                    <Image 
+                                                        src={video.thumbnail_url || "https://placehold.co/1920x1080?text=Vidéo"} 
+                                                        className="vignette-image object-cover" 
+                                                        alt={video.title || "Vidéo JT"} 
+                                                        fill
+                                                        unoptimized
+                                                    />
                                                 </div>
                                                 <div className="vignette-info">
-                                                    <div style={{fontWeight: 'bold', marginBottom: '4px'}}>{article.title}</div>
+                                                    <div style={{fontWeight: 900, fontSize: '0.9em', color: '#000', marginBottom: '4px'}}>
+                                                        {getJtDateLabel(video.date)}
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 line-clamp-2">{video.title}</div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Tutos Column */}
-                                <div className="vignette-column">
-                                    <h3 className="vignette-title">Tutos</h3>
-                                    <div className="vignettes-list">
-                                        {tutorials.map(tuto => (
-                                            <div key={tuto.id} className="vignette-card" onClick={() => window.open(tuto.url, '_blank')}>
-                                                <img 
-                                                    src={tuto.image_url || getDeterministicImage(tuto.software)} 
-                                                    className="vignette-image" 
-                                                    alt={tuto.software} 
-                                                />
-                                                <div className="vignette-info">
-                                                    <div style={{fontWeight: 900, fontSize: '1.1em', color: '#000', marginBottom: '4px'}}>{tuto.software}</div>
-                                                    <div style={{fontSize: '0.9em', color: '#666'}}>{tuto.channel_name}</div>
+                                {/* Oreegami Messages & Tutos Column */}
+                                <div className="vignette-column" style={{gap: '1.5rem'}}>
+                                    <div style={{flex: '0 0 auto', maxHeight: '45%', overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
+                                        <OreegamiMessages />
+                                    </div>
+                                    
+                                    <div style={{flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
+                                        <h3 className="vignette-title">Tutos</h3>
+                                        <div className="vignettes-list">
+                                            {tutorials.map(tuto => (
+                                                <div key={tuto.id} className="vignette-card" onClick={() => window.open(tuto.url, '_blank')}>
+                                                    <div className="relative w-full h-[120px]">
+                                                        <Image 
+                                                            src={tuto.image_url || getDeterministicImage(tuto.software)} 
+                                                            className="vignette-image object-cover" 
+                                                            alt={tuto.software} 
+                                                            fill
+                                                            unoptimized
+                                                        />
+                                                    </div>
+                                                    <div className="vignette-info">
+                                                        <div style={{fontWeight: 900, fontSize: '1.1em', color: '#000', marginBottom: '4px'}}>{tuto.software}</div>
+                                                        <div style={{fontSize: '0.9em', color: '#666'}}>{tuto.channel_name}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -585,39 +836,42 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Categories Section */}
-            <section className="categories-section" id="categories">
-                <div className="container">
-                    <h2 className="section-title">Toutes les catégories</h2>
-                    <div className="categories-grid">
-                        <a href="/category.html?category=IA" className="category-card cat-ia">
-                            <span className="category-name">IA</span>
-                        </a>
-                        <a href="/category.html?category=No-Code" className="category-card cat-nocode">
-                            <span className="category-name">No-Code & Back-end</span>
-                        </a>
-                        <a href="/category.html?category=Automatisation" className="category-card cat-auto">
-                            <span className="category-name">Automatisation</span>
-                        </a>
-                        <a href="/category.html?category=Vibe-coding" className="category-card cat-vibe">
-                            <span className="category-name">Vibe-coding</span>
-                        </a>
-                        <a href="/category.html?category=Multimedia" className="category-card cat-multimedia">
-                            <span className="category-name">Outils Multimédias</span>
-                        </a>
-                    </div>
-                </div>
-            </section>
+
 
             {/* Trending Articles */}
             <section className="articles-section trending-articles" id="actualite">
                 <div className="container">
-                    <h2 className="section-title">Articles Tendances</h2>
+                    <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                        <h2 className="section-title mb-0!">Les news de l&apos;IA</h2>
+                        <div className="flex-1 flex gap-2 ml-12 flex-wrap">
+                            <a href="/category.html?category=IA" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-blue-600 to-cyan-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
+                                IA
+                            </a>
+                            <a href="/category.html?category=No-Code" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-purple-600 to-pink-600 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
+                                No-Code
+                            </a>
+                            <a href="/category.html?category=Automatisation" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-orange-600 to-amber-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
+                                Automatisation
+                            </a>
+                            <a href="/category.html?category=Vibe-coding" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-violet-500 via-pink-500 to-rose-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
+                                Vibe-coding
+                            </a>
+                            <a href="/category.html?category=Multimedia" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-emerald-500 to-blue-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
+                                Multimédia
+                            </a>
+                        </div>
+                    </div>
                     <div className="articles-grid">
                         {trendingArticles.map(article => (
                              <article key={article.id} className="article-card" onClick={() => article.link && window.open(article.link, '_blank')}>
-                                <div className="article-image-container">
-                                    <img src={article.image} alt={article.title} className="article-image" />
+                                <div className="article-image-container relative h-48 w-full">
+                                    <Image 
+                                        src={article.image} 
+                                        alt={article.title} 
+                                        fill 
+                                        className="article-image object-cover" 
+                                        unoptimized 
+                                    />
                                 </div>
                                 <div className="article-content">
                                     {article.tags && (
@@ -655,8 +909,14 @@ export default function Home() {
                     <div className="articles-grid">
                         {coursePrepArticles.map(article => (
                              <article key={article.id} className="article-card" onClick={() => article.link && window.open(article.link, '_blank')}>
-                                <div className="article-image-container">
-                                    <img src={article.image} alt={article.title} className="article-image" />
+                                <div className="article-image-container relative h-48 w-full">
+                                    <Image 
+                                        src={article.image} 
+                                        alt={article.title} 
+                                        fill 
+                                        className="article-image object-cover" 
+                                        unoptimized 
+                                    />
                                 </div>
                                 <div className="article-content">
                                      <div className="article-tags">
