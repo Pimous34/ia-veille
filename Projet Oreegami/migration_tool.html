@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OreegamIA Migration Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Outils de Migration OreegamIA</h1>
+    <p>Ce script va copier les données de l'ancien projet vers le nouveau.</p>
+    <p><strong>ATTENTION :</strong> Assurez-vous d'avoir exécuté le script SQL <code>prepare_migration.sql</code> avant
+        de lancer !</p>
+
+    <button id="startBtn" class="btn" onclick="startMigration()">Lancer la Migration</button>
+
+    <div id="logs" class="log"></div>
+
+    <script>
+        // CONFIGURATION
+        const SOURCE_URL = 'https://pjiobifgcvdapikurlbn.supabase.co';
+        const SOURCE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxMDI0ODEsImV4cCI6MjA4MDY3ODQ4MX0.-y5bw3WwHKGpR9FxNcZhyEWY-iLoAXnI4ZGlhH8DXYo';
+
+        const DEST_URL = 'https://xwlncjdlruwxmgrnesih.supabase.co';
+        const DEST_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3bG5jamRscnV3eG1ncm5lc2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODI2NzgsImV4cCI6MjA4MDc1ODY3OH0.xMFwgPOjpAZ5mPiDo-dR11aHHQqyKE8OWHJh1Dl40Ks';
+
+        const sourceClient = supabase.createClient(SOURCE_URL, SOURCE_KEY);
+        const destClient = supabase.createClient(DEST_URL, DEST_KEY);
+
+        function log(msg, type = 'info') {
+            const div = document.getElementById('logs');
+            const p = document.createElement('div');
+            p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            if (type === 'error') p.className = 'error';
+            if (type === 'success') p.className = 'success';
+            div.appendChild(p);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        async function migrateTable(tableName, displayName) {
+            log(`Récupération de ${displayName} (${tableName})...`);
+            const { data, error } = await sourceClient.from(tableName).select('*');
+
+            if (error) {
+                log(`Erreur lecture ${tableName}: ${error.message}`, 'error');
+                return false;
+            }
+
+            if (!data || data.length === 0) {
+                log(`Aucune donnée trouvée pour ${tableName}.`, 'info');
+                return true;
+            }
+
+            log(`${data.length} entrées trouvées. Insertion dans le nouveau projet...`);
+
+            // Insert in chunks of 50
+            const chunkSize = 50;
+            for (let i = 0; i < data.length; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                const { error: insertError } = await destClient.from(tableName).upsert(chunk);
+
+                if (insertError) {
+                    log(`Erreur insertion ${tableName} (lot ${i}): ${insertError.message}`, 'error');
+                    console.error(insertError);
+                    return false;
+                }
+            }
+
+            log(`${displayName} migré avec succès !`, 'success');
+            return true;
+        }
+
+        async function clearDestination() {
+            log("🧹 Nettoyage de la base de destination (suppression des données existantes)...", 'info');
+
+            // Reverse dependency order
+            const tables = [
+                { name: 'saved_articles', idType: 'uuid' },
+                { name: 'user_activity_log', idType: 'uuid' },
+                { name: 'daily_news_videos', idType: 'uuid' },
+                { name: 'articles', idType: 'uuid' },
+                { name: 'app_messages', idType: 'int' }, // Integer ID
+                { name: 'tutorials', idType: 'uuid' },
+                { name: 'sources', idType: 'uuid' },
+                { name: 'categories', idType: 'uuid' }
+            ];
+
+            for (const table of tables) {
+                log(`Suppression des données de ${table.name}...`);
+
+                let query = destClient.from(table.name).delete();
+
+                if (table.idType === 'uuid') {
+                    // Filter that matches everything but isn't empty (required by Supabase delete)
+                    query = query.neq('id', '00000000-0000-0000-0000-000000000000');
+                } else {
+                    // For integer IDs (app_messages)
+                    query = query.gt('id', -1);
+                }
+
+                const { error } = await query;
+
+                if (error) {
+                    // Ignore "relation does not exist" if we missed a table creation, but log others
+                    if (!error.message.includes('does not exist')) {
+                        log(`Note sur nettoyage ${table.name}: ${error.message} (continuing)`, 'info');
+                    }
+                }
+            }
+            log("Nettoyage terminé.", 'success');
+            return true;
+        }
+
+        async function startMigration() {
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            log("🚀 Démarrage de la migration...", 'info');
+
+            try {
+                // 0. Clean first to avoid duplicate key errors
+                await clearDestination();
+
+                // Order matters for Foreign Keys!
+
+                // 1. Categories
+                if (!await migrateTable('categories', 'Catégories')) throw "Echec Categories";
+
+                // 2. Sources
+                if (!await migrateTable('sources', 'Sources')) throw "Echec Sources";
+
+                // 3. Tutorials
+                if (!await migrateTable('tutorials', 'Tutoriels')) throw "Echec Tutorials";
+
+                // 4. App Messages
+                if (!await migrateTable('app_messages', 'Messages App')) throw "Echec Messages";
+
+                // 5. Articles (depends on Sources & Categories)
+                if (!await migrateTable('articles', 'Articles')) throw "Echec Articles";
+
+                // 6. Daily News Videos (depends on Articles)
+                if (!await migrateTable('daily_news_videos', 'Vidéos JT')) throw "Echec Vidéos";
+
+                log("--- ✨ MIGRATION TERMINÉE AVEC SUCCÈS ✨ ---", 'success');
+                log("Dernière étape : Exécutez finish_migration.sql dans Supabase.", 'success');
+
+            } catch (err) {
+                log(`⛔ Migration stoppée: ${err}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>
