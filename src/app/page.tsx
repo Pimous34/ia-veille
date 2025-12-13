@@ -5,8 +5,10 @@ import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import OreegamiMessages from '@/components/OreegamiMessages';
+import LoginModal from '@/components/LoginModal';
 
 // --- Types ---
+
 interface Article {
   id: number | string;
   title: string;
@@ -168,6 +170,8 @@ export default function Home() {
   const [isFormatMenuOpen, setIsFormatMenuOpen] = useState(false);
   const [activeFormat, setActiveFormat] = useState<'video' | 'podcast' | 'text'>('video');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   
   // Data State
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -206,6 +210,9 @@ export default function Home() {
       const target = event.target as HTMLElement;
       if (!target.closest('.format-controls')) {
         setIsFormatMenuOpen(false);
+      }
+      if (!target.closest('.auth-position')) {
+        setIsProfileMenuOpen(false);
       }
     }
     document.addEventListener('click', handleClickOutside);
@@ -469,6 +476,7 @@ export default function Home() {
 
   return (
     <>
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
         {/* Header */}
         <header className="header">
@@ -512,8 +520,11 @@ export default function Home() {
             </div>
 
             {user ? (
-              <div className="auth-position group">
-                <button className="auth-button flex items-center gap-2 p-1.5 focus:outline-none">
+              <div className="auth-position relative">
+                <button 
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="auth-button flex items-center gap-2 p-1.5 focus:outline-none"
+                >
                   {user.user_metadata?.avatar_url ? (
                      <div className="relative w-8 h-8 rounded-full border border-gray-200 overflow-hidden">
                        <Image 
@@ -533,48 +544,55 @@ export default function Home() {
                       {user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || 'Mon Profil'}
                   </span>
                 </button>
-                <div className="absolute right-0 top-[calc(100%+10px)] w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 hidden group-hover:block z-9999 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-3 border-b border-gray-100 mb-1">
-                    <p className="text-sm font-bold text-gray-900 truncate">
-                        {user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur'}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                
+                {/* Profile Dropdown */}
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 top-[calc(100%+10px)] w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-150 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-3 border-b border-gray-100 mb-1">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                          {user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                    
+                    {/* Admin / Trainer Menu */}
+                    {(user.email?.toLowerCase().includes('benjamin') || user.email?.toLowerCase().includes('oreegami')) && (
+                        <Link href="/teacher" className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                          </svg>
+                          Espace formateur
+                        </Link>
+                    )}
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        window.location.reload();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                    >
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                      </svg>
+                      Se déconnecter
+                    </button>
                   </div>
-                  
-                  {/* Admin / Trainer Menu */}
-                  {(user.email?.toLowerCase().includes('benjamin') || user.email?.toLowerCase().includes('oreegami')) && (
-                      <Link href="/teacher" className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                        </svg>
-                        Espace formateur
-                      </Link>
-                  )}
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      window.location.reload();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 transition-colors"
-                  >
-                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                      <polyline points="16 17 21 12 16 7"></polyline>
-                      <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    Se déconnecter
-                  </button>
-                </div>
+                )}
               </div>
             ) : (
-                <Link href="/auth" className="auth-button auth-position">
+                <button 
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="auth-button auth-position"
+                >
                     <span className="auth-text hidden sm:inline">S&apos;inscrire / Se connecter</span>
                     <svg className="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                </Link>
+                </button>
             )}
           </div>
         </header>

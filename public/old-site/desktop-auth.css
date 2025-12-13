@@ -1,0 +1,41 @@
+/* Desktop Auth Button Positioning */
+@media (min-width: 1200px) {
+    .auth-button {
+        position: fixed !important;
+        top: 55px !important;
+        /* Aligned with header center (20px top + ~70px height / 2) */
+        transform: translateY(-50%) !important;
+        right: 125px !important;
+        /* Centered in 250px margin */
+        z-index: 110;
+
+        /* Visual styles */
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: var(--text-color);
+        font-weight: 600;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .auth-text {
+        display: block !important;
+    }
+
+    .auth-icon {
+        display: block;
+    }
+}
+
+/* Adjust for very large screens where header width is capped */
+@media (min-width: 1700px) {
+    .auth-button {
+        right: calc((100vw - 1200px) / 4) !important;
+    }
+}

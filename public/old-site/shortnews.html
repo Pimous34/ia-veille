@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShortNews - OREEGAM'IA</title>
+    <link rel="stylesheet" href="styles.css?v=final_fix_31">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* CRITICAL: YouTube Shorts-style scrolling with CSS scroll-snap */
+        body.shorts-page .shorts-container {
+            height: 100vh !important;
+            overflow-y: scroll !important;
+            scroll-snap-type: y mandatory !important;
+            scroll-behavior: smooth !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-top: 80px !important;
+            margin-top: 20px !important;
+        }
+
+        body.shorts-page .short-article {
+            height: 100vh !important;
+            scroll-snap-align: start !important;
+            scroll-snap-stop: always !important;
+            display: flex !important;
+            justify-content: center !important;
+            padding: 0 !important;
+        }
+
+        body.shorts-page .short-card-container {
+            position: relative !important;
+            width: 100% !important;
+            max-width: 600px !important;
+            height: calc(100vh - 140px) !important;
+            max-height: calc(100vh - 140px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+        }
+
+        /* Image takes about 45% of card height */
+        body.shorts-page .short-image {
+            flex: 0 0 45% !important;
+            height: 45% !important;
+            min-height: 250px !important;
+            max-height: 45% !important;
+            border-radius: 24px 24px 0 0 !important;
+        }
+
+        /* Content section takes remaining space */
+        body.shorts-page .short-content {
+            flex: 1 !important;
+            padding: 1.5rem 2rem !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.75rem !important;
+            overflow-y: auto !important;
+            background: #ffffff !important;
+            position: relative !important;
+            z-index: 10 !important;
+        }
+
+        /* Category badge - matching article-category style */
+        body.shorts-page .category-badge {
+            display: inline-block !important;
+            order: -1 !important;
+            margin-bottom: 0.75rem !important;
+            position: relative !important;
+            z-index: 20 !important;
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 20px !important;
+        }
+
+        /* Show tags with enhanced styling */
+        body.shorts-page .short-tags {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 0.4rem !important;
+            margin-bottom: 0.75rem !important;
+            order: 0 !important;
+        }
+
+        body.shorts-page .short-tag {
+            font-size: 0.7rem !important;
+            padding: 0.35rem 0.85rem !important;
+            border-radius: 16px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            letter-spacing: 0.02em !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+
+        body.shorts-page .short-tag:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+        }
+
+        /* Title styling */
+        body.shorts-page .short-title {
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
+            margin: 0 !important;
+        }
+
+        /* Excerpt styling */
+        body.shorts-page .short-excerpt {
+            font-size: 0.95rem !important;
+            line-height: 1.5 !important;
+            color: #666 !important;
+            margin: 0 !important;
+        }
+
+        /* Meta section at bottom */
+        body.shorts-page .short-meta {
+            margin-top: auto !important;
+            padding-top: 1rem !important;
+            border-top: 1px solid #f0f0f0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 1rem !important;
+        }
+
+        /* Action buttons */
+        .short-actions {
+            display: flex !important;
+            gap: 0.5rem !important;
+        }
+
+        .action-btn {
+            background: none !important;
+            border: none !important;
+            padding: 8px !important;
+            cursor: pointer !important;
+            color: #64748b !important;
+            transition: all 0.2s ease !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .action-btn:hover {
+            color: #2563eb !important;
+            background-color: rgba(37, 99, 235, 0.1) !important;
+            transform: scale(1.1) !important;
+        }
+
+        /* Tag colors - AI tools with authentic brand colors */
+        .tag-chatgpt {
+            background: rgba(16, 163, 127, 0.12);
+            color: #10a37f;
+        }
+
+        .tag-claude {
+            background: rgba(191, 144, 96, 0.12);
+            color: #bf9060;
+        }
+
+        .tag-gemini {
+            background: linear-gradient(135deg, rgba(66, 133, 244, 0.12), rgba(219, 68, 55, 0.12));
+            color: #4285f4;
+        }
+
+        /* Tag colors - No-Code tools with authentic brand colors */
+        .tag-bubble {
+            background: rgba(0, 112, 243, 0.12);
+            color: #0070f3;
+        }
+
+        .tag-webflow {
+            background: rgba(74, 85, 255, 0.12);
+            color: #4a55ff;
+        }
+
+        /* Tag colors - Automation tools with authentic brand colors */
+        .tag-zapier {
+            background: rgba(255, 74, 0, 0.12);
+            color: #ff4a00;
+        }
+
+        .tag-make {
+            background: rgba(108, 73, 255, 0.12);
+            color: #6c49ff;
+        }
+
+        /* Category badge colors - UNIFORM BLUE for all categories */
+        .cat-ia,
+        .cat-nocode,
+        .cat-auto {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+        }
+
+        /* Swipe Indicators (Tinder-style) - ALWAYS VISIBLE GUIDES */
+        .swipe-indicator {
+            position: absolute;
+            top: 15px;
+            font-size: 1.5rem;
+            opacity: 1;
+            z-index: 100;
+            pointer-events: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .swipe-like {
+            right: 15px;
+            left: auto;
+            transform: rotate(0deg);
+        }
+
+        .swipe-nope {
+            left: 15px;
+            right: auto;
+            transform: rotate(0deg);
+        }
+
+        /* Toast notification for actions */
+        .action-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Active state for action buttons */
+        .action-btn.active {
+            color: #2563eb !important;
+        }
+    </style>
+</head>
+
+<body class="shorts-page">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
+            <a href="index.html" class="logo-link">
+                <div class="logo">
+                    <div class="logo-wrapper">
+                        <img src="logo.png" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.svg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                        <img src="logo.jpeg" alt="OREEGAM'IA Logo" class="logo-img" style="display: none;">
+                    </div>
+                    <div class="logo-placeholder">
+                        <span class="logo-text">OREEGAM'IA</span>
+                    </div>
+                </div>
+            </a>
+            <nav class="main-nav">
+                <a href="index.html#jtnews" class="nav-link">JTNews</a>
+                <a href="index.html#categories" class="nav-link">Catégories</a>
+                <a href="index.html#actualite" class="nav-link">Actualité</a>
+                <a href="index.html#courseprep" class="nav-link">Cours</a>
+                <a href="shortnews.html" class="nav-link active">ShortNews</a>
+            </nav>
+            <div class="search-container">
+                <button class="search-toggle-btn" onclick="toggleSearch()" aria-label="Rechercher">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+            </div>
+            <a href="auth.html" class="auth-button">
+                <span class="auth-text">S'inscrire / Se connecter</span>
+                <svg class="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-overlay-content">
+            <form class="search-overlay-form" onsubmit="handleSearch(event)">
+                <input type="search" class="search-overlay-input" placeholder="Rechercher des articles..."
+                    aria-label="Rechercher" autofocus>
+                <button type="submit" class="search-overlay-submit" aria-label="Rechercher">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+                <button type="button" class="search-overlay-close" onclick="toggleSearch()" aria-label="Fermer">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shorts Container -->
+    <main class="shorts-container">
+        <!-- Short 1 -->
+        <article class="short-article">
+            <div class="short-card-container">
+                <div class="short-image short-img-1"></div>
+                <div class="short-content">
+                    <span class="category-badge cat-ia">IA</span>
+                    <div class="short-tags">
+                        <span class="short-tag tag-chatgpt">ChatGPT</span>
+                        <span class="short-tag tag-claude">Claude</span>
+                    </div>
+                    <h2 class="short-title">L'IA générative révolutionne le design</h2>
+                    <p class="short-excerpt">Découvrez comment les nouveaux outils d'IA transforment la façon dont nous
+                        créons des visuels époustouflants en quelques secondes.</p>
+                    <div class="short-meta">
+                        <span class="short-date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg> 23 Nov 2025</span>
+                        <div class="short-actions">
+                            <button class="action-btn" aria-label="Sauvegarder">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="À regarder plus tard">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="Partager">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="article.html?id=L'IA générative révolutionne le design" class="short-link">Lire <svg
+                                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg></a>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Short 2 -->
+        <article class="short-article">
+            <div class="short-card-container">
+                <div class="short-image short-img-2"></div>
+                <div class="short-content">
+                    <span class="category-badge cat-nocode">No-Code</span>
+                    <div class="short-tags">
+                        <span class="short-tag tag-bubble">Bubble</span>
+                        <span class="short-tag tag-webflow">Webflow</span>
+                    </div>
+                    <h2 class="short-title">Créez votre app sans coder</h2>
+                    <p class="short-excerpt">Les plateformes No-Code permettent désormais de lancer des applications
+                        complexes sans écrire une seule ligne de code.</p>
+                    <div class="short-meta">
+                        <span class="short-date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg> 22 Nov 2025</span>
+                        <div class="short-actions">
+                            <button class="action-btn" aria-label="Sauvegarder">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="À regarder plus tard">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="Partager">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="article.html?id=Créez votre app sans coder" class="short-link">Lire <svg width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg></a>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Short 3 -->
+        <article class="short-article">
+            <div class="short-card-container">
+                <div class="short-image short-img-3"></div>
+                <div class="short-content">
+                    <span class="category-badge cat-auto">Automatisation</span>
+                    <div class="short-tags">
+                        <span class="short-tag tag-zapier">Zapier</span>
+                        <span class="short-tag tag-make">Make</span>
+                    </div>
+                    <h2 class="short-title">Gagnez 10h par semaine</h2>
+                    <p class="short-excerpt">L'automatisation des tâches répétitives est la clé de la productivité
+                        moderne. Voici les outils indispensables.</p>
+                    <div class="short-meta">
+                        <span class="short-date"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg> 21 Nov 2025</span>
+                        <div class="short-actions">
+                            <button class="action-btn" aria-label="Sauvegarder">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="À regarder plus tard">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                            <button class="action-btn" aria-label="Partager">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <a href="article.html?id=Gagnez 10h par semaine" class="short-link">Lire <svg width="16"
+                                height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg></a>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <!-- Mobile Menu Container -->
+    <div class="mobile-menu-container" id="mobileMenuContainer">
+        <button class="mobile-menu-close" onclick="toggleMobileMenu()" aria-label="Fermer le menu">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+
+        <!-- Mobile Search Bar -->
+        <form class="mobile-search-form" onsubmit="handleSearch(event)">
+            <input type="search" class="search-input" placeholder="Rechercher..." aria-label="Rechercher">
+            <button type="submit" aria-label="Rechercher">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </button>
+        </form>
+
+        <nav class="mobile-nav">
+            <a href="index.html#jtnews" class="nav-link" onclick="toggleMobileMenu()">JTNews</a>
+            <a href="index.html#categories" class="nav-link" onclick="toggleMobileMenu()">Catégories</a>
+            <a href="index.html#actualite" class="nav-link" onclick="toggleMobileMenu()">Actualité</a>
+            <a href="index.html#courseprep" class="nav-link" onclick="toggleMobileMenu()">Cours</a>
+            <a href="shortnews.html" class="nav-link" onclick="toggleMobileMenu()">ShortNews</a>
+        </nav>
+    </div>
+
+    <script src="mobile-menu.js"></script>
+    <script src="script.js"></script>
+    <script src="search-toggle.js"></script>
+    <script src="swipe-handlers.js"></script>
+    <script src="action-handlers.js"></script>
+</body>
+
+</html>
