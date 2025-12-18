@@ -24,6 +24,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hot-toast": "^2.6.0",
+    "rss-parser": "^3.13.0",
     "video.js": "^8.23.4"
   },
   "devDependencies": {
@@ -39,6 +40,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

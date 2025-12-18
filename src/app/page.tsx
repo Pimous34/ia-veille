@@ -30,7 +30,7 @@ interface Tutorial {
 }
 
 interface JtVideo {
-  id: number;
+  id: number | string;
   video_url: string;
   thumbnail_url?: string;
   title?: string;
@@ -178,6 +178,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [jtVideo, setJtVideo] = useState<JtVideo | null>(null);
   const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([]);
+  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]); // New state for the sidebar
   const [currentJtIndex, setCurrentJtIndex] = useState(0);
   const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
   const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
@@ -305,6 +306,56 @@ export default function Home() {
       } else {
         // Fallback if no data
         setTrendingArticles(fallbackJtArticles); 
+      }
+
+      // 3. Fetch External Videos (Micode, Underscore_) & Mix with JTs
+      const { data: sourceIdsData } = await supabase
+        .from('sources')
+        .select('id')
+        .in('name', ['Micode', 'Underscore_', 'Ludovic Salenne', 'GEEK CONCEPT']);
+
+      let externalVideos: JtVideo[] = [];
+      
+      if (sourceIdsData && sourceIdsData.length > 0) {
+        const ids = sourceIdsData.map(s => s.id);
+        const { data: extArticles } = await supabase
+            .from('articles')
+            .select('*')
+            .in('source_id', ids)
+            .order('published_at', { ascending: false })
+            .limit(10);
+
+        if (extArticles) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            externalVideos = extArticles.map((a: any) => ({
+                id: a.id,
+                video_url: a.url,
+                thumbnail_url: a.image_url || getDeterministicImage(a.title),
+                title: a.title,
+                date: a.published_at,
+                article_ids: []
+            }));
+        }
+      }
+
+      // Merge JTs and External Videos for the Sidebar Column
+      // Sort combined list by date
+      const combinedVideos = [...jtVideosList, ...externalVideos].sort((a, b) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+      
+      setVideosColumnList(combinedVideos);
+
+      // CRITICAL: We DO NOT update setJtVideosList with combinedVideos here.
+      // We keep setJtVideosList containing ONLY the real JTs (from step 1).
+      // This ensures the Main Player Playlist only cycles through JTs.
+
+      if (jtVideosList.length > 0) {
+          // If no video selected yet, select the first JT
+          if (!jtVideo) {
+              setJtVideo(jtVideosList[0]);
+              setCurrentJtIndex(0);
+          }
       }
 
       // 3. Fetch Tutorials with filtering
@@ -794,10 +845,25 @@ export default function Home() {
                                 <div className="vignette-column">
                                     <h3 className="vignette-title">Vidéos</h3>
                                     <div className="vignettes-list">
-                                        {jtVideosList.map((video, index) => (
+                                        {videosColumnList.map((video, index) => (
                                             <div key={video.id || index} className="vignette-card" onClick={() => {
-                                                setJtVideo(video);
-                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                const isYouTube = video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be');
+                                                if (isYouTube) {
+                                                    window.open(video.video_url, '_blank');
+                                                } else {
+                                                    // Find the index in the MAIN JT LIST to update navigation
+                                                    const navIndex = jtVideosList.findIndex(v => v.id === video.id);
+                                                    if (navIndex !== -1) {
+                                                        setJtVideo(jtVideosList[navIndex]);
+                                                        setCurrentJtIndex(navIndex);
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    } else {
+                                                        // It's a JT not in the main list? Should not happen if logic is correct.
+                                                        // Fallback: Just play it, but navigation controls might be out of sync.
+                                                        setJtVideo(video);
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    }
+                                                }
                                             }}>
                                                 <div className="relative w-full h-[120px]">
                                                     <Image 
@@ -807,6 +873,12 @@ export default function Home() {
                                                         fill
                                                         unoptimized
                                                     />
+                                                    {/* Optional: Add a YouTube badge or icon for external videos */}
+                                                    {(video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be')) && (
+                                                        <div className="absolute top-1 right-1 bg-red-600 text-white text-[10px] px-1 rounded shadow">
+                                                            YouTube
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="vignette-info">
                                                     <div style={{fontWeight: 900, fontSize: '0.9em', color: '#000', marginBottom: '4px'}}>
