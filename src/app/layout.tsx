@@ -41,6 +41,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { N8nChat } from "@/components/N8nChat";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,6 +56,7 @@ export default function RootLayout({
         {children}
         <CookieBanner />
         <ToastProvider />
+        <N8nChat />
       </body>
     </html>
   );

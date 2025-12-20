@@ -692,7 +692,6 @@ export default function Home() {
             <section className="hero-section" id="jtnews">
                 <div className="container">
                     <div className="hero-container">
-                        {/* Video Column */}
                         <div className={`video-column ${isFullscreen ? 'fullscreen' : ''}`} ref={videoContainerRef}>
 
                             <div className="video-wrapper">
@@ -817,11 +816,11 @@ export default function Home() {
                         </div>
 
                         <div className="articles-column">
-                            <div className="vignettes-container">
+                            <div className="vignettes-container" style={{gap: '2.5rem'}}> {/* Increased internal gap */}
                                 {/* Sujets du JT Column */}
-                                <div className="vignette-column">
+                                <div className="vignette-column" style={{gap: '2rem'}}> {/* Added explicit gap */}
                                     <h3 className="vignette-title">Sujets du JT</h3>
-                                    <div className="vignettes-list">
+                                    <div className="vignettes-list" style={{gap: '1.5rem'}}> {/* Added explicit gap */}
                                         {jtSubjects.length > 0 ? jtSubjects.map(article => (
                                             <div key={article.id} className="vignette-card" onClick={() => article.link && window.open(article.link, '_blank')}>
                                                 <div className="relative w-full h-[120px]">
@@ -844,7 +843,7 @@ export default function Home() {
                                 {/* Vidéos Column (formerly Tutos) */}
                                 <div className="vignette-column">
                                     <h3 className="vignette-title">Vidéos</h3>
-                                    <div className="vignettes-list">
+                                    <div className="vignettes-list" style={{gap: '1.5rem'}}>
                                         {videosColumnList.map((video, index) => (
                                             <div key={video.id || index} className="vignette-card" onClick={() => {
                                                 const isYouTube = video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be');
@@ -892,14 +891,14 @@ export default function Home() {
                                 </div>
 
                                 {/* Oreegami Messages & Tutos Column */}
-                                <div className="vignette-column" style={{gap: '1.5rem'}}>
+                                <div className="vignette-column" style={{gap: '2.5rem'}}> {/* Increased vertical gap */}
                                     <div style={{flex: '0 0 auto', maxHeight: '45%', overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
                                         <OreegamiMessages />
                                     </div>
                                     
                                     <div style={{flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
                                         <h3 className="vignette-title">Tutos</h3>
-                                        <div className="vignettes-list">
+                                        <div className="vignettes-list" style={{gap: '1.5rem'}}>
                                             {tutorials.map(tuto => (
                                                 <div key={tuto.id} className="vignette-card" onClick={() => window.open(tuto.url, '_blank')}>
                                                     <div className="relative w-full h-[120px]">
@@ -926,29 +925,17 @@ export default function Home() {
                 </div>
             </section>
 
-
-
             {/* Trending Articles */}
             <section className="articles-section trending-articles" id="actualite">
                 <div className="container">
                     <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                         <h2 className="section-title mb-0!">Les news de l&apos;IA</h2>
                         <div className="flex-1 flex gap-2 ml-12 flex-wrap">
-                            <a href="/category.html?category=IA" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-blue-600 to-cyan-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
-                                IA
-                            </a>
-                            <a href="/category.html?category=No-Code" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-purple-600 to-pink-600 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
-                                No-Code
-                            </a>
-                            <a href="/category.html?category=Automatisation" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-orange-600 to-amber-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
-                                Automatisation
-                            </a>
-                            <a href="/category.html?category=Vibe-coding" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-violet-500 via-pink-500 to-rose-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
-                                Vibe-coding
-                            </a>
-                            <a href="/category.html?category=Multimedia" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-emerald-500 to-blue-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">
-                                Multimédia
-                            </a>
+                            <a href="/category.html?category=IA" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-blue-600 to-cyan-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">IA</a>
+                            <a href="/category.html?category=No-Code" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-purple-600 to-pink-600 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">No-Code</a>
+                            <a href="/category.html?category=Automatisation" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-orange-600 to-amber-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Automatisation</a>
+                            <a href="/category.html?category=Vibe-coding" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-violet-500 via-pink-500 to-rose-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Vibe-coding</a>
+                            <a href="/category.html?category=Multimedia" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-emerald-500 to-blue-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Multimédia</a>
                         </div>
                     </div>
                     <div className="articles-grid">

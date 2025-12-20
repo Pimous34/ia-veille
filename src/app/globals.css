@@ -99,6 +99,11 @@ body {
     transform: translate(-50%, -50%);
 }
 
+/* N8n Chat z-index fix if needed */
+#n8n-chat {
+  z-index: 9999 !important;
+}
+
 /* Large screens: Move logo to left margin */
 @media (min-width: 1500px) {
     .logo-link {
@@ -365,7 +370,7 @@ body {
 .hero-container {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    gap: 3rem;
+    gap: 5rem;
     align-items: start;
 }
 
