@@ -4,9 +4,8 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('Authorization');
     const { question, history, tenantId, userData } = await req.json();
-    console.log(`Chat Request - Tenant: ${tenantId}, HasAuth: ${!!authHeader}, UserData: ${JSON.stringify(userData)}`);
+    console.log(`Processing chat for tenant: ${tenantId}, user: ${JSON.stringify(userData)}, question length: ${question?.length}`);
 
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
