@@ -27,7 +27,7 @@ if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   }
 }
 
-// Security: Log if API key is present but NOT the key itself
+// Security: API key status check (Secrets fixed in Secret Manager)
 if (!process.env.GOOGLE_GENAI_API_KEY) {
   console.warn('WARNING: GOOGLE_GENAI_API_KEY is not defined in environment variables!');
 } else {
