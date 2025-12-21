@@ -9,7 +9,9 @@ import { logger } from 'genkit/logging';
 // Configure logging
 logger.setLogLevel('debug');
 
-// Ensure GCLOUD_PROJECT is set (required for some Google Cloud APIs/Genkit plugins)
+import * as fs from 'fs';
+
+// Ensure GCLOUD_PROJECT is set
 if (!process.env.GCLOUD_PROJECT) {
   process.env.GCLOUD_PROJECT = 'oreegamia'; 
 }
@@ -17,17 +19,19 @@ if (!process.env.GOOGLE_CLOUD_PROJECT) {
   process.env.GOOGLE_CLOUD_PROJECT = 'oreegamia';
 }
 
-// Set Google Application Credentials for Vertex AI/Firestore (if not already set)
+// Set Google Application Credentials for Vertex AI/Firestore
 if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  // Try to find the service account file at root
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fs = require('fs');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const path = require('path');
   const keyPath = path.resolve(process.cwd(), 'service-account.json');
   if (fs.existsSync(keyPath)) {
      process.env.GOOGLE_APPLICATION_CREDENTIALS = keyPath;
   }
+}
+
+// Security: Log if API key is present but NOT the key itself
+if (!process.env.GOOGLE_GENAI_API_KEY) {
+  console.warn('WARNING: GOOGLE_GENAI_API_KEY is not defined in environment variables!');
+} else {
+  console.log(`GOOGLE_GENAI_API_KEY is defined (length: ${process.env.GOOGLE_GENAI_API_KEY.length})`);
 }
 
 export const ai = genkit({
