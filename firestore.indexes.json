@@ -1,0 +1,14 @@
+{
+  "fieldOverrides": [
+    {
+      "collectionGroup": "documents",
+      "fieldPath": "embedding",
+      "vectorIndexes": [
+        {
+          "dimension": 768,
+          "flat": {}
+        }
+      ]
+    }
+  ]
+}

@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
 };
 
-import { N8nChat } from "@/components/N8nChat";
+import { GenkitChat } from "@/components/GenkitChat";
 
 export default function RootLayout({
   children,
@@ -56,7 +56,7 @@ export default function RootLayout({
         {children}
         <CookieBanner />
         <ToastProvider />
-        <N8nChat />
+        <GenkitChat />
       </body>
     </html>
   );
