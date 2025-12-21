@@ -3,11 +3,15 @@ import { ai } from './ai';
 import { z } from 'genkit';
 import { getFirestore, QueryDocumentSnapshot } from 'firebase-admin/firestore'; 
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { gemini15Flash, gemini15Pro } from '@genkit-ai/googleai';
 
 // Initialize Firebase Admin if not already done
 if (getApps().length === 0) {
-  initializeApp();
+  try {
+    initializeApp();
+    console.log('Firebase Admin initialized successfully');
+  } catch (err) {
+    console.error('Firebase Admin initialization error:', err);
+  }
 }
 
 export const chatWithDocuments = ai.defineFlow(

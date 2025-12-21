@@ -14,17 +14,19 @@ type Message = {
 
 export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { role: 'model', content: "Bonjour ! Je suis l'assistant IA d'Oreegami. Posez-moi vos questions sur nos formations, l'IA ou le NoCode." }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isUploading, setIsLoadingUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
 
     useEffect(() => {
+        setMounted(true);
         const getUser = async () => {
              const { data: { session } } = await supabase.auth.getSession();
              setUser(session?.user ?? null);
@@ -37,7 +39,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
         const file = e.target.files?.[0];
         if (!file || !user) return;
 
-        setIsUploading(true);
+        setIsLoadingUploading(true);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('userEmail', user.email);
@@ -59,7 +61,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
             console.error(error);
             alert('Erreur réseau.');
         } finally {
-            setIsUploading(false);
+            setIsLoadingUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -69,8 +71,8 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
     };
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, isOpen]);
+        if (mounted) scrollToBottom();
+    }, [messages, isOpen, mounted]);
 
     const toggleChat = (state: boolean) => {
         setIsOpen(state);
@@ -90,8 +92,6 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
 
         try {
             // Prepare history for context (exclude last user message which is being sent)
-            // Genkit expects history in a specific format if needed, but for now we just send the question
-            // For a robust implementation, we should map local state to Genkit history format
             const history = messages.map(m => ({
                 role: m.role,
                 content: [{ text: m.content }]
@@ -102,21 +102,27 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     question: userMessage,
-                    history: history 
+                    history: history,
+                    tenantId: tenantId
                 }),
             });
 
-            if (!res.ok) throw new Error('Failed to fetch response');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to fetch response');
+            }
 
             const data = await res.json();
             setMessages(prev => [...prev, { role: 'model', content: data.text }]);
-        } catch (error) {
-            console.error(error);
-            setMessages(prev => [...prev, { role: 'model', content: "Désolé, une erreur est survenue. Veuillez réessayer." }]);
+        } catch (error: any) {
+            console.error('Chat Error:', error);
+            setMessages(prev => [...prev, { role: 'model', content: `Désolé, une erreur est survenue : ${error.message || 'Vérifiez la console.'}` }]);
         } finally {
             setIsLoading(false);
         }
     };
+
+    if (!mounted) return null;
 
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
@@ -132,7 +138,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                         {/* Header */}
                         <div className="p-5 bg-white/80 backdrop-blur-md border-b border-zinc-100 flex justify-between items-center sticky top-0 z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-linear-to-br from-orange-500 to-rose-500 rounded-xl rotate-3 shadow-lg flex items-center justify-center transform hover:rotate-6 transition-transform">
+                                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl rotate-3 shadow-lg flex items-center justify-center transform hover:rotate-6 transition-transform">
                                     <MessageSquare size={20} className="text-white" />
                                 </div>
                                 <div>
@@ -164,7 +170,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                                     <div 
                                         className={`max-w-[85%] mx-2 p-5 text-sm leading-relaxed shadow-sm ${
                                             msg.role === 'user' 
-                                                ? 'bg-linear-to-br from-orange-500 to-rose-600 text-white rounded-2xl rounded-tr-sm shadow-orange-500/20' 
+                                                ? 'bg-gradient-to-br from-orange-500 to-rose-600 text-white rounded-2xl rounded-tr-sm shadow-orange-500/20' 
                                                 : 'bg-white text-zinc-700 rounded-2xl rounded-tl-sm shadow-md border border-zinc-50'
                                         }`}
                                     >
@@ -236,27 +242,9 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                         </div>
 
                         {/* Input */}
-
-                        {/* Input */}
                         <div className="p-4 bg-white/50 backdrop-blur-sm">
                             <form 
-                                onSubmit={(e) => {
-                                    e.preventDefault();
-                                    // Manually call handleSubmit passing the event logic essentially
-                                    // Or better yet, just inline the logic here as the user wants
-                                    if (!input.trim() || isLoading) return;
-                                    const userMessage = input.trim();
-                                    setInput('');
-                                    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-                                    setIsLoading(true);
-                                    
-                                    chat([...messages, { role: 'user', content: userMessage }], tenantId).then((response: any) => {
-                                         setMessages(prev => [...prev, { role: 'model', content: response.text }]);
-                                    }).catch((err) => {
-                                         console.error(err);
-                                         setMessages(prev => [...prev, { role: 'model', content: "Désolé, une erreur est survenue." }]);
-                                    }).finally(() => setIsLoading(false));
-                                }} 
+                                onSubmit={handleSubmit} 
                                 className="relative flex items-center gap-2 p-1.5 bg-white rounded-full shadow-lg border border-zinc-100 ring-1 ring-zinc-50"
                             >
                                 <input 

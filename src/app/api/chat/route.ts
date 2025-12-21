@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 export async function POST(req: Request) {
   try {
     const { question, history, tenantId } = await req.json();
+    console.log(`Processing chat for tenant: ${tenantId}, question length: ${question?.length}`);
 
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
       history: history || [],
       tenantId: tenantId || 'oreegami', // Default to 'oreegami' if not provided (backward compatibility)
     });
+    console.log('Chat response generated successfully');
 
     return NextResponse.json({ text: response });
   } catch (error: any) {
