@@ -39,15 +39,19 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
 
         const getUser = async () => {
              const { data: { session } } = await supabase.auth.getSession();
-             if (session?.user) {
-                 const { data: profile } = await supabase
-                     .from('profiles')
-                     .select('age, experience_level, user_type')
-                     .eq('id', session.user.id)
-                     .single();
-                 
-                 setUser({ ...session.user, profile });
-             } else {
+              if (session?.user) {
+                  const { data: profile } = await supabase
+                      .from('profiles')
+                      .select('age, experience_level, user_type')
+                      .eq('id', session.user.id)
+                      .single();
+                  
+                  setUser({ 
+                      ...session.user, 
+                      profile,
+                      access_token: session.access_token 
+                  });
+              } else {
                  setUser(null);
              }
         };
@@ -117,9 +121,14 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                 content: [{ text: m.content }]
             }));
 
+            console.log('Sending chat request with userData:', user?.profile);
             const res = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    // Pass the access token if needed for identity propagation
+                    'Authorization': user?.access_token ? `Bearer ${user.access_token}` : ''
+                },
                 body: JSON.stringify({ 
                     question: userMessage,
                     history: history,
@@ -210,7 +219,8 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                                                     // Check for Markdown link: [text](url) or [text](url "title")
                                                     const mdMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
                                                     if (mdMatch) {
-                                                        const [_, text, fullUrl] = mdMatch;
+                                                        const [fullMatch, text, fullUrl] = mdMatch;
+                                                        console.log('Markdown link match:', fullMatch);
                                                         // Split by space to ignore legitimate markdown titles -> [text](url "title")
                                                         const url = fullUrl.trim().split(/\s+/)[0]; 
                                                         return (
