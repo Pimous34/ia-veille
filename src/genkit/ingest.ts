@@ -23,13 +23,14 @@ export const ingestDocuments = ai.defineFlow(
     name: 'ingestDocuments',
     inputSchema: z.object({
       driveFolderId: z.string().describe('ID of the Google Drive folder to index'),
+      tenantId: z.string().default('oreegami').describe('Tenant ID for multi-tenant isolation'),
     }),
     outputSchema: z.object({
       processedFiles: z.number(),
       errors: z.array(z.string()),
     }),
   },
-  async ({ driveFolderId }) => {
+  async ({ driveFolderId, tenantId }) => {
 
 
     const auth = new google.auth.GoogleAuth({
@@ -279,6 +280,7 @@ export const ingestDocuments = ai.defineFlow(
                 content: chunk,
                 embedding: FieldValue.vector(vector), // Requires Firestore Vector Search enabled
                 metadata: {
+                    tenantId: tenantId, // Multi-tenant isolation
                     source: 'google_drive',
                     fileId: file.id,
                     fileName: file.name,

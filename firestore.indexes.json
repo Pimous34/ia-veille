@@ -1,14 +1,22 @@
 {
-  "fieldOverrides": [
+  "indexes": [
     {
       "collectionGroup": "documents",
-      "fieldPath": "embedding",
-      "vectorIndexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "dimension": 768,
-          "flat": {}
+          "fieldPath": "metadata.tenantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "embedding",
+          "vectorConfig": {
+            "dimension": "768",
+            "flat": {}
+          }
         }
       ]
     }
-  ]
+  ],
+  "fieldOverrides": []
 }

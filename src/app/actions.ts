@@ -2,7 +2,7 @@
 
 import { chatWithDocuments } from '@/genkit/chat';
 
-export async function chat(history: any[]) {
+export async function chat(history: any[], tenantId: string = 'oreegami') {
   const lastMessage = history[history.length - 1];
   const question = lastMessage.content;
   const historyWithoutLast = history.slice(0, -1).map(h => ({
@@ -13,7 +13,8 @@ export async function chat(history: any[]) {
   try {
     const result = await chatWithDocuments({
       question,
-      history: historyWithoutLast
+      history: historyWithoutLast,
+      tenantId
     });
     return { text: result };
   } catch (error) {

@@ -16,10 +16,11 @@ export const chatWithDocuments = ai.defineFlow(
     inputSchema: z.object({
       question: z.string(),
       history: z.array(z.object({ role: z.enum(['user', 'model']), content: z.array(z.object({ text: z.string() })) })).optional(),
+      tenantId: z.string().default('oreegami'),
     }),
     outputSchema: z.string(),
   },
-  async ({ question, history }) => {
+  async ({ question, history, tenantId }) => {
     const db = getFirestore();
     
     // 1. Embed the user's question with the SAME model as ingestion
@@ -39,7 +40,8 @@ export const chatWithDocuments = ai.defineFlow(
     const vector = (embedding as any)[0].embedding;
     
     // findNearest(vectorField, queryVector, options)
-    const vectorQuery = coll.findNearest('embedding', vector, {
+    // Filter by tenantId BEFORE vector search for security and relevance
+    const vectorQuery = coll.where('metadata.tenantId', '==', tenantId).findNearest('embedding', vector, {
       limit: 5,
       distanceMeasure: 'COSINE',
     });

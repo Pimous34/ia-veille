@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { question, history } = await req.json();
+    const { question, history, tenantId } = await req.json();
 
     if (!question) {
       return NextResponse.json({ error: 'Question is required' }, { status: 400 });
@@ -14,6 +14,7 @@ export async function POST(req: Request) {
     const response = await chatWithDocuments({
       question,
       history: history || [],
+      tenantId: tenantId || 'oreegami', // Default to 'oreegami' if not provided (backward compatibility)
     });
 
     return NextResponse.json({ text: response });

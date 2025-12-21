@@ -12,7 +12,7 @@ type Message = {
     content: string;
 };
 
-export const GenkitChat = () => {
+export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { role: 'model', content: "Bonjour ! Je suis l'assistant IA d'Oreegami. Posez-moi vos questions sur nos formations, l'IA ou le NoCode." }
@@ -72,8 +72,15 @@ export const GenkitChat = () => {
         scrollToBottom();
     }, [messages, isOpen]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const toggleChat = (state: boolean) => {
+        setIsOpen(state);
+        if (typeof window !== 'undefined' && window.parent) {
+             window.parent.postMessage({ type: 'OREEGAMI_CHAT_RESIZE', isOpen: state }, '*');
+        }
+    };
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (!input.trim() || isLoading) return;
 
         const userMessage = input.trim();
@@ -140,7 +147,7 @@ export const GenkitChat = () => {
                                 </div>
                             </div>
                             <button 
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => toggleChat(false)}
                                 className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-600"
                             >
                                 <X size={20} />
@@ -243,7 +250,7 @@ export const GenkitChat = () => {
                                     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
                                     setIsLoading(true);
                                     
-                                    chat([...messages, { role: 'user', content: userMessage }]).then((response: any) => {
+                                    chat([...messages, { role: 'user', content: userMessage }], tenantId).then((response: any) => {
                                          setMessages(prev => [...prev, { role: 'model', content: response.text }]);
                                     }).catch((err) => {
                                          console.error(err);
@@ -308,7 +315,7 @@ export const GenkitChat = () => {
             <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => toggleChat(!isOpen)}
                 className="w-16 h-16 bg-gradient-to-br from-orange-500 to-rose-600 text-white rounded-blob shadow-2xl flex items-center justify-center hover:shadow-orange-500/30 transition-all focus:outline-none"
                 style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}
             >

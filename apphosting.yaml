@@ -1,0 +1,21 @@
+# Fichier de configuration pour Firebase App Hosting
+# Voir https://firebase.google.com/docs/app-hosting/configure
+
+kind: "AppHostingYaml"
+schemaVersion: "v1"
+
+# Configuration des ressources
+env:
+  - variable: GOOGLE_GENAI_API_KEY
+    secret: GOOGLE_GENAI_API_KEY # Le nom du secret dans Cloud Secret Manager
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: "https://pjiobifgcvdapikurlbn.supabase.co"
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
