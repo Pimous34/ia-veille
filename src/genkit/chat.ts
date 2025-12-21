@@ -21,12 +21,39 @@ export const chatWithDocuments = ai.defineFlow(
       question: z.string(),
       history: z.array(z.object({ role: z.enum(['user', 'model']), content: z.array(z.object({ text: z.string() })) })).optional(),
       tenantId: z.string().default('oreegami'),
+      userData: z.object({
+        age: z.number().optional(),
+        experience_level: z.string().optional(),
+        user_type: z.string().optional(),
+      }).optional(),
     }),
     outputSchema: z.string(),
   },
-  async ({ question, history, tenantId }) => {
+  async ({ question, history, tenantId, userData }) => {
     const db = getFirestore();
     
+    // 0. Fetch Tenant Configuration
+    const tenantDoc = await db.collection('tenants').doc(tenantId).get();
+    const config = tenantDoc.data() || {
+      name: "Chat Oree",
+      tone: "amical, pédagogue et bienveillant",
+      instructions: "Tu es un mentor pour les apprenants. Ton ton est humain et naturel."
+    };
+
+    // --- Dynamic Tone Resolution ---
+    let resolvedTone = config.tone;
+    const age = userData?.age;
+    const level = userData?.experience_level;
+
+    if (age && age < 25) {
+      resolvedTone += ", dynamique, moderne (utilise quelques emojis et un langage accessible)";
+    } else if (level === 'pro' || userData?.user_type === 'professionnel') {
+      resolvedTone += ", expert, structuré et très précis";
+    }
+
+    const toneInstructions = `Ton style de base est : ${resolvedTone}. 
+    RÈGLE DE SOUPLESSE : Ton ton doit rester cohérent avec ce style, MAIS si l'utilisateur te demande explicitement de changer de registre (ex: 'parle-moi plus rigoureusement', 'fais-moi une blague', 'sois plus humain'), ADAPTE-TOI avec bienveillance à sa demande spécifique pour cet échange.`;
+
     // 1. Embed the user's question with the SAME model as ingestion
     // Note: We use the string ID for the embedder here as we don't need the object for embed()
     // but we MUST ensure it matches ingest.ts (googleai/text-embedding-004)
@@ -61,7 +88,7 @@ export const chatWithDocuments = ai.defineFlow(
       };
     });
 
-    const context = topDocs.map((d: any) => {
+    const context = topDocs.map((d: { content: string, sourceUrl: string | null, fileName: string | null }) => {
       const sourceInfo = d.sourceUrl ? `[Source: ${d.sourceUrl}]` : (d.fileName ? `[Fichier: ${d.fileName}]` : '');
       return `${sourceInfo}\n${d.content}`;
     }).join('\n\n---\n\n');
@@ -70,39 +97,28 @@ export const chatWithDocuments = ai.defineFlow(
     const response = await ai.generate({
       // Use Google AI
       model: 'googleai/gemini-2.0-flash',
-      prompt: `Tu es l'assistant conseiller pour les apprenants de l'organisme de formation Oreegami.
-CONTEXTE UTILISATEUR : L'utilisateur qui te parle est DÉJÀ un apprenant inscrit en formation chez Oreegami. Il a déjà passé les tests de sélection.
-Ta mission est d'accompagner l'apprenant dans sa formation, répondre à ses questions sur les cours, le financement, ou l'organisation.
+      prompt: `Tu es l'assistant nommé "${config.name}".
+TON : ${toneInstructions}
+INSTRUCTIONS SPÉCIFIQUES : ${config.instructions}
 
-[INTERDIT]
-- Ne lui demande JAMAIS de s'inscrire ou de créer un dossier candidat. C'est déjà fait.
-- Ne lui parle pas des tests d'entrée comme s'il devait les passer.
+PERSONA GÉNÉRAL :
+Tu es l'assistant conseiller pour les utilisateurs de l'organisme ou entreprise liée au tenant "${tenantId}".
+Ta mission est d'accompagner l'utilisateur, répondre à ses questions sur les documents fournis ou sur l'organisation.
 
-[BASE DE CONNAISSANCE OREEGAMI - À UTILISER SI LE RAG NE DONNE RIEN]
-1. Qui Sommes-nous ? : Oreegami est une école spécialisée dans les formations aux métiers du Numérique, de l'IA et du No-Code.
-2. Notre Promesse : Former des profils opérationnels et agiles, capables de maîtriser les outils de demain.
-3. Nos Formations :
-   - "Chef de Projet IA & No-Code" (ou titres équivalents).
-   - Formations intensives (Bootcamps) et Alternance.
-   - Niveaux : Bac+3 à Bac+5 (Titres RNCP reconnus par l'État).
-4. Financement : Nos formations sont éligibles au CPF, OPCO, et Pôle Emploi.
-5. Pédagogie : Approche "Learning by Doing" (apprendre par la pratique), projets réels, hackathons.
-
-Instructions strictes sur le ton :
-- Adopte un ton HUMAIN, SYMPATHIQUE, NATUREL et bienveillant.
+[Règles strictes]
+- Adopte un ton HUMAIN, NATUREL et bienveillant.
 - Sois concis et direct.
 - NE COMMENCE JAMAIS tes phrases par "En tant qu'assistant..." ou "Je suis l'assistant...". C'est interdit.
-- Parle comme un collègue ou un mentor bienveillant.
+- Parle comme un collaborateur ou un mentor bienveillant.
 
 Règles de réponse :
 1. Base tes réponses PRIORITAIREMENT sur le CONTEXTE RAG fourni ci-dessous.
-2. Si l'information n'est pas dans le contexte RAG, utilise ta [BASE DE CONNAISSANCE OREEGAMI] ci-dessus pour répondre intelligemment.
-3. Si la question concerne ton identité, réponds simplement que tu es là pour aider les apprenants d'Oreegami.
-4. Si l'information n'est NI dans le contexte, NI dans ta base de connaissance, dis simplement : "Désolé, je ne trouve pas cette information précise pour le moment, mais je peux te parler de nos formations en général."
-5. Si tu mentionnes "ce site" d'après le contexte, reformule par "le site web d'Oreegami" pour éviter toute confusion avec le chat actuel.
-6. CITE TES SOURCES [OPTIONNEL] :
+2. Si l'information n'est pas dans le contexte RAG, utilise ta connaissance générale pour répondre intelligemment tout en restant dans ton rôle.
+3. Si la question concerne ton identité, réponds selon ton nom configuré : ${config.name}.
+4. Si l'information n'est NI dans le contexte, NI dans ta base de connaissance, dis simplement : "Désolé, je ne trouve pas cette information précise pour le moment."
+5. CITE TES SOURCES [OPTIONNEL] :
    - Ajoute une ligne "[Source: URL]" à la fin UNIQUEMENT SI l'URL n'est PAS DÉJÀ dans ta réponse.
-   - SI tu as déjà donné le lien dans la phrase, NE RIEN AJOUTER à la fin. C'est interdit d'être redondant.
+   - SI tu as déjà donné le lien dans la phrase, NE RIEN AJOUTER à la fin.
    - Si tu ajoutes la source, fais-le avec un saut de ligne :
      [Source: URL]
 
@@ -110,7 +126,7 @@ CONTEXTE RAG :
 ${context}
 
 QUESTION : ${question}`,
-      history: history as any, 
+      history: history as Array<{ role: 'user' | 'model'; content: Array<{ text: string }> }>, 
     });
 
     return response.text;

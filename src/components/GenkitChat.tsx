@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, X, MessageSquare, Loader2, Paperclip } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
-import { chat } from '@/app/actions';
 
 type Message = {
     role: 'user' | 'model';
@@ -15,9 +14,8 @@ type Message = {
 export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        { role: 'model', content: "Bonjour ! Je suis l'assistant IA d'Oreegami. Posez-moi vos questions sur nos formations, l'IA ou le NoCode." }
-    ]);
+    const [tenantConfig, setTenantConfig] = useState<any>(null);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<any>(null);
@@ -27,12 +25,34 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
 
     useEffect(() => {
         setMounted(true);
+        
+        // Fetch Tenant Config
+        fetch(`/api/tenant-config?tenantId=${tenantId}`)
+            .then(res => res.json())
+            .then(data => {
+                setTenantConfig(data);
+                if (messages.length === 0) {
+                    setMessages([{ role: 'model', content: data.systemGreeting || "Bonjour ! Comment puis-je vous aider ?" }]);
+                }
+            })
+            .catch(err => console.error("Config fetch error:", err));
+
         const getUser = async () => {
              const { data: { session } } = await supabase.auth.getSession();
-             setUser(session?.user ?? null);
+             if (session?.user) {
+                 const { data: profile } = await supabase
+                     .from('profiles')
+                     .select('age, experience_level, user_type')
+                     .eq('id', session.user.id)
+                     .single();
+                 
+                 setUser({ ...session.user, profile });
+             } else {
+                 setUser(null);
+             }
         };
         getUser();
-    }, [supabase]);
+    }, [supabase, tenantId]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,7 +123,12 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                 body: JSON.stringify({ 
                     question: userMessage,
                     history: history,
-                    tenantId: tenantId
+                    tenantId: tenantId,
+                    userData: user?.profile ? {
+                        age: user.profile.age,
+                        experience_level: user.profile.experience_level,
+                        user_type: user.profile.user_type
+                    } : undefined
                 }),
             });
 
@@ -138,11 +163,16 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                         {/* Header */}
                         <div className="p-5 bg-white/80 backdrop-blur-md border-b border-zinc-100 flex justify-between items-center sticky top-0 z-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl rotate-3 shadow-lg flex items-center justify-center transform hover:rotate-6 transition-transform">
+                                <div 
+                                    className="w-10 h-10 rounded-xl rotate-3 shadow-lg flex items-center justify-center transform hover:rotate-6 transition-transform"
+                                    style={{ background: tenantConfig?.primaryColor || 'linear-gradient(to bottom right, #f97316, #e11d48)' }}
+                                >
                                     <MessageSquare size={20} className="text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-zinc-800 text-lg leading-tight">Chat Oree</h3>
+                                    <h3 className="font-bold text-zinc-800 text-lg leading-tight">
+                                        {tenantConfig?.name || 'Chat Oree'}
+                                    </h3>
                                     <p className="text-xs text-zinc-500 font-medium flex items-center gap-1.5">
                                         <span className="relative flex h-2 w-2">
                                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -175,7 +205,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                                         }`}
                                     >
                                         {msg.content.split('\n').map((line, i) => (
-                                            <p key={i} className="min-h-[1em] mb-2 last:mb-0 break-words">
+                                            <p key={i} className="min-h-[1em] mb-2 last:mb-0 wrap-break-word">
                                                 {line.split(/(\[[^\]]+\]\([^)]+\))/g).map((part, j) => {
                                                     // Check for Markdown link: [text](url) or [text](url "title")
                                                     const mdMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
@@ -304,7 +334,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => toggleChat(!isOpen)}
-                className="w-16 h-16 bg-gradient-to-br from-orange-500 to-rose-600 text-white rounded-blob shadow-2xl flex items-center justify-center hover:shadow-orange-500/30 transition-all focus:outline-none"
+                className="w-16 h-16 bg-linear-to-br from-orange-500 to-rose-600 text-white rounded-blob shadow-2xl flex items-center justify-center hover:shadow-orange-500/30 transition-all focus:outline-none"
                 style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}
             >
                 {isOpen ? <X size={28} /> : <MessageSquare size={28} />}
