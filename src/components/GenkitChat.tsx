@@ -48,8 +48,7 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                   
                   setUser({ 
                       ...session.user, 
-                      profile,
-                      access_token: session.access_token 
+                      profile
                   });
               } else {
                  setUser(null);
