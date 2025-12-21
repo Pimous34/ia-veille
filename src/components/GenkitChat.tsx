@@ -121,13 +121,10 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                 content: [{ text: m.content }]
             }));
 
-            console.log('Sending chat request with userData:', user?.profile);
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json',
-                    // Pass the access token if needed for identity propagation
-                    'Authorization': user?.access_token ? `Bearer ${user.access_token}` : ''
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ 
                     question: userMessage,
