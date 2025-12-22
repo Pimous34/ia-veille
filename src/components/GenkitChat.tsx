@@ -11,8 +11,14 @@ type Message = {
     content: string;
 };
 
-export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => {
-    const [isOpen, setIsOpen] = useState(false);
+export const GenkitChat = ({ 
+    tenantId = 'oreegami', 
+    standalone = false 
+}: { 
+    tenantId?: string;
+    standalone?: boolean;
+}) => {
+    const [isOpen, setIsOpen] = useState(standalone);
     const [mounted, setMounted] = useState(false);
     const [tenantConfig, setTenantConfig] = useState<any>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -144,9 +150,10 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
 
             const data = await res.json();
             setMessages(prev => [...prev, { role: 'model', content: data.text }]);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Désolée, une erreur est survenue.';
             console.error('Chat Error:', error);
-            setMessages(prev => [...prev, { role: 'model', content: `Désolé, une erreur est survenue : ${error.message || 'Vérifiez la console.'}` }]);
+            setMessages(prev => [...prev, { role: 'model', content: `Désolé, une erreur est survenue : ${errorMessage}` }]);
         } finally {
             setIsLoading(false);
         }
@@ -155,15 +162,21 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
     if (!mounted) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+        <div className={standalone 
+            ? "w-full h-full flex flex-col font-sans overflow-hidden bg-zinc-50" 
+            : "fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans"
+        }>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={standalone ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        exit={standalone ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="mb-4 w-[380px] h-[600px] max-h-[80vh] bg-zinc-50 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/50 backdrop-blur-sm"
+                        className={standalone 
+                            ? "w-full h-full flex flex-col overflow-hidden"
+                            : "mb-4 w-[380px] h-[600px] max-h-[80vh] bg-zinc-50 rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-white/50 backdrop-blur-sm"
+                        }
                     >
                         {/* Header */}
                         <div className="p-5 bg-white/80 backdrop-blur-md border-b border-zinc-100 flex justify-between items-center sticky top-0 z-10">
@@ -187,12 +200,14 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                                     </p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => toggleChat(false)}
-                                className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-600"
-                            >
-                                <X size={20} />
-                            </button>
+                            {!standalone && (
+                                <button 
+                                    onClick={() => toggleChat(false)}
+                                    className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-600"
+                                >
+                                    <X size={20} />
+                                </button>
+                            )}
                         </div>
 
                         {/* Messages */}
@@ -335,16 +350,17 @@ export const GenkitChat = ({ tenantId = 'oreegami' }: { tenantId?: string }) => 
                 )}
             </AnimatePresence>
 
-            {/* Toggle Button */}
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => toggleChat(!isOpen)}
-                className="w-16 h-16 bg-linear-to-br from-orange-500 to-rose-600 text-white rounded-blob shadow-2xl flex items-center justify-center hover:shadow-orange-500/30 transition-all focus:outline-none"
-                style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}
-            >
-                {isOpen ? <X size={28} /> : <MessageSquare size={28} />}
-            </motion.button>
+            {!standalone && (
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleChat(!isOpen)}
+                    className="w-16 h-16 bg-linear-to-br from-orange-500 to-rose-600 text-white rounded-blob shadow-2xl flex items-center justify-center hover:shadow-orange-500/30 transition-all focus:outline-none"
+                    style={{ borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' }}
+                >
+                    {isOpen ? <X size={28} /> : <MessageSquare size={28} />}
+                </motion.button>
+            )}
         </div>
     );
 };
