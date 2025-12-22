@@ -52,3 +52,9 @@ supabase/.temp/
 # firebase
 .firebase/
 service-account.json
+
+# Tooling
+fix-env.js
+
+
+
