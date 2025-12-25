@@ -14,6 +14,29 @@ if (getApps().length === 0) {
   }
 }
 
+
+// Helper for embedding with retry logic
+async function embedWithRetry(content: string, embedder: string, taskType: 'RETRIEVAL_QUERY' | 'RETRIEVAL_DOCUMENT', retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await ai.embed({
+        embedder,
+        content,
+        options: { taskType }
+      });
+    } catch (err: any) {
+      if (i === retries - 1) throw err;
+      const is500 = err.message?.includes('500') || err.stack?.includes('500');
+      if (is500) {
+        console.warn(`[Retry ${i + 1}/${retries}] Embedding failed with 500, retrying in 1s...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 export const chatWithDocuments = ai.defineFlow(
   {
     name: 'chatWithDocuments',
@@ -57,10 +80,7 @@ export const chatWithDocuments = ai.defineFlow(
     // 1. Embed the user's question with the SAME model as ingestion
     // Note: We use the string ID for the embedder here as we don't need the object for embed()
     // but we MUST ensure it matches ingest.ts (googleai/text-embedding-004)
-    const embedding = await ai.embed({
-      embedder: 'googleai/text-embedding-004', 
-      content: question,
-    });
+    const embedding = await embedWithRetry(question, 'googleai/text-embedding-004', 'RETRIEVAL_QUERY');
 
     // 2. Perform Firestore Vector Search (Native)
     // This requires the vector index to be enabled (firestore.indexes.json)

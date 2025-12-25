@@ -11,6 +11,28 @@ if (getApps().length === 0) {
   initializeApp();
 }
 
+// Helper for embedding with retry logic
+async function embedWithRetry(content: string, embedder: string, taskType: 'RETRIEVAL_QUERY' | 'RETRIEVAL_DOCUMENT', retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await ai.embed({
+        embedder,
+        content,
+        options: { taskType }
+      });
+    } catch (err: any) {
+      if (i === retries - 1) throw err;
+      const is500 = err.message?.includes('500') || err.stack?.includes('500');
+      if (is500) {
+        console.warn(`[Retry ${i + 1}/${retries}] Embedding failed with 500, retrying in 1s...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 /**
  * Ingests documents from a Google Drive folder into Firestore Vector Store.
  * 
@@ -223,10 +245,7 @@ export const ingestDocuments = ai.defineFlow(
                         const chunk = pageChunks[i];
                         if (chunk.length < 50) continue; // Skip tiny chunks
 
-                        const embedding = await ai.embed({
-                            embedder: 'googleai/text-embedding-004', 
-                            content: chunk,
-                        });
+                        const embedding = await embedWithRetry(chunk, 'googleai/text-embedding-004', 'RETRIEVAL_DOCUMENT');
                         const vector = (embedding as any)[0].embedding as number[];
                         
                          if (vector.some(isNaN)) continue;
@@ -260,10 +279,7 @@ export const ingestDocuments = ai.defineFlow(
         for (let i = 0; i < chunks.length; i++) {
             const chunk = chunks[i];
             console.log(`Embedding chunk of length ${chunk.length}...`);
-            const embedding = await ai.embed({
-                embedder: 'googleai/text-embedding-004', 
-                content: chunk,
-            });
+            const embedding = await embedWithRetry(chunk, 'googleai/text-embedding-004', 'RETRIEVAL_DOCUMENT');
             
             // Fix: ai.embed returns [{ embedding: [...] }]
             const vectorRaw = (embedding as any)[0].embedding;
