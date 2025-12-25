@@ -24,9 +24,10 @@ async function embedWithRetry(content: string, embedder: string, taskType: 'RETR
         content,
         options: { taskType }
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (i === retries - 1) throw err;
-      const is500 = err.message?.includes('500') || err.stack?.includes('500');
+      const message = err instanceof Error ? err.message : String(err);
+      const is500 = message.includes('500');
       if (is500) {
         console.warn(`[Retry ${i + 1}/${retries}] Embedding failed with 500, retrying in 1s...`);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -45,10 +46,12 @@ export const chatWithDocuments = ai.defineFlow(
       history: z.array(z.object({ role: z.enum(['user', 'model']), content: z.array(z.object({ text: z.string() })) })).optional(),
       tenantId: z.string().default('oreegami'),
       userData: z.object({
-        age: z.number().optional(),
-        experience_level: z.string().optional(),
-        user_type: z.string().optional(),
-      }).optional(),
+        profile: z.object({
+            age: z.number().optional(),
+            experience_level: z.string().optional(),
+            user_type: z.string().optional(),
+        }),
+      }).nullable().default(null),
     }),
     outputSchema: z.string(),
   },
@@ -65,12 +68,12 @@ export const chatWithDocuments = ai.defineFlow(
 
     // --- Dynamic Tone Resolution ---
     let resolvedTone = config.tone;
-    const age = userData?.age;
-    const level = userData?.experience_level;
+    const age = userData?.profile?.age;
+    const level = userData?.profile?.experience_level;
 
     if (age && age < 25) {
       resolvedTone += ", dynamique, moderne (utilise quelques emojis et un langage accessible)";
-    } else if (level === 'pro' || userData?.user_type === 'professionnel') {
+    } else if (level === 'pro' || userData?.profile?.user_type === 'professionnel') {
       resolvedTone += ", expert, structuré et très précis";
     }
 
@@ -88,7 +91,7 @@ export const chatWithDocuments = ai.defineFlow(
     
     // Fix: ai.embed returns [{ embedding: [...] }]
     // we need to extract the actual vector (array of objects -> object -> valid vector)
-    const vector = (embedding as any)[0].embedding;
+    const vector = (embedding as { embedding: number[] }[])[0].embedding;
     
     // findNearest(vectorField, queryVector, options)
     // Filter by tenantId BEFORE vector search for security and relevance

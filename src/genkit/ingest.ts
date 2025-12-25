@@ -20,9 +20,10 @@ async function embedWithRetry(content: string, embedder: string, taskType: 'RETR
         content,
         options: { taskType }
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (i === retries - 1) throw err;
-      const is500 = err.message?.includes('500') || err.stack?.includes('500');
+      const message = err instanceof Error ? err.message : String(err);
+      const is500 = message.includes('500');
       if (is500) {
         console.warn(`[Retry ${i + 1}/${retries}] Embedding failed with 500, retrying in 1s...`);
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -87,7 +88,7 @@ export const ingestDocuments = ai.defineFlow(
             .get();
 
         if (!existingDocsSnapshot.empty) {
-            const existingDoc = existingDocsSnapshot.docs[0].data();
+            const existingDoc = existingDocsSnapshot.docs[0].data() as { metadata?: { md5Checksum?: string; version?: string } };
             const storedChecksum = existingDoc.metadata?.md5Checksum;
             const storedVersion = existingDoc.metadata?.version;
 
@@ -133,9 +134,9 @@ export const ingestDocuments = ai.defineFlow(
 
           textContent = await new Promise<string>((resolve, reject) => {
              let data = '';
-             exportRes.data.on('data', (chunk: any) => data += chunk);
+             exportRes.data.on('data', (chunk: Buffer) => data += chunk.toString());
              exportRes.data.on('end', () => resolve(data));
-             exportRes.data.on('error', (err: any) => reject(err));
+             exportRes.data.on('error', (err: Error) => reject(err));
           });
         } else if (file.mimeType === 'text/plain') {
            // Download text files
@@ -146,9 +147,9 @@ export const ingestDocuments = ai.defineFlow(
 
            textContent = await new Promise<string>((resolve, reject) => {
              let data = '';
-             contentRes.data.on('data', (chunk: any) => data += chunk);
+             contentRes.data.on('data', (chunk: Buffer) => data += chunk.toString());
              contentRes.data.on('end', () => resolve(data));
-             contentRes.data.on('error', (err: any) => reject(err));
+             contentRes.data.on('error', (err: Error) => reject(err));
           });
         } else if (file.mimeType === 'application/pdf') {
              // Convert PDF to Google Doc (Temporary) to extract text via OCR

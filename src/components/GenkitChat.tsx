@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, X, MessageSquare, Loader2, Paperclip } from 'lucide-react';
+import { Send, X, MessageSquare, Loader2, Paperclip, Settings, Save, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 
@@ -20,11 +20,32 @@ export const GenkitChat = ({
 }) => {
     const [isOpen, setIsOpen] = useState(standalone);
     const [mounted, setMounted] = useState(false);
-    const [tenantConfig, setTenantConfig] = useState<any>(null);
+    const [tenantConfig, setTenantConfig] = useState<{
+        name?: string;
+        systemGreeting?: string;
+        primaryColor?: string;
+        driveFolderId?: string;
+    } | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<{
+        id: string;
+        email: string;
+        profile: {
+            age?: number;
+            experience_level?: string;
+            user_type?: string;
+        } | null;
+    } | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isSavingConfig, setIsSavingConfig] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [configForm, setConfigForm] = useState({
+        primaryColor: '',
+        systemGreeting: '',
+        driveFolderId: ''
+    });
     const [isUploading, setIsLoadingUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const supabase = createClient();
@@ -37,6 +58,11 @@ export const GenkitChat = ({
             .then(res => res.json())
             .then(data => {
                 setTenantConfig(data);
+                setConfigForm({
+                    primaryColor: data.primaryColor || '#f97316',
+                    systemGreeting: data.systemGreeting || "Bonjour ! Comment puis-je vous aider ?",
+                    driveFolderId: data.driveFolderId || ''
+                });
                 if (messages.length === 0) {
                     setMessages([{ role: 'model', content: data.systemGreeting || "Bonjour ! Comment puis-je vous aider ?" }]);
                 }
@@ -52,16 +78,17 @@ export const GenkitChat = ({
                       .eq('id', session.user.id)
                       .single();
                   
-                  setUser({ 
-                      ...session.user, 
-                      profile
-                  });
+                   setUser({ 
+                       id: session.user.id,
+                       email: session.user.email!,
+                       profile: (profile as { age?: number; experience_level?: string; user_type?: string }) || null
+                   });
               } else {
                  setUser(null);
              }
         };
         getUser();
-    }, [supabase, tenantId]);
+    }, [supabase, tenantId, messages.length]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,6 +186,61 @@ export const GenkitChat = ({
         }
     };
 
+    const handleSaveConfig = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSavingConfig(true);
+        try {
+            const res = await fetch('/api/admin-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tenantId,
+                    config: configForm
+                }),
+            });
+            if (res.ok) {
+                setTenantConfig(prev => prev ? { ...prev, ...configForm } : null);
+                setIsSettingsOpen(false);
+            } else {
+                const data = await res.json();
+                alert('Erreur: ' + data.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erreur lors de la sauvegarde.');
+        } finally {
+            setIsSavingConfig(false);
+        }
+    };
+
+    const handleSyncDrive = async () => {
+        if (!configForm.driveFolderId) return;
+        setIsSyncing(true);
+        try {
+            const res = await fetch('/api/ingest-drive', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tenantId,
+                    driveFolderId: configForm.driveFolderId
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Synchronisation terminée : ${data.processedFiles} fichiers traités.`);
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erreur lors de la synchronisation.');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const isAdmin = user?.profile?.user_type === 'admin' || user?.profile?.user_type === 'teacher';
+
     if (!mounted) return null;
 
     return (
@@ -200,18 +282,114 @@ export const GenkitChat = ({
                                     </p>
                                 </div>
                             </div>
-                            {!standalone && (
-                                <button 
-                                    onClick={() => toggleChat(false)}
-                                    className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-600"
-                                >
-                                    <X size={20} />
-                                </button>
-                            )}
+                            <div className="flex items-center gap-1">
+                                {isAdmin && (
+                                    <button 
+                                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                        className={`p-2 rounded-full transition-colors ${isSettingsOpen ? 'bg-orange-100 text-orange-600' : 'hover:bg-zinc-100 text-zinc-400'}`}
+                                        title="Paramètres Admin"
+                                    >
+                                        <Settings size={20} />
+                                    </button>
+                                )}
+                                {!standalone && (
+                                    <button 
+                                        onClick={() => toggleChat(false)}
+                                        className="p-2 hover:bg-zinc-100 rounded-full transition-colors text-zinc-400 hover:text-zinc-600"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                        {/* Content Area */}
+                        {isSettingsOpen ? (
+                            <div className="flex-1 overflow-y-auto p-6 bg-white space-y-6 animate-in fade-in duration-200">
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-zinc-800 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-orange-500 rounded-full"></div>
+                                        Apparence
+                                    </h4>
+                                    
+                                    <div className="space-y-3">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Couleur Primaire</label>
+                                        <div className="flex gap-2">
+                                            {['#f97316', '#e11d48', '#8b5cf6', '#0ea5e9', '#10b981', '#18181b'].map(color => (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => setConfigForm(prev => ({ ...prev, primaryColor: color }))}
+                                                    className={`w-8 h-8 rounded-lg border-2 transition-all ${configForm.primaryColor === color ? 'border-zinc-900 scale-110 shadow-md' : 'border-transparent'}`}
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                            <input 
+                                                type="color" 
+                                                value={configForm.primaryColor}
+                                                onChange={(e) => setConfigForm(prev => ({ ...prev, primaryColor: e.target.value }))}
+                                                className="w-8 h-8 rounded-lg bg-zinc-50 border border-zinc-200 cursor-pointer overflow-hidden p-0"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider">Message de bienvenue</label>
+                                        <textarea 
+                                            value={configForm.systemGreeting}
+                                            onChange={(e) => setConfigForm(prev => ({ ...prev, systemGreeting: e.target.value }))}
+                                            className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all h-24 resize-none text-zinc-700"
+                                            placeholder="Bonjour ! Comment puis-je vous aider ?"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="font-bold text-zinc-800 flex items-center gap-2">
+                                        <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+                                        Source de données
+                                    </h4>
+                                    
+                                    <div className="space-y-3">
+                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider text-blue-600 flex justify-between items-center">
+                                            Google Drive Folder ID
+                                            <button 
+                                                onClick={handleSyncDrive}
+                                                disabled={isSyncing || !configForm.driveFolderId}
+                                                className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                                            >
+                                                {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                                                Sync
+                                            </button>
+                                        </label>
+                                        <input 
+                                            type="text" 
+                                            value={configForm.driveFolderId}
+                                            onChange={(e) => setConfigForm(prev => ({ ...prev, driveFolderId: e.target.value }))}
+                                            className="w-full p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-zinc-700"
+                                            placeholder="Ex: 1f4zikRox4qnnT8IkC12..."
+                                        />
+                                        <p className="text-[10px] text-zinc-400 italic">L&apos;ID du dossier se trouve à la fin de l&apos;URL Google Drive.</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleSaveConfig}
+                                    disabled={isSavingConfig}
+                                    className="w-full py-3 bg-zinc-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-zinc-800 disabled:opacity-50 transition-all shadow-lg active:scale-[0.98]"
+                                >
+                                    {isSavingConfig ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                    Sauvegarder les paramètres
+                                </button>
+                                
+                                <button
+                                    onClick={() => setIsSettingsOpen(false)}
+                                    className="w-full py-2 text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto p-5 space-y-6">
                             {messages.map((msg, idx) => (
                                 <div 
                                     key={idx} 
@@ -291,9 +469,11 @@ export const GenkitChat = ({
                             )}
                             <div ref={messagesEndRef} />
                         </div>
+                        )}
 
                         {/* Input */}
-                        <div className="p-4 bg-white/50 backdrop-blur-sm">
+                        {!isSettingsOpen && (
+                            <div className="p-4 bg-white/50 backdrop-blur-sm">
                             <form 
                                 onSubmit={handleSubmit} 
                                 className="relative flex items-center gap-2 p-1.5 bg-white rounded-full shadow-lg border border-zinc-100 ring-1 ring-zinc-50"
@@ -346,6 +526,7 @@ export const GenkitChat = ({
                                 <span className="text-[10px] text-zinc-300 font-medium">Oreegami Assistant Intelligence</span>
                             </div>
                         </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

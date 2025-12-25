@@ -24,9 +24,10 @@ export async function GET(req: Request) {
     return NextResponse.json({
       name: data?.name || "Assistant",
       systemGreeting: data?.systemGreeting || "Bonjour !",
-      primaryColor: data?.primaryColor || "#FF5733"
+      primaryColor: data?.primaryColor || "#FF5733",
+      driveFolderId: data?.driveFolderId || ""
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching tenant config:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
