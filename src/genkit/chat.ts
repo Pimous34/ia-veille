@@ -119,7 +119,7 @@ export const chatWithDocuments = ai.defineFlow(
     // 3. Generate the answer with Gemini
     const response = await ai.generate({
       // Use Google AI
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-2.0-flash-exp',
       prompt: `Tu es l'assistant nommé "${config.name}".
 TON : ${toneInstructions}
 INSTRUCTIONS SPÉCIFIQUES : ${config.instructions}
