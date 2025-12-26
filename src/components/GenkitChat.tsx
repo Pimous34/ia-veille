@@ -13,10 +13,12 @@ type Message = {
 
 export const GenkitChat = ({ 
     tenantId = 'oreegami', 
-    standalone = false 
+    standalone = false,
+    adminMode = false
 }: { 
     tenantId?: string;
     standalone?: boolean;
+    adminMode?: boolean;
 }) => {
     const [isOpen, setIsOpen] = useState(standalone);
     const [mounted, setMounted] = useState(false);
@@ -283,7 +285,7 @@ export const GenkitChat = ({
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                {isAdmin && (
+                                {(isAdmin || adminMode) && (
                                     <button 
                                         onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                                         className={`p-2 rounded-full transition-colors ${isSettingsOpen ? 'bg-orange-100 text-orange-600' : 'hover:bg-zinc-100 text-zinc-400'}`}
@@ -306,6 +308,44 @@ export const GenkitChat = ({
                         {/* Content Area */}
                         {isSettingsOpen ? (
                             <div className="flex-1 overflow-y-auto p-6 bg-white space-y-6 animate-in fade-in duration-200">
+                                {!user ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                                        <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+                                            <Settings size={32} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-zinc-800">Accès restreint</h4>
+                                            <p className="text-sm text-zinc-500">Veuillez vous connecter pour administrer le chatbot.</p>
+                                        </div>
+                                        <a 
+                                            href="/teacher" 
+                                            target="_blank"
+                                            className="px-6 py-2 bg-zinc-900 text-white rounded-xl font-medium text-sm hover:bg-zinc-800 transition-all"
+                                        >
+                                            Se connecter
+                                        </a>
+                                        <button
+                                            onClick={() => setIsSettingsOpen(false)}
+                                            className="text-xs text-zinc-400 hover:text-zinc-600 underline"
+                                        >
+                                            Retour au chat
+                                        </button>
+                                    </div>
+                                ) : !isAdmin ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+                                            <X size={32} />
+                                        </div>
+                                        <p className="text-sm text-zinc-600">Vous n&apos;avez pas les droits nécessaires pour modifier la configuration.</p>
+                                        <button
+                                            onClick={() => setIsSettingsOpen(false)}
+                                            className="px-6 py-2 bg-zinc-100 text-zinc-600 rounded-xl font-medium text-sm"
+                                        >
+                                            Fermer
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
                                 <div className="space-y-4">
                                     <h4 className="font-bold text-zinc-800 flex items-center gap-2">
                                         <div className="w-1.5 h-4 bg-orange-500 rounded-full"></div>
@@ -387,6 +427,8 @@ export const GenkitChat = ({
                                 >
                                     Annuler
                                 </button>
+                                </>
+                                )}
                             </div>
                         ) : (
                             <div className="flex-1 overflow-y-auto p-5 space-y-6">

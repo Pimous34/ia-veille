@@ -7,10 +7,11 @@ import { Suspense } from 'react';
 function ChatEmbedContent() {
     const searchParams = useSearchParams();
     const tenantId = searchParams.get('tenant') || 'oreegami';
+    const adminMode = searchParams.get('admin') === '1';
 
     return (
         <main className="w-screen h-screen overflow-hidden">
-            <GenkitChat tenantId={tenantId} standalone={true} />
+            <GenkitChat tenantId={tenantId} standalone={true} adminMode={adminMode} />
         </main>
     );
 }
