@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Send, X, MessageSquare, Loader2, Paperclip, Settings, Save, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
@@ -20,6 +21,7 @@ export const GenkitChat = ({
     standalone?: boolean;
     adminMode?: boolean;
 }) => {
+    const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(standalone);
     const [mounted, setMounted] = useState(false);
     const [tenantConfig, setTenantConfig] = useState<{
@@ -244,6 +246,9 @@ export const GenkitChat = ({
     const isAdmin = user?.profile?.user_type === 'admin' || user?.profile?.user_type === 'teacher';
 
     if (!mounted) return null;
+
+    // 🛡️ RECURSION STOPPER: Don't render the floating widget on the embed page itself
+    if (pathname?.startsWith('/embed') && !standalone) return null;
 
     return (
         <div className={standalone 
