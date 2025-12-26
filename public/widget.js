@@ -2,6 +2,10 @@
 (function() {
   const script = document.currentScript;
   const tenantId = script.getAttribute('data-tenant-id') || 'oreegami';
+  
+  // 🛡️ RECURSION GUARD: Do not load if inside the embed page
+  if (window.location.href.includes('/embed')) return;
+
   // Check if we are in dev (localhost) or prod
   // For now, assuming the script is served from the same domain as the iframe for this test
   // Ideally this URL is hardcoded to the production URL, e.g. https://ia-veille.vercel.app/embed
