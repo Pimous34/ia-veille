@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { calendar, calendarId } from '@/lib/google-calendar';
-import { startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, format, addDays } from 'date-fns';
+import { endOfMonth, eachDayOfInterval } from 'date-fns';
 
 export async function GET(request: Request) {
   try {
@@ -20,16 +20,14 @@ export async function GET(request: Request) {
 
     const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate });
 
-    // Récupérer les événements existants pour tout le mois pour optimiser
-    const eventsResponse = await calendar.events.list({
+    // Récupérer les événements existants pour tout le mois pour optimiser (Préparatoire pour future logique)
+    await calendar.events.list({
       calendarId,
       timeMin: startDate.toISOString(),
       timeMax: endDate.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
-
-    const events = eventsResponse.data.items || [];
 
     // Logique simplifiée : Vérifier si le jour est un jour de semaine (Mon-Fri)
     // Pour une vraie dispo, il faudrait vérifier slot par slot, mais ici on fait un premier filtre.
