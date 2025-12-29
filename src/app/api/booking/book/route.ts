@@ -1,11 +1,12 @@
 
 import { NextResponse } from 'next/server';
-import { calendar, calendarId } from '@/lib/google-calendar';
+import { calendar, defaultCalendarId } from '@/lib/google-calendar';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { startTime, endTime, name, email, phone } = body;
+    const { startTime, endTime, name, email, phone, calendarId } = body;
+    const targetCalendarId = calendarId || defaultCalendarId;
 
     if (!startTime || !endTime || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     };
 
     const insertResponse = await calendar.events.insert({
-      calendarId,
+      calendarId: targetCalendarId,
       requestBody: event,
     });
 

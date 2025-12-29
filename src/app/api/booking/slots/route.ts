@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { calendar, calendarId } from '@/lib/google-calendar';
+import { calendar, defaultCalendarId } from '@/lib/google-calendar';
 import { setHours, setMinutes, addMinutes, isBefore, formatISO, parseISO } from 'date-fns';
 
 const APPOINTMENT_DURATION = 40; // minutes
@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const year = parseInt(searchParams.get('year') || '');
     const month = parseInt(searchParams.get('month') || '');
     const day = parseInt(searchParams.get('day') || '');
+    const targetCalendarId = searchParams.get('calendarId') || defaultCalendarId;
 
     if (!year || !month || !day) {
       return NextResponse.json({ error: 'Missing params' }, { status: 400 });
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
 
     // 1. Récupérer les événements du calendrier pour ce jour
     const response = await calendar.events.list({
-      calendarId,
+      calendarId: targetCalendarId,
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,

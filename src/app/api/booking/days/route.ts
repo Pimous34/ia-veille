@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { calendar, calendarId } from '@/lib/google-calendar';
+import { calendar, defaultCalendarId } from '@/lib/google-calendar';
 import { endOfMonth, eachDayOfInterval } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || '');
     const month = parseInt(searchParams.get('month') || ''); // 1-12
+    const targetCalendarId = searchParams.get('calendarId') || defaultCalendarId;
 
     if (!year || !month) {
       return NextResponse.json({ error: 'Missing year or month' }, { status: 400 });
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
 
     // Récupérer les événements existants pour tout le mois pour optimiser (Préparatoire pour future logique)
     await calendar.events.list({
-      calendarId,
+      calendarId: targetCalendarId,
       timeMin: startDate.toISOString(),
       timeMax: endDate.toISOString(),
       singleEvents: true,

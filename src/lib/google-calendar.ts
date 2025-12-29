@@ -20,4 +20,4 @@ const auth = new google.auth.JWT(
 
 const calendar = google.calendar({ version: 'v3', auth });
 
-export { calendar, calendarId };
+export { calendar, calendarId as defaultCalendarId };

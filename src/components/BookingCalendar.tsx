@@ -5,7 +5,11 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterv
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Loader2, Calendar, Clock, CheckCircle } from 'lucide-react';
 
-export default function BookingCalendar() {
+interface BookingCalendarProps {
+  calendarId?: string;
+}
+
+export default function BookingCalendar({ calendarId }: BookingCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [timeSlots, setTimeSlots] = useState<any[]>([]);
@@ -44,7 +48,12 @@ export default function BookingCalendar() {
       const month = date.getMonth() + 1;
       const day = date.getDate();
       
-      const res = await fetch(`/api/booking/slots?year=${year}&month=${month}&day=${day}`);
+      let url = `/api/booking/slots?year=${year}&month=${month}&day=${day}`;
+      if (calendarId) {
+        url += `&calendarId=${encodeURIComponent(calendarId)}`;
+      }
+      
+      const res = await fetch(url);
       const data = await res.json();
       
       if (data.success) {
@@ -71,7 +80,8 @@ export default function BookingCalendar() {
         body: JSON.stringify({
           startTime: selectedSlot.startTime,
           endTime: selectedSlot.endTime,
-          ...formData
+          ...formData,
+          calendarId // Pass the calendarId to the API
         })
       });
       const data = await res.json();
