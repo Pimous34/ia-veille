@@ -5,7 +5,7 @@ import { calendar, defaultCalendarId } from '@/lib/google-calendar';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { startTime, endTime, name, email, phone, calendarId } = body;
+    const { startTime, endTime, name, email, phone, calendarId, serviceName } = body;
     const targetCalendarId = calendarId || defaultCalendarId;
 
     if (!startTime || !endTime || !email) {
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
     
     // Créer l'événement
     const event = {
-      summary: `Coiffure - ${name}`,
-      description: `Client: ${name}\nEmail: ${email}\nTel: ${phone}`,
+      summary: serviceName ? `${serviceName} - ${name}` : `Coiffure - ${name}`,
+      description: `Client: ${name}\nEmail: ${email}\nTel: ${phone}\nService: ${serviceName || 'N/A'}`,
       start: {
         dateTime: startTime, // ISO format expects timezone offset or Z
       },
@@ -41,8 +41,9 @@ export async function POST(request: Request) {
         link: insertResponse.data.htmlLink
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    // @ts-ignore
+    return NextResponse.json({ success: false, error: error.message || 'Unknown error' }, { status: 500 });
   }
 }
