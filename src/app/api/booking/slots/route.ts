@@ -1,12 +1,9 @@
-
 import { NextResponse } from 'next/server';
 import { calendar, defaultCalendarId } from '@/lib/google-calendar';
-import { setHours, setMinutes, addMinutes, isBefore, formatISO, parseISO } from 'date-fns';
+import { addMinutes, addDays } from 'date-fns'; // Removed unused imports
+import { getBookingConfig } from '@/lib/booking';
 
-const APPOINTMENT_DURATION = 40; // minutes
 const BREAK_DURATION = 5; // minutes
-const START_HOUR = 9;
-const END_HOUR = 18; // 6 PM
 
 export async function GET(request: Request) {
   try {
@@ -23,11 +20,35 @@ export async function GET(request: Request) {
     // Date cible (UTC)
     const targetDate = new Date(Date.UTC(year, month - 1, day));
     
-    // Définir plage horaire de la journée (9h - 18h)
-    const timeMin = new Date(Date.UTC(year, month - 1, day, START_HOUR, 0, 0));
-    const timeMax = new Date(Date.UTC(year, month - 1, day, END_HOUR, 0, 0));
+    // 1. Récupérer configuration
+    const config = await getBookingConfig(targetCalendarId);
+    const serviceId = searchParams.get('serviceId') || 'default';
+    const targetService = config.services.find(s => s.id === serviceId) || config.services[0];
+    const appointmentDuration = targetService.duration;
+    
+    // 2. Définir plage horaire en fonction du jour de la semaine
+    // Date.getDay(): 0 (Dimanche) à 6 (Samedi). Config utilise '1' à '7' (ou '0'?) -> mapping.
+    // Dans notre config default: '1' = Lundi.
+    const dayOfWeek = targetDate.getUTCDay(); // 0 (Sun) - 6 (Sat)
+    // Convertir JS getUTCDay() (0=Sun, 1=Mon) vers notre clé config (1=Mon, ..., 7=Sun ?)
+    // Assumons standard ISO: 1=Mon, 7=Sun.
+    let configDayKey = dayOfWeek.toString();
+    if (dayOfWeek === 0) configDayKey = '7'; // Dimanche
 
-    // 1. Récupérer les événements du calendrier pour ce jour
+    const dayConfig = config.workingHours[configDayKey];
+
+    // Si pas de config pour ce jour (fermé), retourner vide
+    if (!dayConfig) {
+       return NextResponse.json({ success: true, timeSlots: [] });
+    }
+
+    const [startH, startM] = dayConfig.start.split(':').map(Number);
+    const [endH, endM] = dayConfig.end.split(':').map(Number);
+
+    const timeMin = new Date(Date.UTC(year, month - 1, day, startH, startM, 0));
+    const timeMax = new Date(Date.UTC(year, month - 1, day, endH, endM, 0));
+
+    // 3. Récupérer les événements du calendrier pour ce jour
     const response = await calendar.events.list({
       calendarId: targetCalendarId,
       timeMin: timeMin.toISOString(),
@@ -41,12 +62,12 @@ export async function GET(request: Request) {
       end: new Date(event.end?.dateTime || event.end?.date!).getTime(),
     })) || [];
 
-    // 2. Générer tous les slots possibles et filtrer
+    // 4. Générer tous les slots possibles et filtrer
     const availableSlots = [];
     let currentSlotStart = timeMin;
 
-    while (currentSlotStart.getTime() + (APPOINTMENT_DURATION * 60000) <= timeMax.getTime()) {
-      const currentSlotEnd = addMinutes(currentSlotStart, APPOINTMENT_DURATION);
+    while (currentSlotStart.getTime() + (appointmentDuration * 60000) <= timeMax.getTime()) {
+      const currentSlotEnd = addMinutes(currentSlotStart, appointmentDuration);
       
       // Vérifier collision
       const isBusy = busySlots.some(busy => {
@@ -60,7 +81,8 @@ export async function GET(request: Request) {
       if (!isBusy) {
         availableSlots.push({
           startTime: currentSlotStart.toISOString(),
-          endTime: currentSlotEnd.toISOString()
+          endTime: currentSlotEnd.toISOString(),
+          serviceId: targetService.id // optionnel
         });
       }
 
