@@ -191,8 +191,9 @@ export const ingestDocuments = ai.defineFlow(
              
              // Parse with PDF.js
              try {
-                // Use standard require for Node environment
-                const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+                // Use dynamic import for ESM module
+                // @ts-ignore
+                const pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
                 
                 const uint8Array = new Uint8Array(contentRes.data as unknown as ArrayBuffer);
                 const loadingTask = pdfjsLib.getDocument({ data: uint8Array });

@@ -6,7 +6,7 @@ import { BookingConfig } from '@/lib/booking-types';
 import { Trash2, Plus, Save, Clock } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
-function AdminInterface() {
+function AdminContent() {
     const searchParams = useSearchParams();
     const calendarId = searchParams.get('calendarId');
     const [config, setConfig] = useState<BookingConfig | null>(null);
@@ -220,38 +220,6 @@ function AdminInterface() {
             </div>
         </div>
     );
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none ring-0 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
-                    </label>
-                  </div>
-                  
-                  {isOpen && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock size={14} className="text-gray-400" />
-                      <input
-                        type="time"
-                        value={hours.start}
-                        onChange={(e) => updateWorkingHours(dayKey, 'start', e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded px-2 py-1 outline-none focus:border-indigo-500"
-                      />
-                      <span className="text-gray-400">-</span>
-                      <input
-                        type="time"
-                        value={hours.end}
-                        onChange={(e) => updateWorkingHours(dayKey, 'end', e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded px-2 py-1 outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                  )}
-                  {!isOpen && <span className="text-xs text-gray-400 italic pl-1">Fermé</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function AdminPage() {
