@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { BookingConfig, DEFAULT_CONFIG } from '@/lib/booking';
+import { BookingConfig, DEFAULT_CONFIG } from '@/lib/booking-types';
 import { Trash2, Plus, Save, Clock } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
