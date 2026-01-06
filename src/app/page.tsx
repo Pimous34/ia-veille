@@ -176,12 +176,32 @@ export default function Home() {
   // Data State
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
-  const [jtVideo, setJtVideo] = useState<JtVideo | null>(null);
-  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([]);
-  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]); // New state for the sidebar
+  
+  const [dataError, setDataError] = useState<string | null>(null);
+
+  // Use fallbacks IMMEDIATELY so the page is never empty
+  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([
+    {
+        id: 'fallback-1',
+        video_url: '#',
+        title: "JT IA (Démo)",
+        date: new Date().toISOString(),
+        thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
+    }
+  ]);
+  const [jtVideo, setJtVideo] = useState<JtVideo | null>({
+        id: 'fallback-1',
+        video_url: '#',
+        title: "JT IA (Démo)",
+        date: new Date().toISOString(),
+        thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
+  });
+  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]);
   const [currentJtIndex, setCurrentJtIndex] = useState(0);
   const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
-  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
+  
+  // Initialize with fallback articles right away
+  const [trendingArticles, setTrendingArticles] = useState<Article[]>(fallbackJtArticles);
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [coursePrepArticles, _setCoursePrepArticles] = useState<Article[]>(fallbackCoursePrepArticles);
@@ -223,193 +243,223 @@ export default function Home() {
   // Fetch Data
    useEffect(() => {
     async function fetchData() {
-      // 0. Get User and Promo Config
-      const { data: { user } } = await supabase.auth.getUser();
-      let promoConfig: { tuto_sources?: string[], video_tags?: string[] } = {};
-
-      if (user && user.email) {
-          const { data: studentData } = await supabase
-              .from('students')
-              .select('promos!inner(tuto_config, video_config)')
-              .eq('email', user.email)
-              .single();
-          
-          if (studentData && studentData.promos) {
-              const promosRaw = studentData.promos;
-              // Handle case where it might be array or object due to joined query
-              const p = Array.isArray(promosRaw) ? promosRaw[0] : promosRaw;
-              
-              if (p) {
-                  promoConfig = {
-                      tuto_sources: p.tuto_config?.sources || [],
-                      video_tags: p.video_config?.tags || []
-                  };
-              }
-          }
-      }
-
-      // 1. Fetch Latest JTs (History)
-      // If we have video tags config, we could try to filter, but current JTs might not have explicit tags in DB easily queryable. 
-      // For now, we assume "Vidéos" column is just the history.
-      const { data: jtDataList } = await supabase
-        .from('daily_news_videos')
-        .select('*')
-        .eq('status', 'completed')
-        .order('date', { ascending: false })
-        .limit(10);
-
-      if (jtDataList && jtDataList.length > 0) {
-        setJtVideosList(jtDataList);
-        setJtVideo(jtDataList[0]);
-        setCurrentJtIndex(0);
-      }
-
-      // 2. Fetch Articles for Buzz & Trending
-      const { data: articlesData } = await supabase
-        .from('articles')
-        .select('*')
-        .order('published_at', { ascending: false })
-        .limit(30);
-
-      if (articlesData && articlesData.length > 0) {
-        // Scoring logic logic from script.js
-        const interestingKeywords = ['nouveau', 'révolution', 'innovation', 'découverte', 'important', 'majeur', 'exclusif', 'outil', 'guide', 'comment', 'gpt-5', 'llm', 'agent'];
-        
-        const mapped = articlesData.map((article: { id: number; title: string; excerpt: string; tags: string[]; published_at: string; url: string; image_url: string }) => {
-           let score = 0;
-           const lowerTitle = article.title?.toLowerCase() || '';
-           // Keyword Bonus
-           interestingKeywords.forEach(k => {
-             if (lowerTitle.includes(k)) score += 10;
-           });
-           // Recency Bonus
-           if (new Date(article.published_at).toDateString() === new Date().toDateString()) score += 10;
-           
-           return {
-             id: article.id,
-             title: article.title,
-             excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
-             category: 'IA', // Default
-             tags: article.tags,
-             date: article.published_at,
-             link: article.url,
-             image: article.image_url || getDeterministicImage(article.title),
-             score
-           };
-        });
-
-        // Sort by score
-        mapped.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-        setTrendingArticles(mapped.slice(0, 15));
-        // setBuzzArticles(mapped.slice(0, 6)); // Removed
-      } else {
-        // Fallback if no data
-        setTrendingArticles(fallbackJtArticles); 
-      }
-
-      // 3. Fetch External Videos (Micode, Underscore_) & Mix with JTs
-      const { data: sourceIdsData } = await supabase
-        .from('sources')
-        .select('id')
-        .in('name', ['Micode', 'Underscore_', 'Ludovic Salenne', 'GEEK CONCEPT']);
-
-      let externalVideos: JtVideo[] = [];
+      // Debug Env Vars
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const clientUrl = (supabase as any).supabaseUrl || (supabase as any).storedUrl;
       
-      if (sourceIdsData && sourceIdsData.length > 0) {
-        const ids = sourceIdsData.map(s => s.id);
-        const { data: extArticles } = await supabase
-            .from('articles')
-            .select('*')
-            .in('source_id', ids)
-            .order('published_at', { ascending: false })
-            .limit(10);
-
-        if (extArticles) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            externalVideos = extArticles.map((a: any) => ({
-                id: a.id,
-                video_url: a.url,
-                thumbnail_url: a.image_url || getDeterministicImage(a.title),
-                title: a.title,
-                date: a.published_at,
-                article_ids: []
-            }));
-        }
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || (clientUrl && clientUrl.includes('placeholder'))) {
+          console.error("❌ NEXT_PUBLIC_SUPABASE_URL is missing or client is dummy!");
+          setDataError("⚠️ Configuration non chargée. VEUILLEZ REDÉMARRER LE SERVEUR (Ctrl+C puis npm run dev).");
+          setTrendingArticles(fallbackJtArticles); // Show fallback immediately
+          return; // Stop fetching
       }
 
-      // Merge JTs and External Videos for the Sidebar Column
-      // Sort combined list by date
-      const combinedVideos = [...jtVideosList, ...externalVideos].sort((a, b) => {
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-      });
-      
-      setVideosColumnList(combinedVideos);
+      try {
+        // 0. Get User and Promo Config
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) console.warn("Auth check failed (might be offline/blocked):", authError.message);
 
-      // CRITICAL: We DO NOT update setJtVideosList with combinedVideos here.
-      // We keep setJtVideosList containing ONLY the real JTs (from step 1).
-      // This ensures the Main Player Playlist only cycles through JTs.
+        let promoConfig: { tuto_sources?: string[], video_tags?: string[] } = {};
 
-      if (jtVideosList.length > 0) {
-          // If no video selected yet, select the first JT
-          if (!jtVideo) {
-              setJtVideo(jtVideosList[0]);
-              setCurrentJtIndex(0);
-          }
-      }
-
-      // 3. Fetch Tutorials with filtering
-      let tutoQuery = supabase
-        .from('tutorials')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
-          // Construct an OR filter for channel_name ILIKE any source or custom logic
-          // Simplification: We fetch 20 and filter in JS if simple query fails.
-          tutoQuery = tutoQuery.limit(20);
-      } else {
-          tutoQuery = tutoQuery.limit(5);
-      }
-
-      const { data: tutoData } = await tutoQuery;
-
-      if (tutoData) {
-        let filteredTutos = tutoData;
-        
-        // Client-side filtering for flexibility
-        if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
-             const lowerSources = promoConfig.tuto_sources.map(s => s.toLowerCase());
-             filteredTutos = tutoData.filter((t: { channel_name?: string; software?: string }) => {
-                 const c = (t.channel_name || '').toLowerCase();
-                 const s = (t.software || '').toLowerCase();
-                 return lowerSources.some(src => c.includes(src) || s.includes(src));
-             });
-        }
-        
-        // Take top 5 after filtering
-        const limitedTutos = filteredTutos.slice(0, 5);
-
-        const parsedTutos = limitedTutos.map((tuto: { id: number; image_url: string; software: string; channel_name: string; url: string }) => {
-            let bgImage = tuto.image_url;
-            if (bgImage && typeof bgImage === 'string' && (bgImage.startsWith('{') || bgImage.startsWith('['))) {
-                try {
-                    const parsed = JSON.parse(bgImage);
-                    const imageObj = Array.isArray(parsed) ? parsed[0] : parsed;
-                    if (imageObj && imageObj.url) {
-                        bgImage = imageObj.url;
-                    }
-                } catch (e) {
-                    console.warn('Failed to parse image JSON', e);
+        if (user && user.email) {
+            const { data: studentData } = await supabase
+                .from('students')
+                .select('promos!inner(tuto_config, video_config)')
+                .eq('email', user.email)
+                .single();
+            
+            if (studentData && studentData.promos) {
+                const promosRaw = studentData.promos;
+                // Handle case where it might be array or object due to joined query
+                const p = Array.isArray(promosRaw) ? promosRaw[0] : promosRaw;
+                
+                if (p) {
+                    promoConfig = {
+                        tuto_sources: p.tuto_config?.sources || [],
+                        video_tags: p.video_config?.tags || []
+                    };
                 }
             }
-            return { ...tuto, image_url: bgImage };
+        }
+
+        // 1. Fetch Latest JTs (History)
+        const { data: jtDataList, error: jtError } = await supabase
+          .from('daily_news_videos')
+          .select('*')
+          .eq('status', 'completed')
+          .order('date', { ascending: false })
+          .limit(10);
+
+        if (jtError) console.warn('Supabase JT Fetch Error:', jtError.message);
+
+        let fetchedJts: JtVideo[] = [];
+        if (jtDataList && jtDataList.length > 0) {
+          fetchedJts = jtDataList;
+          setJtVideosList(jtDataList);
+          setJtVideo(jtDataList[0]);
+          setCurrentJtIndex(0);
+        }
+
+        // 2. Fetch Articles for Buzz & Trending
+        const { data: articlesData, error: articlesError } = await supabase
+          .from('articles')
+          .select('*')
+          .order('published_at', { ascending: false })
+          .limit(30);
+
+        if (articlesError) console.warn('Supabase Articles Fetch Error:', articlesError.message);
+
+        if (articlesData && articlesData.length > 0) {
+          // Scoring logic logic from script.js
+          const interestingKeywords = ['nouveau', 'révolution', 'innovation', 'découverte', 'important', 'majeur', 'exclusif', 'outil', 'guide', 'comment', 'gpt-5', 'llm', 'agent'];
+          
+          const mapped = articlesData.map((article: { id: number; title: string; excerpt: string; tags: string[]; published_at: string; url: string; image_url: string }) => {
+             let score = 0;
+             const lowerTitle = article.title?.toLowerCase() || '';
+             // Keyword Bonus
+             interestingKeywords.forEach(k => {
+               if (lowerTitle.includes(k)) score += 10;
+             });
+             // Recency Bonus
+             if (new Date(article.published_at).toDateString() === new Date().toDateString()) score += 10;
+             
+             return {
+               id: article.id,
+               title: article.title,
+               excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
+               category: 'IA', // Default
+               tags: article.tags,
+               date: article.published_at,
+               link: article.url,
+               image: article.image_url || getDeterministicImage(article.title),
+               score
+             };
+          });
+
+          // Sort by score
+          mapped.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+          setTrendingArticles(mapped.slice(0, 15));
+        } else {
+          // Fallback if no data
+          setTrendingArticles(fallbackJtArticles); 
+        }
+
+        // 3. Fetch External Videos (Micode, Underscore_) & Mix with JTs
+        const { data: sourceIdsData } = await supabase
+          .from('sources')
+          .select('id')
+          .in('name', ['Micode', 'Underscore_', 'Ludovic Salenne', 'GEEK CONCEPT']);
+
+        let externalVideos: JtVideo[] = [];
+        
+        if (sourceIdsData && sourceIdsData.length > 0) {
+          const ids = sourceIdsData.map(s => s.id);
+          const { data: extArticles } = await supabase
+              .from('articles')
+              .select('*')
+              .in('source_id', ids)
+              .order('published_at', { ascending: false })
+              .limit(10);
+
+          if (extArticles) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              externalVideos = extArticles.map((a: any) => ({
+                  id: a.id,
+                  video_url: a.url,
+                  thumbnail_url: a.image_url || getDeterministicImage(a.title),
+                  title: a.title,
+                  date: a.published_at,
+                  article_ids: []
+              }));
+          }
+        }
+
+        // Merge JTs and External Videos for the Sidebar Column
+        // Sort combined list by date
+        const combinedVideos = [...fetchedJts, ...externalVideos].sort((a, b) => {
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
         });
-        setTutorials(parsedTutos);
+        
+        setVideosColumnList(combinedVideos);
+
+        // CRITICAL: We DO NOT update setJtVideosList with combinedVideos here.
+        // We keep setJtVideosList containing ONLY the real JTs (from step 1).
+        // This ensures the Main Player Playlist only cycles through JTs.
+
+        if (fetchedJts.length > 0) {
+            // If no video selected yet, select the first JT
+            if (!jtVideo) {
+                setJtVideo(fetchedJts[0]);
+                setCurrentJtIndex(0);
+            }
+        }
+
+        // 3. Fetch Tutorials with filtering
+        let tutoQuery = supabase
+          .from('tutorials')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
+            // Construct an OR filter for channel_name ILIKE any source or custom logic
+            // Simplification: We fetch 20 and filter in JS if simple query fails.
+            tutoQuery = tutoQuery.limit(20);
+        } else {
+            tutoQuery = tutoQuery.limit(5);
+        }
+
+        const { data: tutoData } = await tutoQuery;
+
+        if (tutoData) {
+          let filteredTutos = tutoData;
+          
+          // Client-side filtering for flexibility
+          if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
+               const lowerSources = promoConfig.tuto_sources.map(s => s.toLowerCase());
+               filteredTutos = tutoData.filter((t: { channel_name?: string; software?: string }) => {
+                   const c = (t.channel_name || '').toLowerCase();
+                   const s = (t.software || '').toLowerCase();
+                   return lowerSources.some(src => c.includes(src) || s.includes(src));
+               });
+          }
+          
+          // Take top 5 after filtering
+          const limitedTutos = filteredTutos.slice(0, 5);
+
+          const parsedTutos = limitedTutos.map((tuto: { id: number; image_url: string; software: string; channel_name: string; url: string }) => {
+              let bgImage = tuto.image_url;
+              if (bgImage && typeof bgImage === 'string' && (bgImage.startsWith('{') || bgImage.startsWith('['))) {
+                  try {
+                      const parsed = JSON.parse(bgImage);
+                      const imageObj = Array.isArray(parsed) ? parsed[0] : parsed;
+                      if (imageObj && imageObj.url) {
+                          bgImage = imageObj.url;
+                      }
+                  } catch (e) {
+                      console.warn('Failed to parse image JSON', e);
+                  }
+              }
+              return { ...tuto, image_url: bgImage };
+          });
+          setTutorials(parsedTutos);
+        }
+      } catch (err) {
+        console.error("CRITICAL: Failed to fetch data. Check network or AdBlock.", err);
+        const errorMessage = err instanceof Error ? err.message : "Erreur de chargement des données.";
+        setDataError(errorMessage);
+        
+        // Fallback Strategy
+        setTrendingArticles(fallbackJtArticles);
+        // Ensure we have at least the fallback video if list is empty
+        if (jtVideosList.length === 0) {
+             // Already initialized with fallback, but let's be safe
+        }
       }
     }
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
   // Fetch JT Subjects whenever jtVideo changes
@@ -477,17 +527,25 @@ export default function Home() {
     // Jingle transition handler
     const handleEnded = () => {
       if (video.src.includes('Jingle.mp4')) {
-        video.src = mainVideoUrl;
-        video.load();
-        video.play().catch(console.error);
+        // Prevent setting src to '#' or invalid URL
+        if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
+            video.src = mainVideoUrl;
+            video.load();
+            video.play().catch(console.error);
+        } else {
+            console.log("No valid video URL for playback, stopping.");
+            // Optionally set it to a placeholder video or just stop
+        }
       }
     };
 
     if (isNavigatingRef.current) {
         // Skip jingle if navigating
-        video.src = mainVideoUrl;
-        video.muted = false; // Unmute for user-initiated navigation
-        video.play().catch(console.error);
+        if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
+            video.src = mainVideoUrl;
+            video.muted = false; // Unmute for user-initiated navigation
+            video.play().catch(console.error);
+        }
         isNavigatingRef.current = false;
     } else {
         // Play jingle for initial load
@@ -557,7 +615,7 @@ export default function Home() {
                 <a href="#jtnews" className="nav-link">JTNews</a>
                 <a href="#categories" className="nav-link">Catégories</a>
                 <a href="#actualite" className="nav-link">Actualité</a>
-                <a href="#courseprep" className="nav-link">Cours</a>
+                <Link href="/flashcards" className="nav-link">Cours</Link>
                 <a href="/shortnews.html" className="nav-link">ShortNews</a>
             </nav>
 
@@ -652,7 +710,7 @@ export default function Home() {
         <div className={`search-overlay ${isSearchOpen ? 'active' : ''}`} id="searchOverlay">
             <div className="search-overlay-content">
                 <form className="search-overlay-form" onSubmit={(e) => e.preventDefault()}>
-                    <input type="search" className="search-overlay-input" placeholder="Rechercher des articles..." aria-label="Rechercher" autoFocus={isSearchOpen} />
+                    <input type="search" className="search-overlay-input" name="q" id="search-input" placeholder="Rechercher des articles..." aria-label="Rechercher" autoFocus={isSearchOpen} />
                     <button type="submit" className="search-overlay-submit" aria-label="Rechercher">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="11" cy="11" r="8"></circle>
@@ -682,7 +740,7 @@ export default function Home() {
                     <a href="#jtnews" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>JTNews</a>
                     <a href="#categories" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Catégories</a>
                     <a href="#actualite" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Actualité</a>
-                    <a href="#courseprep" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Cours</a>
+                    <Link href="/flashcards" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Cours</Link>
                 </nav>
             </div>
         )}
@@ -691,6 +749,16 @@ export default function Home() {
             {/* Hero Section */}
             <section className="hero-section" id="jtnews">
                 <div className="container">
+                    {dataError && (
+                       <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-center shadow-xs border border-red-100 flex items-center justify-center gap-2">
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                               <circle cx="12" cy="12" r="10"></circle>
+                               <line x1="12" y1="8" x2="12" y2="12"></line>
+                               <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                           </svg>
+                           <strong>Erreur :</strong> {dataError}
+                       </div>
+                    )}
                     <div className="hero-container">
                         <div className={`video-column ${isFullscreen ? 'fullscreen' : ''}`} ref={videoContainerRef}>
 

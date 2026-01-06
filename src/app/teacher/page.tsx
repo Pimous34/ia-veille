@@ -213,6 +213,8 @@ export default function TeacherPage() {
                 <label className="block text-sm font-bold text-gray-700 mb-1">Sélectionner une promotion</label>
                 <div className="relative">
                     <select 
+                        id="promo-select"
+                        name="promoId"
                         value={selectedPromoId}
                         onChange={(e) => setSelectedPromoId(e.target.value)}
                         className="w-full appearance-none bg-gray-50 border border-gray-200 text-gray-900 text-lg rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-3 pr-10 font-semibold"
@@ -277,6 +279,8 @@ export default function TeacherPage() {
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
                             <textarea
+                                id="message-text"
+                                name="message"
                                 value={messageText}
                                 onChange={(e) => setMessageText(e.target.value)}
                                 className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -288,6 +292,8 @@ export default function TeacherPage() {
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Lien (optionnel)</label>
                             <input
+                                id="message-link"
+                                name="link"
                                 type="url"
                                 value={messageLink}
                                 onChange={(e) => setMessageLink(e.target.value)}
@@ -344,6 +350,8 @@ export default function TeacherPage() {
                                 Liste des chaînes YouTube ou mots-clés pour filtrer les tutoriels. Séparez par des virgules.
                              </p>
                              <textarea
+                                id="tuto-sources"
+                                name="tutoSources"
                                 value={tutoSources}
                                 onChange={(e) => setTutoSources(e.target.value)}
                                 className="w-full h-24 p-3 bg-white border border-purple-200 rounded-lg text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
@@ -360,6 +368,8 @@ export default function TeacherPage() {
                                 Tags ou catégories pour filtrer les vidéos/JTs affichés. Séparez par des virgules.
                              </p>
                              <textarea
+                                id="video-tags"
+                                name="videoTags"
                                 value={videoTags}
                                 onChange={(e) => setVideoTags(e.target.value)}
                                 className="w-full h-24 p-3 bg-white border border-indigo-200 rounded-lg text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"

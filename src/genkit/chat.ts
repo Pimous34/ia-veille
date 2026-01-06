@@ -22,7 +22,7 @@ async function embedWithRetry(content: string, embedder: string, taskType: 'RETR
       return await ai.embed({
         embedder,
         content,
-        options: { taskType }
+        options: { taskType, apiKey: process.env.GOOGLE_GENAI_API_KEY }
       });
     } catch (err: unknown) {
       if (i === retries - 1) throw err;
