@@ -59,8 +59,8 @@ export default function RootLayout({
         <ToastProvider />
         <GenkitChat />
         <Script
-          src="https://valid-artisan-pimous.web.app/widget.js"
-          data-artisan-id="fr-re-995"
+          src="https://valid-artisan.web.app/widget.js"
+          data-artisan-id="trassy-fr-res-sarl-39"
           data-review-url="https://search.google.com/local/writereview?placeid=ChIJ3eypf2SjthIRpoW3KVHENTY"
           strategy="afterInteractive"
         />
