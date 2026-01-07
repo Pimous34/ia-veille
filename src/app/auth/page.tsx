@@ -34,7 +34,7 @@ const AuthPage = () => {
         <div className="p-8 text-center border-b border-gray-100 dark:border-gray-700">
              <Link href="/" className="inline-block mb-4">
                 <div className="w-12 h-12 relative mx-auto">
-                    <Image src="/logo.svg" alt="Logo" fill className="object-contain" unoptimized />
+                    <Image src="/logo.png" alt="Logo" fill className="object-contain" unoptimized />
                 </div>
             </Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -75,12 +75,12 @@ const AuthPage = () => {
           </div>
 
           <p className="text-xs text-center text-gray-500 mt-6">
-            En continuant, vous acceptez nos conditions d'utilisation
+            En continuant, vous acceptez nos conditions d&apos;utilisation
           </p>
           
            <div className="mt-6 text-center">
              <Link href="/" className="text-sm text-indigo-600 hover:text-indigo-500 font-medium">
-               Retour à l'accueil
+               Retour à l&apos;accueil
              </Link>
           </div>
         </div>

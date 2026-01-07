@@ -71,7 +71,7 @@ serve(async (req) => {
     
     const { data: articles, error: fetchError } = await supabase
       .from('articles')
-      .select('id, title, tags')
+      .select('id, title, tags, url')
       .or('tags.is.null,tags.eq.{}') // Fetch if null OR empty array
       .order('created_at', { ascending: false })
       .limit(100);
@@ -95,14 +95,14 @@ serve(async (req) => {
     for (const article of articles) {
       const newTags = generateTagsFromTitle(article.title);
       
-      // Always add 'Actualité' if no other tags found, or just leave empty?
-      // User wanted specific tags. If empty, maybe we shouldn't force it in DB 
-      // but let frontend handle default. 
-      // However, to prevent re-processing, we should probably save something 
-      // or just accept that empty tags means "analyzed but found nothing".
-      // But our query selects empty tags, so we'd loop forever.
-      // Let's add "Actualité" if nothing else found, so it's not empty anymore.
-      
+      // Auto-detect YouTube videos
+      if (article.url && (article.url.includes('youtube.com') || article.url.includes('youtu.be'))) {
+        if (!newTags.includes('Vidéo')) {
+          newTags.push('Vidéo');
+        }
+      }
+
+      // Always add 'Actualité' if no other tags found
       if (newTags.length === 0) {
           newTags.push('Actualité');
       }

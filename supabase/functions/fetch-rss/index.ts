@@ -106,8 +106,21 @@ serve(async (req) => {
         console.log(`📰 Fetching: ${source.name} (${source.rss_url})`);
 
         // Fetch and parse RSS feed
-        const feed = await parser.parseURL(source.rss_url);
+        // Use native fetch to avoid "https.get not implemented" errors in Edge Runtime
+        const response = await fetch(source.rss_url, {
+          headers: {
+            'User-Agent': 'IA-Veille RSS Aggregator/1.0',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const xmlText = await response.text();
+        const feed = await parser.parseString(xmlText);
         console.log(`✅ Parsed ${feed.items.length} items from ${source.name}`);
+
 
         const articlesToInsert: Article[] = [];
 

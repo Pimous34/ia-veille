@@ -603,7 +603,7 @@ export default function Home() {
                 <div className="logo">
                     <div className="logo-wrapper">
                          {/* Showing SVG logo as default since we copied it */}
-                        <Image src="/logo.svg" alt="OREEGAM'IA Logo" width={32} height={32} className="logo-img" style={{display: 'block'}} unoptimized />
+                        <Image src="/logo.png" alt="OREEGAM'IA Logo" width={32} height={32} className="logo-img" style={{display: 'block'}} unoptimized />
                     </div>
                     <div className="logo-placeholder" style={{display: 'none'}}>
                         <span className="logo-text">OREEGAM&apos;IA</span>

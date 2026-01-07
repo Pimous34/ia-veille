@@ -75,7 +75,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                   </div>
                   
                   <div className="w-20 h-20 mx-auto mb-6 relative">
-                    <Image src="/logo.svg" alt="Oreegami" fill className="object-contain" unoptimized />
+                    <Image src="/logo.png" alt="Oreegami" fill className="object-contain" unoptimized />
                   </div>
                   
                   <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-pink-500 to-violet-500 mb-2">
