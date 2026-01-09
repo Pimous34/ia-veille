@@ -50,6 +50,13 @@ const Footer = () => {
               </button>
             </div>
           </div>
+
+          <div className="flex flex-col items-start md:items-end">
+             <Link href="/contact" className="inline-block text-white font-semibold no-underline py-2 px-5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #9C27B0 0%, #5E35B1 100%)', boxShadow: '0 4px 6px rgba(156, 39, 176, 0.3)' }}>
+                Nous contacter
+             </Link>
+          </div>
+
         </div>
         
         <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
