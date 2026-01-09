@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OREEGAM'IA - Utilisateurs</title>
+    <link rel="stylesheet" href="admin.css">
+    <script>
+        function deleteUser(btn) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+                btn.closest('tr').remove();
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-text">OREEGAM'IA</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="admin.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+            <a href="admin-articles.html" class="nav-item">
+                <span class="nav-icon">📰</span>
+                Articles
+            </a>
+            <a href="admin-users.html" class="nav-item active">
+                <span class="nav-icon">👥</span>
+                Utilisateurs
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                Paramètres
+            </a>
+        </nav>
+
+        <div class="user-profile">
+            <div class="avatar">A</div>
+            <div class="user-info">
+                <div style="font-weight: 600;">Admin</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">stessier@edu-oreegami.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">Utilisateurs</h1>
+            <a href="auth.html" class="logout-btn">Déconnexion</a>
+        </header>
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h2 class="welcome-text">Liste des Utilisateurs</h2>
+            <p class="welcome-subtext">Gérez les comptes de vos 30 utilisateurs.</p>
+        </div>
+
+        <!-- Users Table Section -->
+        <section class="content-section">
+            <div class="section-header">
+                <h2>Tous les utilisateurs</h2>
+                <a href="javascript:void(0)" class="action-btn" onclick="openImportModal()">
+                    <span>+</span> Ajouter
+                </a>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Courriel</th>
+                            <th>Inactif depuis</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Thomas</td>
+                            <td>Dubois</td>
+                            <td>thomas.dubois@edu-oreegami.com</td>
+                            <td>02 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Marie</td>
+                            <td>Lefebvre</td>
+                            <td>marie.lefebvre@edu-oreegami.com</td>
+                            <td>28 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Lucas</td>
+                            <td>Moreau</td>
+                            <td>lucas.moreau@edu-oreegami.com</td>
+                            <td>05 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Sophie</td>
+                            <td>Laurent</td>
+                            <td>sophie.laurent@edu-oreegami.com</td>
+                            <td>15 Nov 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Julien</td>
+                            <td>Simon</td>
+                            <td>julien.simon@edu-oreegami.com</td>
+                            <td>01 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Camille</td>
+                            <td>Michel</td>
+                            <td>camille.michel@edu-oreegami.com</td>
+                            <td>12 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Nicolas</td>
+                            <td>Garcia</td>
+                            <td>nicolas.garcia@edu-oreegami.com</td>
+                            <td>30 Oct 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Lea</td>
+                            <td>David</td>
+                            <td>lea.david@edu-oreegami.com</td>
+                            <td>04 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Antoine</td>
+                            <td>Bertrand</td>
+                            <td>antoine.bertrand@edu-oreegami.com</td>
+                            <td>20 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Manon</td>
+                            <td>Roux</td>
+                            <td>manon.roux@edu-oreegami.com</td>
+                            <td>11 Sep 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Alexandre</td>
+                            <td>Vincent</td>
+                            <td>alexandre.vincent@edu-oreegami.com</td>
+                            <td>06 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Chloe</td>
+                            <td>Fournier</td>
+                            <td>chloe.fournier@edu-oreegami.com</td>
+                            <td>25 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Maxime</td>
+                            <td>Morel</td>
+                            <td>maxime.morel@edu-oreegami.com</td>
+                            <td>14 Oct 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Sarah</td>
+                            <td>Girard</td>
+                            <td>sarah.girard@edu-oreegami.com</td>
+                            <td>03 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Paul</td>
+                            <td>Andre</td>
+                            <td>paul.andre@edu-oreegami.com</td>
+                            <td>29 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Laura</td>
+                            <td>Lefevre</td>
+                            <td>laura.lefevre@edu-oreegami.com</td>
+                            <td>08 Nov 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Kevin</td>
+                            <td>Mercier</td>
+                            <td>kevin.mercier@edu-oreegami.com</td>
+                            <td>01 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Julie</td>
+                            <td>Dupont</td>
+                            <td>julie.dupont@edu-oreegami.com</td>
+                            <td>07 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Romain</td>
+                            <td>Lambert</td>
+                            <td>romain.lambert@edu-oreegami.com</td>
+                            <td>18 Oct 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Elodie</td>
+                            <td>Bonnet</td>
+                            <td>elodie.bonnet@edu-oreegami.com</td>
+                            <td>05 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Florian</td>
+                            <td>Francois</td>
+                            <td>florian.francois@edu-oreegami.com</td>
+                            <td>22 Nov 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Celine</td>
+                            <td>Martinez</td>
+                            <td>celine.martinez@edu-oreegami.com</td>
+                            <td>02 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Pierre</td>
+                            <td>Legrand</td>
+                            <td>pierre.legrand@edu-oreegami.com</td>
+                            <td>19 Sep 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Audrey</td>
+                            <td>Garnier</td>
+                            <td>audrey.garnier@edu-oreegami.com</td>
+                            <td>31 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Guillaume</td>
+                            <td>Faure</td>
+                            <td>guillaume.faure@edu-oreegami.com</td>
+                            <td>10 Dec 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Emilie</td>
+                            <td>Rousseau</td>
+                            <td>emilie.rousseau@edu-oreegami.com</td>
+                            <td>04 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Mathieu</td>
+                            <td>Blanc</td>
+                            <td>mathieu.blanc@edu-oreegami.com</td>
+                            <td>15 Aug 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Charlotte</td>
+                            <td>Guerin</td>
+                            <td>charlotte.guerin@edu-oreegami.com</td>
+                            <td>06 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Adrien</td>
+                            <td>Muller</td>
+                            <td>adrien.muller@edu-oreegami.com</td>
+                            <td>27 Nov 2025</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                        <tr>
+                            <td>Jessica</td>
+                            <td>Henry</td>
+                            <td>jessica.henry@edu-oreegami.com</td>
+                            <td>03 Jan 2026</td>
+                            <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bulk Import Modal -->
+    <div id="importModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ajouter des utilisateurs en masse</h3>
+                <button class="close-modal" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem;">
+                    Collez votre liste d'utilisateurs ici. Format: <strong>Prénom Nom Email</strong> (un par ligne).
+                </p>
+                <textarea id="importText" class="import-textarea"
+                    placeholder="Thomas Dubois thomas.dubois@edu-oreegami.com&#10;Marie Lefebvre marie.lefebvre@edu-oreegami.com"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeImportModal()">Annuler</button>
+                <button class="btn-import" onclick="processImport()">Importer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function deleteUser(btn) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+                btn.closest('tr').remove();
+            }
+        }
+
+        function openImportModal() {
+            document.getElementById('importModal').style.display = 'flex';
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+        }
+
+        function processImport() {
+            const text = document.getElementById('importText').value;
+            const lines = text.split('\n');
+            const tbody = document.querySelector('.data-table tbody');
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+
+                const parts = line.split(/\s+/);
+                if (parts.length >= 3) {
+                    const email = parts.pop();
+                    const lastName = parts.pop();
+                    const firstName = parts.join(' ');
+
+                    const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${firstName}</td>
+                        <td>${lastName}</td>
+                        <td>${email}</td>
+                        <td>${date}</td>
+                        <td><button class="btn-delete" onclick="deleteUser(this)">Supprimer</button></td>
+                    `;
+                    tbody.insertBefore(row, tbody.firstChild);
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                alert(addedCount + ' utilisateur(s) ajouté(s) avec succès !');
+                document.getElementById('importText').value = '';
+                closeImportModal();
+            } else {
+                alert('Aucun utilisateur valide trouvé. Vérifiez le format (Prénom Nom Email).');
+            }
+        }
+
+        window.onclick = function (event) {
+            const modal = document.getElementById('importModal');
+            if (event.target == modal) {
+                closeImportModal();
+            }
+        }
+    </script>
+</body>
+
+</html>

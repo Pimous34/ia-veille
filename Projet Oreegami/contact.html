@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OREEGAM'IA - Nous Contacter</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .contact-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            font-size: 1rem;
+        }
+
+        .contact-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+    </style>
+</head>
+
+<body class="auth-page">
+    <div class="auth-container">
+        <!-- Logo -->
+        <div class="auth-logo">
+            <div class="logo">
+                <a href="index.html" style="text-decoration: none;">
+                    <div class="logo-wrapper" style="justify-content: center; width: 100%;">
+                        <img src="logo.png" alt="OREEGAM'IA Logo" class="logo-img"
+                            style="display: block; height: 150px; width: auto; margin: 0 auto; transform: none;">
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Contact Form Container -->
+        <div class="auth-form-container" style="display: block;">
+            <h1 class="auth-title">Nous Contacter</h1>
+            <p style="text-align: center; color: var(--text-light); margin-bottom: 1.5rem;">
+                Un bug ? Une suggestion ? N'hésitez pas à nous écrire.
+            </p>
+
+            <form class="auth-form"
+                onsubmit="event.preventDefault(); alert('Merci pour votre message ! Nous vous répondrons bientôt.'); window.location.href='index.html';">
+                <div class="form-group">
+                    <select class="form-input" required>
+                        <option value="" disabled selected>Sujet de votre message</option>
+                        <option value="bug">Signaler un problème technique</option>
+                        <option value="suggestion">Suggestion d'amélioration</option>
+                        <option value="content">Question sur le contenu</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <textarea class="contact-textarea" placeholder="Votre message..." required></textarea>
+                </div>
+
+                <button type="submit" class="auth-submit-btn">Envoyer le message</button>
+            </form>
+
+            <a href="index.html" class="auth-skip">Retour à l'accueil</a>
+        </div>
+    </div>
+</body>
+
+</html>

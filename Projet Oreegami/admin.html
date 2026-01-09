@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OREEGAM'IA - Dashboard Admin</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <!-- Simplified Logo for Admin -->
+            <div class="logo-text">OREEGAM'IA</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="admin.html" class="nav-item active">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+            <a href="admin-articles.html" class="nav-item">
+                <span class="nav-icon">📰</span>
+                Articles
+            </a>
+            <a href="admin-users.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                Utilisateurs
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                Paramètres
+            </a>
+        </nav>
+
+        <div class="user-profile">
+            <div class="avatar">A</div>
+            <div class="user-info">
+                <div style="font-weight: 600;">Admin</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">stessier@edu-oreegami.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">Tableau de Bord</h1>
+            <a href="auth.html" class="logout-btn">Déconnexion</a>
+        </header>
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h2 class="welcome-text">Bonjour Samuel,</h2>
+            <p class="welcome-subtext">Voici ce qui se passe sur Oreegam'ia aujourd'hui.</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon bg-pink">📝</div>
+                <div class="stat-info">
+                    <h3>Articles Total</h3>
+                    <div class="stat-value">869</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple">👁️</div>
+                <div class="stat-info">
+                    <h3>Vues ce mois</h3>
+                    <div class="stat-value">12.5k</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-blue">👥</div>
+                <div class="stat-info">
+                    <h3>Abonnés</h3>
+                    <div class="stat-value">624</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-orange">⚠️</div>
+                <div class="stat-info">
+                    <h3>Nombre de retours utilisateurs</h3>
+                    <div class="stat-value">15</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Feedback Section -->
+        <!-- User Feedback Section -->
+        <section class="content-section" style="margin-bottom: 2rem;">
+            <div class="section-header">
+                <!-- utilizing existing section-header class for consistency with 'Derniers Articles' -->
+                <h2>Retours Utilisateurs</h2>
+            </div>
+            <div class="feedback-grid">
+                <!-- Feedback 1 -->
+                <div class="feedback-card">
+                    <div class="feedback-header">
+                        <span class="feedback-type type-bug">Bug</span>
+                        <span class="feedback-date">Il y a 2h</span>
+                    </div>
+                    <p class="feedback-text">"Impossible de changer mon mot de passe, ça charge à l'infini..."</p>
+                    <div class="feedback-user">
+                        <div class="avatar-small">TD</div>
+                        <span>Thomas Dubois</span>
+                    </div>
+                </div>
+                <!-- Feedback 2 -->
+                <div class="feedback-card">
+                    <div class="feedback-header">
+                        <span class="feedback-type type-suggestion">Suggestion</span>
+                        <span class="feedback-date">Hier</span>
+                    </div>
+                    <p class="feedback-text">"Ce serait super d'avoir un mode sombre pour lire les articles le soir !"
+                    </p>
+                    <div class="feedback-user">
+                        <div class="avatar-small">ML</div>
+                        <span>Marie Lefebvre</span>
+                    </div>
+                </div>
+                <!-- Feedback 3 -->
+                <div class="feedback-card">
+                    <div class="feedback-header">
+                        <span class="feedback-type type-content">Contenu</span>
+                        <span class="feedback-date">05 Jan</span>
+                    </div>
+                    <p class="feedback-text">"L'article sur Make.com est top, merci pour les détails !"</p>
+                    <div class="feedback-user">
+                        <div class="avatar-small">JS</div>
+                        <span>Julien Simon</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Content Section -->
+        <section class="content-section">
+            <div class="section-header">
+                <h2>Derniers Articles</h2>
+                <a href="#" class="action-btn">
+                    <span>+</span> Nouvel Article
+                </a>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Catégorie</th>
+                        <th>Date</th>
+                        <th>Auteur</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>L'IA générative en 2024</td>
+                        <td>Intelligence Artificielle</td>
+                        <td>07 Jan 2026</td>
+                        <td>Samuel Tessier</td>
+                        <td><span class="status-badge status-active">Publié</span></td>
+                    </tr>
+                    <tr>
+                        <td>Tutoriel Make.com avancé</td>
+                        <td>No-Code</td>
+                        <td>06 Jan 2026</td>
+                        <td>Jane Smith</td>
+                        <td><span class="status-badge status-active">Publié</span></td>
+                    </tr>
+                    <tr>
+                        <td>Les dangers du Deepfake</td>
+                        <td>Éthique</td>
+                        <td>05 Jan 2026</td>
+                        <td>Mike Johnson</td>
+                        <td><span class="status-badge status-pending">En relecture</span></td>
+                    </tr>
+                    <tr>
+                        <td>Introduction à n8n</td>
+                        <td>Automatisation</td>
+                        <td>04 Jan 2026</td>
+                        <td>Emily Davis</td>
+                        <td><span class="status-badge status-active">Publié</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+
+</html>

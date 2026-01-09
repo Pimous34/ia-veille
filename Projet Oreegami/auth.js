@@ -44,6 +44,13 @@ async function handleLogin(event) {
     const email = event.target.querySelector('input[type="email"]').value;
     const password = event.target.querySelector('input[type="password"]').value;
     
+    // Check for admin credentials
+    if (email === 'stessier@edu-oreegami.com' && password === 'oreegami') {
+        console.log('Connexion administrateur');
+        window.location.href = 'admin.html';
+        return;
+    }
+    
     try {
         const { data, error } = await _supabase.auth.signInWithPassword({
             email: email,

@@ -4508,9 +4508,42 @@ body.shorts-page .short-category {
         -webkit-overflow-scrolling: touch;
     }
 
+
     .compact-cat-btn {
         flex: 0 0 auto;
         /* Don't shrink */
+    }
+}
+
+/* Contact/Auth Page Responsive Styles */
+@media (max-width: 768px) {
+    .auth-page {
+        padding: 1rem;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .auth-container {
+        flex-direction: column;
+        padding: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .auth-logo {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .auth-logo .logo-img {
+        height: 150px !important;
+        /* Scale down logo on mobile */
+    }
+
+    .auth-form-container {
+        width: 100%;
+        padding: 1.5rem;
+        margin: 0;
     }
 }
 

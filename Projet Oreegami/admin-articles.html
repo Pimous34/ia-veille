@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OREEGAM'IA - Gestion des Articles</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        .filters-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: var(--text-color);
+            background-color: white;
+            font-family: inherit;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-text">OREEGAM'IA</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="admin.html" class="nav-item">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+            <a href="admin-articles.html" class="nav-item active">
+                <span class="nav-icon">📰</span>
+                Articles
+            </a>
+            <a href="admin-users.html" class="nav-item">
+                <span class="nav-icon">👥</span>
+                Utilisateurs
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                Paramètres
+            </a>
+        </nav>
+
+        <div class="user-profile">
+            <div class="avatar">A</div>
+            <div class="user-info">
+                <div style="font-weight: 600;">Admin</div>
+                <div style="font-size: 0.8rem; opacity: 0.7;">stessier@edu-oreegami.com</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <h1 class="page-title">Gestion des Articles</h1>
+            <a href="auth.html" class="logout-btn">Déconnexion</a>
+        </header>
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h2 class="welcome-text">Articles</h2>
+            <p class="welcome-subtext">Analysez vos performances par catégorie et gérez votre contenu multicanal.</p>
+        </div>
+
+        <!-- KPI Cards by Category -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon bg-blue">🤖</div>
+                <div class="stat-info">
+                    <h3>Intelligence Artificielle</h3>
+                    <div class="stat-value">458</div>
+                    <small style="color: var(--text-light); font-size: 0.8rem;">+12% vues</small>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple">⚡</div>
+                <div class="stat-info">
+                    <h3>No-Code</h3>
+                    <div class="stat-value">284</div>
+                    <small style="color: var(--text-light); font-size: 0.8rem;">+8% vues</small>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-orange">⚙️</div>
+                <div class="stat-info">
+                    <h3>Automatisation</h3>
+                    <div class="stat-value">127</div>
+                    <small style="color: var(--text-light); font-size: 0.8rem;">+24% vues</small>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-pink">📢</div>
+                <div class="stat-info">
+                    <h3>Marketing</h3>
+                    <div class="stat-value">96</div>
+                    <small style="color: var(--text-light); font-size: 0.8rem;">+5% vues</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="filter-source">Source:</label>
+                <select id="filter-source" class="filter-select">
+                    <option value="all">Toutes</option>
+                    <option value="blog">Blog Interne</option>
+                    <option value="medium">Medium</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="youtube">YouTube</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-type">Type:</label>
+                <select id="filter-type" class="filter-select">
+                    <option value="all">Tous</option>
+                    <option value="text">Texte</option>
+                    <option value="video">Vidéo</option>
+                    <option value="audio">Audio</option>
+                </select>
+            </div>
+            <div style="margin-left: auto;">
+                <a href="#" class="action-btn">
+                    <span>+</span> Nouvel Article
+                </a>
+            </div>
+        </div>
+
+        <!-- Articles Table Section -->
+        <section class="content-section">
+            <div class="section-header">
+                <h2>Liste des Articles</h2>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Source</th>
+                            <th>Type</th>
+                            <th>Catégorie</th>
+                            <th>Vues</th>
+                            <th>Engagement</th>
+                            <th>Statut</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>L'IA générative en 2026 : Tendances</td>
+                            <td>Blog Interne</td>
+                            <td>📝 Texte</td>
+                            <td>Intelligence Artificielle</td>
+                            <td>12.5k</td>
+                            <td>4.8/5</td>
+                            <td><span class="status-badge status-active">Publié</span></td>
+                            <td><button class="btn-delete" style="background: var(--primary-color);">Éditer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tutoriel Make.com : Automatiser ses emails</td>
+                            <td>YouTube</td>
+                            <td>🎥 Vidéo</td>
+                            <td>Automatisation</td>
+                            <td>8.3k</td>
+                            <td>98% 👍</td>
+                            <td><span class="status-badge status-active">Publié</span></td>
+                            <td><button class="btn-delete" style="background: var(--primary-color);">Éditer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Podcast : Le futur du No-Code</td>
+                            <td>Spotify / Audio</td>
+                            <td>🎙️ Audio</td>
+                            <td>No-Code</td>
+                            <td>3.2k</td>
+                            <td>4.5/5</td>
+                            <td><span class="status-badge status-active">Publié</span></td>
+                            <td><button class="btn-delete" style="background: var(--primary-color);">Éditer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Comparatif des outils No-Code 2025</td>
+                            <td>Medium</td>
+                            <td>📝 Texte</td>
+                            <td>No-Code</td>
+                            <td>5.1k</td>
+                            <td>350 👏</td>
+                            <td><span class="status-badge status-pending">Brouillon</span></td>
+                            <td><button class="btn-delete" style="background: var(--primary-color);">Éditer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Les agents autonomes expliqués</td>
+                            <td>Blog Interne</td>
+                            <td>📝 Texte</td>
+                            <td>Intelligence Artificielle</td>
+                            <td>1.2k</td>
+                            <td>4.2/5</td>
+                            <td><span class="status-badge status-active">Publié</span></td>
+                            <td><button class="btn-delete" style="background: var(--primary-color);">Éditer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Interview Expert : Jean Dupont</td>
+                            <td>YouTube</td>
+                            <td>🎥 Vidéo</td>
+                            <td>Automatisation</td>
+                            <td>15k</td>
+                            <td>95% 👍</td>
+                            <td><span class="status-badge status-active">Publié</span></td>
+                            <td><button class="btn-delete" style="background: var(--primary-color);">Éditer</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+
+</html>
