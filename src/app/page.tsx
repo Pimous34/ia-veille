@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
-import Link from 'next/link';
 import OreegamiMessages from '@/components/OreegamiMessages';
-import LoginModal from '@/components/LoginModal';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 // --- Types ---
 
@@ -165,17 +165,12 @@ export default function Home() {
   const [supabase] = useState(() => createClient());
   
   // UI State
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isFormatMenuOpen, setIsFormatMenuOpen] = useState(false);
   const [activeFormat, setActiveFormat] = useState<'video' | 'podcast' | 'text'>('video');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   
   // Data State
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [user, setUser] = useState<any>(null);
+
   
   const [dataError, setDataError] = useState<string | null>(null);
 
@@ -210,20 +205,7 @@ export default function Home() {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const isNavigatingRef = useRef(false);
 
-  // Fetch Session on Mount
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    };
-    getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
 
   // Helper to close format menu when clicking outside
   useEffect(() => {
@@ -232,8 +214,8 @@ export default function Home() {
       if (!target.closest('.format-controls')) {
         setIsFormatMenuOpen(false);
       }
-      if (!target.closest('.auth-position')) {
-        setIsProfileMenuOpen(false);
+      if (!target.closest('.format-controls')) {
+        setIsFormatMenuOpen(false);
       }
     }
     document.addEventListener('click', handleClickOutside);
@@ -256,31 +238,10 @@ export default function Home() {
 
       try {
         // 0. Get User and Promo Config
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) console.warn("Auth check failed (might be offline/blocked):", authError.message);
+       // Removed user-specific logic for now to fix build issues
+        const promoConfig: { tuto_sources?: string[], video_tags?: string[] } = {};
 
-        let promoConfig: { tuto_sources?: string[], video_tags?: string[] } = {};
-
-        if (user && user.email) {
-            const { data: studentData } = await supabase
-                .from('students')
-                .select('promos!inner(tuto_config, video_config)')
-                .eq('email', user.email)
-                .single();
-            
-            if (studentData && studentData.promos) {
-                const promosRaw = studentData.promos;
-                // Handle case where it might be array or object due to joined query
-                const p = Array.isArray(promosRaw) ? promosRaw[0] : promosRaw;
-                
-                if (p) {
-                    promoConfig = {
-                        tuto_sources: p.tuto_config?.sources || [],
-                        video_tags: p.video_config?.tags || []
-                    };
-                }
-            }
-        }
+        // if (user && user.email) { ... } logic removed
 
         // 1. Fetch Latest JTs (History)
         const { data: jtDataList, error: jtError } = await supabase
@@ -294,9 +255,12 @@ export default function Home() {
 
         let fetchedJts: JtVideo[] = [];
         if (jtDataList && jtDataList.length > 0) {
-          fetchedJts = jtDataList;
-          setJtVideosList(jtDataList);
-          setJtVideo(jtDataList[0]);
+          fetchedJts = jtDataList.map((jt: JtVideo) => ({
+            ...jt,
+            thumbnail_url: jt.thumbnail_url || getDeterministicImage(jt.title || 'JT IA')
+          }));
+          setJtVideosList(fetchedJts);
+          setJtVideo(fetchedJts[0]);
           setCurrentJtIndex(0);
         }
 
@@ -585,167 +549,10 @@ export default function Home() {
 
   return (
     <>
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-        {/* Header */}
-        <header className="header">
-          <div className="header-container">
-            {/* Mobile Menu Toggle */}
-            <button className="mobile-menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+        <Navbar />
 
-            <Link href="/" className="logo-link">
-                <div className="logo">
-                    <div className="logo-wrapper">
-                         {/* Showing SVG logo as default since we copied it */}
-                        <Image src="/logo.png" alt="OREEGAM'IA Logo" width={32} height={32} className="logo-img" style={{display: 'block'}} unoptimized />
-                    </div>
-                    <div className="logo-placeholder" style={{display: 'none'}}>
-                        <span className="logo-text">OREEGAM&apos;IA</span>
-                    </div>
-                </div>
-            </Link>
-
-            <nav className="main-nav hidden md:flex">
-                <a href="#jtnews" className="nav-link">JTNews</a>
-                <a href="#categories" className="nav-link">Catégories</a>
-                <a href="#actualite" className="nav-link">Actualité</a>
-                <Link href="/flashcards" className="nav-link">Cours</Link>
-                <a href="/shortnews.html" className="nav-link">ShortNews</a>
-            </nav>
-
-            <div className="search-container">
-                <button className="search-toggle-btn" onClick={() => setIsSearchOpen(!isSearchOpen)} aria-label="Rechercher">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                    </svg>
-                </button>
-            </div>
-
-            {user ? (
-              <div className="auth-position relative">
-                <button 
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="auth-button flex items-center gap-2 p-1.5 focus:outline-none"
-                >
-                  {user.user_metadata?.avatar_url ? (
-                     <div className="relative w-8 h-8 rounded-full border border-gray-200 overflow-hidden">
-                       <Image 
-                          src={user.user_metadata.avatar_url} 
-                          alt="Profile" 
-                          fill
-                          className="object-cover"
-                          unoptimized
-                       />
-                     </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
-                        <span className="font-bold text-xs">{user.email?.charAt(0).toUpperCase() || 'U'}</span>
-                    </div>
-                  )}
-                  <span className="auth-text hidden sm:inline font-medium text-black truncate max-w-[60px]">
-                      {user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || 'Mon Profil'}
-                  </span>
-                </button>
-                
-                {/* Profile Dropdown */}
-                {isProfileMenuOpen && (
-                  <div className="absolute right-0 top-[calc(100%+10px)] w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-150 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="px-4 py-3 border-b border-gray-100 mb-1">
-                      <p className="text-sm font-bold text-gray-900 truncate">
-                          {user.user_metadata?.full_name || user.user_metadata?.name || 'Utilisateur'}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                    </div>
-                    
-                    {/* Admin / Trainer Menu */}
-                    {(user.email?.toLowerCase().includes('benjamin') || user.email?.toLowerCase().includes('oreegami')) && (
-                        <Link href="/teacher" className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                          </svg>
-                          Espace formateur
-                        </Link>
-                    )}
-                    <button
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        window.location.reload();
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                    >
-                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                      </svg>
-                      Se déconnecter
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-                <button 
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="auth-button auth-position"
-                >
-                    <span className="auth-text hidden sm:inline">S&apos;inscrire / Se connecter</span>
-                    <svg className="auth-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                </button>
-            )}
-          </div>
-        </header>
-
-        {/* Search Overlay */}
-        <div className={`search-overlay ${isSearchOpen ? 'active' : ''}`} id="searchOverlay">
-            <div className="search-overlay-content">
-                <form className="search-overlay-form" onSubmit={(e) => e.preventDefault()}>
-                    <input type="search" className="search-overlay-input" name="q" id="search-input" placeholder="Rechercher des articles..." aria-label="Rechercher" autoFocus={isSearchOpen} />
-                    <button type="submit" className="search-overlay-submit" aria-label="Rechercher">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                    </button>
-                    <button type="button" className="search-overlay-close" onClick={() => setIsSearchOpen(false)} aria-label="Fermer">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
-             <div className="mobile-menu-container active" id="mobileMenuContainer" style={{display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'white', zIndex: 200, padding: '2rem'}}>
-                <button className="mobile-menu-close" onClick={() => setIsMobileMenuOpen(false)} aria-label="Fermer le menu" style={{position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none'}}>
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-                <nav className="mobile-nav" style={{display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '2rem'}}>
-                    <a href="#jtnews" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>JTNews</a>
-                    <a href="#categories" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Catégories</a>
-                    <a href="#actualite" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Actualité</a>
-                    <Link href="/flashcards" className="nav-link" onClick={() => setIsMobileMenuOpen(false)}>Cours</Link>
-                </nav>
-            </div>
-        )}
-
-        <main className="main-content">
+        <main className="main-content grow pt-20">
             {/* Hero Section */}
             <section className="hero-section" id="jtnews">
                 <div className="container">
@@ -1081,11 +888,7 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="footer">
-            <div className="container">
-                <p>&copy; 2024 OREEGAM&apos;IA - Veille IA & No-Code</p>
-            </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );

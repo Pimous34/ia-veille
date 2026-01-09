@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Cookie } from 'lucide-react';
 
 declare global {
@@ -9,13 +9,16 @@ declare global {
   }
 }
 
-const shouldShowBanner = () => {
-  if (typeof window === 'undefined') return false;
-  return !window.localStorage.getItem('cookieConsent');
-};
-
 const CookieBanner = () => {
-  const [showBanner, setShowBanner] = useState(shouldShowBanner);
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage only after component mounts on client
+    const consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+      setShowBanner(true);
+    }
+  }, []);
 
   const acceptAll = () => {
     const allAccepted = {

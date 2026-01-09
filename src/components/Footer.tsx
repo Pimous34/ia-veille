@@ -6,8 +6,8 @@ const Footer = () => {
   return (
     <footer className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-16">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+          <div className="col-span-1 md:col-span-2 lg:col-span-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">IA Veille</h3>
             <p className="text-gray-600 dark:text-gray-400">
               Votre source d&apos;information sur les dernières avancées en intelligence artificielle.
@@ -37,22 +37,23 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Newsletter</h4>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Abonnez-vous à notre newsletter pour recevoir les dernières actualités directement dans votre boîte mail.
+              Abonnez-vous à notre newsletter.
             </p>
-            <div className="flex">
+            <div className="flex flex-col space-y-2">
               <input 
                 type="email" 
                 placeholder="Votre email" 
-                className="px-4 py-2 w-full rounded-l-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="px-4 py-2 w-full rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
-              <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-r-lg transition-colors">
+              <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors w-full">
                 S&apos;inscrire
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col items-start md:items-end">
-             <Link href="/contact" className="inline-block text-white font-semibold no-underline py-2 px-5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #9C27B0 0%, #5E35B1 100%)', boxShadow: '0 4px 6px rgba(156, 39, 176, 0.3)' }}>
+          <div className="flex flex-col items-start lg:items-end">
+             <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4 lg:text-right w-full">Contact</h4>
+             <Link href="/contact" className="inline-block text-white font-semibold no-underline py-2 px-5 rounded-full transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #9C27B0 0%, #5E35B1 100%)', boxShadow: '0 4px 6px rgba(156, 39, 176, 0.3)' }}>
                 Nous contacter
              </Link>
           </div>

@@ -11,7 +11,7 @@
         {
           "fieldPath": "embedding",
           "vectorConfig": {
-            "dimension": "768",
+            "dimension": 768,
             "flat": {}
           }
         }
