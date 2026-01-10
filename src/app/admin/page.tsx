@@ -2,24 +2,26 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export default function AdminDashboard() {
   const router = useRouter();
 
   const handleLogout = () => {
-    // In a real app, call supabase.auth.signOut() here
     router.push('/auth');
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc]">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <div className="logo-placeholder">A</div>
+        <Link href="/" className="sidebar-header group">
+          <div className="logo-placeholder group-hover:scale-110 transition-transform">
+            <Image src="/logo.png" alt="OreegamIA" width={40} height={40} className="logo-img" />
+          </div>
           <div className="logo-text">ADMIN</div>
-        </div>
+        </Link>
 
         <nav className="sidebar-nav">
           <Link href="/admin" className="nav-item active">
@@ -31,8 +33,12 @@ export default function AdminDashboard() {
             <span>Articles</span>
           </Link>
           <Link href="/admin/users" className="nav-item">
-            <span className="nav-icon">👥</span>
-            <span>Utilisateurs</span>
+            <span className="nav-icon">🛡️</span>
+            <span>Gestion des Accès</span>
+          </Link>
+          <Link href="/admin/flashcards" className="nav-item">
+            <span className="nav-icon">🧠</span>
+            <span>Cartes Mémo</span>
           </Link>
           <Link href="#" className="nav-item">
             <span className="nav-icon">⚙️</span>
@@ -51,7 +57,6 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="main-content">
-        {/* Top bar */}
         <div className="top-bar">
           <h1 className="page-title">Tableau de Bord</h1>
           <button onClick={handleLogout} className="logout-btn">
@@ -68,7 +73,7 @@ export default function AdminDashboard() {
         <div className="stats-grid">
           <StatCard icon="📝" title="Articles Total" value="869" trend="+12" />
           <StatCard icon="👁️" title="Vues ce mois" value="12.5k" trend="+5%" />
-          <StatCard icon="👥" title="Abonnés" value="624" trend="+43" />
+          <StatCard icon="👥" title="Apprenants" value="624" trend="+43" />
           <StatCard icon="⚠️" title="Retours" value="15" trend="-2" />
         </div>
 
@@ -109,9 +114,9 @@ export default function AdminDashboard() {
         <section className="content-section">
           <div className="section-header">
             <h2 className="section-title">Derniers Articles</h2>
-            <button className="btn-primary">
-              + Nouvel Article
-            </button>
+            <Link href="/admin/articles" className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold">
+              Voir tout
+            </Link>
           </div>
           <div className="table-container">
             <table className="data-table">
@@ -126,7 +131,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                <ArticleRow title="L'IA générative en 2024" category="IA" date="07 Jan 2026" author="Samuel Tessier" status="Publié" statusClass="published" />
+                <ArticleRow title="L&apos;IA générative en 2024" category="IA" date="07 Jan 2026" author="Samuel Tessier" status="Publié" statusClass="published" />
                 <ArticleRow title="Tutoriel Make.com avancé" category="No-Code" date="06 Jan 2026" author="Jane Smith" status="Publié" statusClass="published" />
                 <ArticleRow title="Les dangers du Deepfake" category="Éthique" date="05 Jan 2026" author="Mike Johnson" status="En relecture" statusClass="review" />
                 <ArticleRow title="Introduction à n8n" category="Automatisation" date="04 Jan 2026" author="Emily Davis" status="Publié" statusClass="published" />
@@ -184,8 +189,8 @@ function ArticleRow({ title, category, date, author, status, statusClass }: { ti
             </td>
             <td>
                 <div className="flex gap-2">
-                    <button className="btn-icon" title="Modifier">✏️</button>
-                    <button className="btn-delete" title="Supprimer">🗑️</button>
+                    <button className="text-gray-400 hover:text-indigo-600" title="Modifier">✏️</button>
+                    <button className="text-gray-400 hover:text-red-600" title="Supprimer">🗑️</button>
                 </div>
             </td>
         </tr>

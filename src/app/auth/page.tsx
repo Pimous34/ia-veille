@@ -11,8 +11,16 @@ import { Suspense } from 'react';
 function AuthContent() {
   const searchParams = useSearchParams();
   const isAdminView = searchParams.get('admin') === '1';
+  const errorType = searchParams.get('error');
   const view: 'welcome' | 'login' = isAdminView ? 'login' : 'welcome';
   const supabase = createClient();
+
+  const getErrorMessage = () => {
+    if (errorType === 'unauthorized') {
+      return "Accès restreint : Votre compte n'est pas autorisé à accéder à cette plateforme. Veuillez contacter un administrateur Oreegami si vous pensez qu'il s'agit d'une erreur.";
+    }
+    return null;
+  };
 
   // Social Login Handler
   const handleOAuthSignIn = async (provider: 'google') => {
@@ -38,6 +46,12 @@ function AuthContent() {
     return (
       <div className="auth-page">
         <div className="auth-container">
+            {/* Error Message */}
+            {getErrorMessage() && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-medium animate-pulse">
+                    {getErrorMessage()}
+                </div>
+            )}
             {/* Logo */}
             <div className="auth-logo">
                 <Link href="/">

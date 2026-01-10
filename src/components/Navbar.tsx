@@ -112,7 +112,7 @@ import { useAuth } from '@/contexts/AuthContext';
                 <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
                 <Link href="/categories" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
                 <Link href="/articles" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Actualité</Link>
-                <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Apprendre</Link>
+                <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Cartes Mémo</Link>
                 <Link href="/short-news" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
               </div>
 
@@ -147,7 +147,8 @@ import { useAuth } from '@/contexts/AuthContext';
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 overflow-hidden">
                       <Link href="/parametres" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Paramètres</Link>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Se déconnecter</button>
+                      <Link href="/admin" className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50">Espace Admin</Link>
+                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50">Se déconnecter</button>
                     </div>
                   )}
                 </div>
@@ -176,18 +177,27 @@ import { useAuth } from '@/contexts/AuthContext';
                 unoptimized
               />
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 relative">
                <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                   </svg>
                </button>
                {user ? (
-                 <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">
-                    {getUserDisplayName().charAt(0).toUpperCase()}
-                 </button>
+                 <div className="relative" ref={menuRef}>
+                    <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
+                        {getUserDisplayName().charAt(0).toUpperCase()}
+                    </button>
+                    {isMenuOpen && (
+                        <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl py-1 border border-gray-100 overflow-hidden z-50 animate-scale-in">
+                            <Link href="/parametres" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50">Paramètres</Link>
+                            <Link href="/admin" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-b border-gray-50">Espace Admin</Link>
+                            <button onClick={handleLogout} className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50">Se déconnecter</button>
+                        </div>
+                    )}
+                 </div>
                ) : (
-                 <Link href="/auth" className="bg-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold">
+                 <Link href="/auth" className="bg-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md">
                     Connexion
                  </Link>
                )}

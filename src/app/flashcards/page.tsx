@@ -5,12 +5,13 @@ import { createClient } from '@/utils/supabase/client'
 import { Flashcard, reviewFlashcard, getNextIntervals } from '@/lib/fsrs'
 import { Rating } from 'ts-fsrs'
 import Link from 'next/link'
-import { ArrowLeft, Check, BrainCircuit, Loader2, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, Check, BrainCircuit, Loader2, Sparkles, X, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { widgetsDb } from '@/lib/widgets-firebase'
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { toast } from 'react-hot-toast'
 
 // Extended Flashcard for UI with joined template data
 interface UIFlashcard extends Flashcard {
@@ -82,7 +83,7 @@ const CURRICULUM_ORDER: Record<string, number> = {
   'IA & Génération': 8,
 };
 
-export default function FlashcardsPage() {
+export default function MemoCardsPage() {
   const [loading, setLoading] = useState(true)
   const [flashcards, setFlashcards] = useState<UIFlashcard[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
@@ -103,7 +104,6 @@ export default function FlashcardsPage() {
   // ... (fetchDueFlashcards logic remains unchanged) ...
 
   const fetchDueFlashcards = useCallback(async () => {
-    setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
@@ -150,7 +150,10 @@ export default function FlashcardsPage() {
   }, [supabase])
 
   useEffect(() => {
-    fetchDueFlashcards()
+    const load = async () => {
+       await fetchDueFlashcards();
+    };
+    load();
   }, [fetchDueFlashcards])
 
   // Auto-focus the input on mount or when coming back from explanation
@@ -259,17 +262,33 @@ export default function FlashcardsPage() {
     if (!currentCard) return;
 
     if (confirm("Êtes-vous sûr de vouloir supprimer cette carte de vos révisions ?")) {
-        // Delete from DB
-        const { error } = await supabase
+        // 1. Delete from user's personal cards
+        const { error: deleteError } = await supabase
             .from('user_flashcards')
             .delete()
             .eq('id', currentCard.id);
 
-        if (error) {
-            console.error('Error deleting card:', error);
-            alert("Erreur lors de la suppression de la carte.");
+        if (deleteError) {
+            console.error('Error deleting card:', deleteError);
+            toast.error("Erreur lors de la suppression locale.");
             return;
         }
+
+        // 2. Notify Admin about possible bad template
+        if (currentCard.template_id) {
+            const { data: { user } } = await supabase.auth.getUser();
+            await supabase.from('suggested_flashcards').insert({
+                user_id: user?.id,
+                template_id: currentCard.template_id,
+                front: currentCard.front_content,
+                back: currentCard.back_content,
+                category: currentCard.category,
+                type: 'deletion',
+                status: 'pending'
+            });
+        }
+
+        toast.success("Carte retirée. L'admin a été notifié de votre retour.");
 
         // Move to next card
         setIsFlipped(false);
@@ -293,8 +312,13 @@ export default function FlashcardsPage() {
     }
   };
 
-  const handleExplain = async () => {
-    if (!userNotes.trim() || isWaitingForAi) return;
+  const handleExplain = async (customPrompt?: string) => {
+    const promptToUse = customPrompt || userNotes.trim();
+    if (!promptToUse || isWaitingForAi) return;
+
+    if (customPrompt) {
+        setUserNotes(customPrompt);
+    }
 
     setIsWaitingForAi(true);
     setIsExplaining(true);
@@ -319,12 +343,12 @@ Question étudiée: "${currentCard.front_content}"
 Réponse de référence: "${currentCard.back_content}"
 
 INPUT DE L'APPRENANT (Réflexion ou Question):
-"${userNotes}"`;
+"${promptToUse}"`;
 
     const instructions = `TA MISSION:
-1. Analyse l'intention de l'apprenant : "${userNotes}".
+1. Analyse l'intention de l'apprenant : "${promptToUse}".
 2. Applique ces règles de style : 
-   - Commence ta réponse en mettant le terme principal recherché ("${userNotes}") EN GRAS tout au début.
+   - Commence ta réponse en mettant le terme principal recherché ("${promptToUse}") EN GRAS tout au début.
    - Mets systématiquement EN GRAS les mots-clés, termes techniques et concepts essentiels tout au long de ton explication pour favoriser la lecture rapide.
 3. Si sa question n'a AUCUN rapport avec la carte actuelle ("${currentCard.front_content}"), IGNORE totalement la carte. Ne mentionne JAMAIS son contenu, ne fais pas de phrase de transition. Réponds comme si la carte n'existait pas.
 4. Ne commence JAMAIS ta réponse par un préambule. Entre directement dans le vif du sujet.
@@ -367,6 +391,39 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
     setUserNotes('');
   };
 
+  const handleSuggestCard = async () => {
+    const currentCard = flashcards[currentCardIndex];
+    if (!currentCard || !aiResponse) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        toast.error("Vous devez être connecté pour suggérer une carte.");
+        return;
+    }
+
+    const { error } = await supabase.from('suggested_flashcards').insert({
+        user_id: user.id,
+        front: userNotes,
+        back: aiResponse,
+        category: currentCard.category,
+        status: 'pending',
+        type: 'new_card'
+    });
+
+    if (error) {
+        console.error('Détails erreur suggestion:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+        toast.error(`Erreur : ${error.message || "Impossible d'envoyer la suggestion"}`);
+    } else {
+        toast.success("Suggestion envoyée pour la formation !");
+        closeExplanation();
+    }
+  };
+
   // UI Render Logic
   if (loading) {
     return (
@@ -403,13 +460,13 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
         
         <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-4">
         
-        {sessionComplete ? (
+         {sessionComplete ? (
            <div className="w-full max-w-lg text-center space-y-6 animate-fade-in py-10 bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
              <div className="mx-auto w-24 h-24 bg-green-100 rounded-full flex items-center justify-center border border-green-200">
                 <Check size={48} className="text-green-600" />
              </div>
-             <h2 className="text-3xl font-bold text-gray-900">Session terminée !</h2>
-             <p className="text-gray-600">Vous avez révisé toutes vos cartes pour le moment.</p>
+             <h2 className="text-3xl font-black text-gray-900">Session terminée !</h2>
+             <p className="text-gray-500 font-medium">Bravo ! Vous avez terminé votre session de cartes mémo avec succès.</p>
              <div className="flex flex-col gap-4 items-center">
                 <Link 
                   href="/"
@@ -430,9 +487,9 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
             <div className="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100">
                <BrainCircuit size={48} className="text-gray-400" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Rien à réviser pour l&apos;instant !</h2>
-            <p className="text-gray-500 max-w-md mx-auto">
-              Revenez plus tard quand vos cartes seront dues, ou ajoutez-en de nouvelles depuis la bibliothèque.
+            <h2 className="text-3xl md:text-5xl font-black text-gray-900 mb-4">Cartes mémo épuisées !</h2>
+            <p className="text-gray-500 text-lg md:text-xl font-medium mb-10 max-w-md mx-auto">
+                Vous avez révisé toutes vos cartes pour aujourd&apos;hui. Revenez demain pour la suite !
             </p>
              {/* Debug Button to Add Random Card */}
              <button 
@@ -467,7 +524,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                     />
                     {userNotes.trim() && !isWaitingForAi && (
                         <button 
-                            onClick={handleExplain}
+                            onClick={() => handleExplain()}
                             className="ml-4 p-2 bg-indigo-600 text-white rounded-full hover:scale-110 transition-transform shadow-lg cursor-pointer flex items-center justify-center pulse-indigo"
                         >
                             <Sparkles size={20} />
@@ -488,24 +545,24 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
               >
                   {/* Interactive Hover Zones (Visible ON TOP when flipped) */}
                   {isFlipped && (
-                      <div className="absolute -inset-x-8 -top-8 -bottom-16 z-10 grid grid-cols-3 pointer-events-auto">
+                      <div className="absolute -inset-x-8 top-24 -bottom-16 z-10 grid grid-cols-3 pointer-events-auto">
                           {/* Left Zone: Again */}
                           <div 
-                              className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Again ? 'bg-red-500/5' : ''}`}
+                              className="transition-colors duration-200 cursor-pointer"
                               onMouseEnter={() => setHoveredZone(Rating.Again)}
                               onMouseLeave={() => setHoveredZone(null)}
                               onClick={() => handleRate(Rating.Again)}
                           />
                           {/* Middle Zone: Hard */}
                           <div 
-                              className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Hard ? 'bg-amber-500/5' : ''}`}
+                              className="transition-colors duration-200 cursor-pointer"
                               onMouseEnter={() => setHoveredZone(Rating.Hard)}
                               onMouseLeave={() => setHoveredZone(null)}
                               onClick={() => handleRate(Rating.Hard)}
                           />
                           {/* Right Zone: Easy */}
                           <div 
-                              className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Easy ? 'bg-green-500/5' : ''}`}
+                              className="transition-colors duration-200 cursor-pointer"
                               onMouseEnter={() => setHoveredZone(Rating.Easy)}
                               onMouseLeave={() => setHoveredZone(null)}
                               onClick={() => handleRate(Rating.Easy)}
@@ -532,6 +589,18 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                               {flashcards[currentCardIndex].category}
                           </span>
                       </div>
+
+                      {/* Top Right: Learn More Button */}
+                      <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleExplain(flashcards[currentCardIndex].front_content);
+                        }}
+                        className="absolute top-8 right-8 z-30 pointer-events-auto flex items-center gap-3 px-10 py-4 bg-[linear-gradient(135deg,rgba(255,235,59,0.1)_0%,rgba(255,152,0,0.1)_25%,rgba(255,107,157,0.1)_50%,rgba(156,39,176,0.1)_75%,rgba(33,150,243,0.1)_100%)] backdrop-blur-xl shadow-lg border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-indigo-600/30 border-r-2 border-r-indigo-600/30 hover:scale-105 hover:-translate-y-0.5 transition-all text-gray-800 font-black text-sm uppercase tracking-widest group rounded-[40px]"
+                      >
+                        <Info size={18} className="text-indigo-600 group-hover:rotate-12 transition-transform" />
+                        <span>En savoir plus</span>
+                      </button>
                       
                       <div className="flex-1 flex flex-col items-center justify-center w-full mt-16">
                           <div className="text-2xl md:text-4xl font-bold text-center leading-snug text-gray-900 max-w-prose">
@@ -555,12 +624,24 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                           </span>
                       </div>
 
-                      {/* Corner Category */}
+                       {/* Corner Category */}
                       <div className="absolute top-6 left-6 hidden md:block">
                           <span className="text-xs font-semibold text-gray-400 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
                               {flashcards[currentCardIndex].category}
                           </span>
                       </div>
+
+                      {/* Top Right: Learn More Button (Back) */}
+                      <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleExplain(flashcards[currentCardIndex].front_content);
+                        }}
+                        className="absolute top-8 right-8 z-30 pointer-events-auto flex items-center gap-3 px-10 py-4 bg-[linear-gradient(135deg,rgba(255,235,59,0.1)_0%,rgba(255,152,0,0.1)_25%,rgba(255,107,157,0.1)_50%,rgba(156,39,176,0.1)_75%,rgba(33,150,243,0.1)_100%)] backdrop-blur-xl shadow-lg border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-indigo-600/30 border-r-2 border-r-indigo-600/30 hover:scale-105 hover:-translate-y-0.5 transition-all text-gray-800 font-black text-sm uppercase tracking-widest group rounded-[40px]"
+                      >
+                        <Info size={18} className="text-indigo-600 group-hover:rotate-12 transition-transform" />
+                        <span>En savoir plus</span>
+                      </button>
 
                       <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-32">
                           <RichContent content={flashcards[currentCardIndex].back_content} />
@@ -646,7 +727,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                     {isWaitingForAi ? (
                       <div className="flex flex-col items-center justify-center h-full space-y-4">
                         <Loader2 className="animate-spin text-indigo-600/20" size={50} />
-                        <p className="text-indigo-600/40 font-black text-sm uppercase tracking-[0.4em] animate-pulse">On prépare la réponse</p>
+                        <p className="text-indigo-600/40 font-black text-sm uppercase tracking-[0.4em] animate-pulse">Analyse de la carte mémo...</p>
                       </div>
                     ) : (
                         <div className="max-w-4xl mx-auto space-y-8 py-8 w-full">
@@ -656,7 +737,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                                 <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-500">Expertise OREEGAMI</span>
                             </div>
 
-                            <div className="text-gray-900 text-lg md:text-xl font-medium leading-[1.6] tracking-tight whitespace-pre-wrap selection:bg-indigo-100 prose prose-indigo max-w-none prose-p:leading-[1.6] prose-strong:text-indigo-600 prose-strong:font-black">
+                            <div className="text-gray-900 text-lg md:text-xl font-medium leading-[1.6] tracking-tight selection:bg-indigo-100 prose prose-indigo max-w-none prose-p:leading-[1.6] prose-p:mt-0 prose-p:mb-4 prose-strong:text-indigo-600 prose-strong:font-black">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                     {aiResponse}
                                 </ReactMarkdown>
@@ -672,12 +753,12 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                       <div className="fixed bottom-10 inset-x-0 z-60 flex justify-center px-4 animate-fade-in-up pointer-events-none">
                           <div className="flex items-center gap-6 p-4 pointer-events-auto">
                                 <button 
-                                    onClick={closeExplanation}
+                                    onClick={handleSuggestCard}
                                     className="h-32 min-w-[280px] md:min-w-[320px] px-6 rounded-[35px] border-2 bg-white border-indigo-50 text-indigo-600 shadow-xl shadow-indigo-100/50 hover:bg-indigo-600 hover:border-indigo-700 hover:text-white hover:scale-110 hover:-translate-y-4 font-black transition-all flex flex-col items-center justify-center gap-0.5 group cursor-pointer"
                                 >
                                     <Check size={28} strokeWidth={4} className="group-hover:scale-125 transition-transform" />
-                                    <span className="text-lg md:text-xl uppercase tracking-widest leading-tight">Utile,</span>
-                                    <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] opacity-80 leading-tight">rajouter au quizz</span>
+                                    <span className="text-lg md:text-xl uppercase tracking-widest leading-tight">Utile pour</span>
+                                    <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] opacity-80 leading-tight">la formation (quizz)</span>
                                 </button>
 
                                 <button 

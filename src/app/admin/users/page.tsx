@@ -1,0 +1,340 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { X, Search, UserPlus, Trash2 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { toast } from 'react-hot-toast';
+
+interface Promo {
+  id: string;
+  name: string;
+}
+
+interface Student {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  promo_id: string;
+  status: string;
+  created_at: string;
+  promos?: Promo;
+}
+
+export default function AdminUsersPage() {
+  const router = useRouter();
+  const [supabase] = useState(() => createClient());
+  const [students, setStudents] = useState<Student[]>([]);
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPromoId, setSelectedPromoId] = useState<string>('');
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch promos first
+      const { data: promoData } = await supabase.from('promos').select('id, name');
+      setPromos(promoData || []);
+      if (promoData && promoData.length > 0) setSelectedPromoId(promoData[0].id);
+
+      // Fetch students with promo info
+      const { data, error } = await supabase
+        .from('students')
+        .select('*, promos(id, name)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setStudents(data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error("Erreur lors du chargement des données");
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDeleteUser = async (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet apprenant ?')) {
+      const { error } = await supabase.from('students').delete().eq('id', id);
+      if (error) {
+        toast.error("Erreur lors de la suppression");
+      } else {
+        setStudents(students.filter(s => s.id !== id));
+        toast.success("Apprenant supprimé");
+      }
+    }
+  };
+
+  const handleImport = async () => {
+    const lines = importText.split('\n');
+    const newStudentsData: { first_name: string; last_name: string; email: string; promo_id: string | null; status: string }[] = [];
+    let addedCount = 0;
+
+    lines.forEach(line => {
+      line = line.trim();
+      if (!line) return;
+
+      const parts = line.split(/\s+/);
+      if (parts.length >= 3) {
+        const email = parts.pop() || '';
+        const lastName = parts.pop() || '';
+        const firstName = parts.join(' ');
+        
+        newStudentsData.push({
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          promo_id: selectedPromoId || null,
+          status: 'active'
+        });
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      const { error } = await supabase.from('students').insert(newStudentsData);
+      if (error) {
+        console.error('Import error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        toast.error(`Erreur lors de l'import : ${error.message || 'Erreur inconnue'}`);
+      } else {
+        toast.success(`${addedCount} apprenant(s) ajouté(s) avec succès !`);
+        setImportText('');
+        setIsModalOpen(false);
+        fetchData();
+      }
+    } else {
+      toast.error('Aucun apprenant valide trouvé. Format: Prénom Nom Email');
+    }
+  };
+
+  const filteredStudents = students.filter(student => 
+    `${student.first_name} ${student.last_name} ${student.email}`.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <Link href="/" className="sidebar-header group">
+          <div className="logo-placeholder group-hover:scale-110 transition-transform">
+            <Image src="/logo.png" alt="OreegamIA" width={40} height={40} className="logo-img" />
+          </div>
+          <div className="logo-text">ADMIN</div>
+        </Link>
+
+        <nav className="sidebar-nav">
+          <Link href="/admin" className="nav-item">
+            <span className="nav-icon">📊</span>
+            <span>Dashboard</span>
+          </Link>
+          <Link href="/admin/articles" className="nav-item">
+            <span className="nav-icon">📰</span>
+            <span>Articles</span>
+          </Link>
+          <Link href="/admin/users" className="nav-item active">
+            <span className="nav-icon">🛡️</span>
+            <span>Gestion des Accès</span>
+          </Link>
+          <Link href="/admin/flashcards" className="nav-item">
+            <span className="nav-icon">🧠</span>
+            <span>Cartes Mémo</span>
+          </Link>
+          <Link href="#" className="nav-item">
+            <span className="nav-icon">⚙️</span>
+            <span>Paramètres</span>
+          </Link>
+        </nav>
+
+        <div className="user-profile">
+          <div className="avatar">A</div>
+          <div className="user-info">
+            <div className="user-name">Admin</div>
+            <div className="user-email">stessier@edu...</div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+        <div className="top-bar">
+          <h1 className="page-title">Gestion des Accès</h1>
+          <button onClick={() => router.push('/auth')} className="logout-btn">
+            Déconnexion
+          </button>
+        </div>
+
+        <div className="welcome-banner">
+          <h2 className="welcome-text">Contrôle des Accès</h2>
+          <p className="welcome-subtext">Gérez les autorisations pour vos {students.length} membres (Apprenants & Formateurs).</p>
+        </div>
+
+        {/* Filters & Actions */}
+        <section className="content-section">
+          <div className="section-header">
+            <div className="flex items-center gap-4 flex-1">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input 
+                        type="text" 
+                        placeholder="Rechercher un membre..." 
+                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 transition-colors"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+            <button 
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+            >
+              <UserPlus size={18} />
+              <span>Ajouter</span>
+            </button>
+          </div>
+
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Prénom</th>
+                  <th>Nom</th>
+                  <th>Courriel</th>
+                  <th>Promotion</th>
+                  <th>Statut</th>
+                  <th className="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                    <tr>
+                        <td colSpan={6} className="text-center py-20">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-gray-500 font-medium">Chargement des apprenants...</span>
+                            </div>
+                        </td>
+                    </tr>
+                ) : filteredStudents.map((student) => (
+                  <tr key={student.id}>
+                    <td>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">
+                                {student.first_name.charAt(0)}
+                            </div>
+                            {student.first_name}
+                        </div>
+                    </td>
+                    <td>{student.last_name}</td>
+                    <td className="text-gray-500">{student.email}</td>
+                    <td>
+                        <span className="px-3 py-1 bg-yellow-50 text-yellow-700 rounded-lg text-xs font-bold border border-yellow-100">
+                            {student.promos?.name || 'Sans promo'}
+                        </span>
+                    </td>
+                    <td>
+                        <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                            student.status === 'active' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                            {student.status === 'active' ? 'Actif' : student.status}
+                        </span>
+                    </td>
+                    <td className="text-right">
+                      <button 
+                        onClick={() => handleDeleteUser(student.id)} 
+                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!loading && filteredStudents.length === 0 && (
+                    <tr>
+                        <td colSpan={6} className="text-center py-10 text-gray-400">
+                            Aucun apprenant trouvé.
+                        </td>
+                    </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      {/* Import Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+            <div className="relative bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-scale-in">
+                <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <div>
+                        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Import de masse</h3>
+                        <p className="text-sm text-gray-500 mt-1">Ajoutez plusieurs utilisateurs en une seule fois.</p>
+                    </div>
+                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors shadow-sm">
+                        <X size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-8">
+                    <div className="mb-6">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Choisir la Promotion</label>
+                        <select 
+                            value={selectedPromoId}
+                            onChange={(e) => setSelectedPromoId(e.target.value)}
+                            className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 bg-white"
+                        >
+                            <option value="">-- Sans promotion --</option>
+                            {promos.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-4 bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                        Format attendu : <strong className="text-indigo-600">Prénom Nom Email</strong> (un apprenant par ligne).
+                    </p>
+                    <textarea 
+                        className="w-full h-48 p-4 rounded-2xl border border-gray-200 outline-none focus:border-indigo-500 resize-none font-mono text-sm leading-relaxed"
+                        placeholder="Thomas Dubois thomas.dubois@edu-oreegami.com&#10;Marie Lefebvre marie.lefebvre@edu-oreegami.com"
+                        value={importText}
+                        onChange={(e) => setImportText(e.target.value)}
+                    />
+                </div>
+
+                <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button 
+                        onClick={() => setIsModalOpen(false)}
+                        className="px-6 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-white transition-all capitalize"
+                    >
+                        Annuler
+                    </button>
+                    <button 
+                        onClick={handleImport}
+                        className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 uppercase tracking-widest text-sm"
+                    >
+                        Démarrer l&apos;import
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+    </div>
+  );
+}
