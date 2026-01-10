@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Send, X, MessageSquare, Loader2, Paperclip, Settings, Save, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Message = {
     role: 'user' | 'model';
@@ -33,15 +34,15 @@ export const GenkitChat = ({
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [user, setUser] = useState<{
+    const [userWithProfile, setUserWithProfile] = useState<{
         id: string;
         email: string;
         profile: {
-            age?: number;
             experience_level?: string;
             user_type?: string;
         } | null;
     } | null>(null);
+    const { user: authUser } = useAuth();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -72,37 +73,36 @@ export const GenkitChat = ({
                 }
             })
             .catch(err => console.error("Config fetch error:", err));
-
-        const getUser = async () => {
-             const { data: { session } } = await supabase.auth.getSession();
-              if (session?.user) {
-                  const { data: profile } = await supabase
-                      .from('profiles')
-                      .select('age, experience_level, user_type')
-                      .eq('id', session.user.id)
-                      .single();
-                  
-                   setUser({ 
-                       id: session.user.id,
-                       email: session.user.email!,
-                       profile: (profile as { age?: number; experience_level?: string; user_type?: string }) || null
-                   });
-              } else {
-                 setUser(null);
-             }
-        };
-        getUser();
     }, [supabase, tenantId, messages.length]);
+
+    useEffect(() => {
+        if (authUser && authUser.email) {
+             supabase
+                .from('user_profiles')
+                .select('experience_level, user_type')
+                .eq('id', authUser.id)
+                .maybeSingle()
+                .then(({ data: profile }) => {
+                    setUserWithProfile({
+                        id: authUser.id,
+                        email: authUser.email!,
+                        profile: profile
+                    });
+                });
+        } else {
+             setUserWithProfile(null);
+        }
+    }, [authUser, supabase]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !user) return;
+        if (!file || !userWithProfile) return;
 
         setIsLoadingUploading(true);
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('userEmail', user.email);
+        formData.append('userEmail', userWithProfile.email);
 
         try {
             const res = await fetch('/api/upload-drive', {
@@ -166,10 +166,9 @@ export const GenkitChat = ({
                     question: userMessage,
                     history: history,
                     tenantId: tenantId,
-                    userData: user?.profile ? {
-                        age: user.profile.age,
-                        experience_level: user.profile.experience_level,
-                        user_type: user.profile.user_type
+                    userData: userWithProfile?.profile ? {
+                        experience_level: userWithProfile.profile.experience_level,
+                        user_type: userWithProfile.profile.user_type
                     } : undefined
                 }),
             });
@@ -243,7 +242,7 @@ export const GenkitChat = ({
         }
     };
 
-    const isAdmin = user?.profile?.user_type === 'admin' || user?.profile?.user_type === 'teacher';
+    const isAdmin = userWithProfile?.profile?.user_type === 'admin' || userWithProfile?.profile?.user_type === 'teacher';
 
     if (!mounted) return null;
 
@@ -313,7 +312,7 @@ export const GenkitChat = ({
                         {/* Content Area */}
                         {isSettingsOpen ? (
                             <div className="flex-1 overflow-y-auto p-6 bg-white space-y-6 animate-in fade-in duration-200">
-                                {!user ? (
+                                {!authUser ? (
                                     <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
                                         <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
                                             <Settings size={32} />
@@ -395,7 +394,7 @@ export const GenkitChat = ({
                                     </h4>
                                     
                                     <div className="space-y-3">
-                                        <label className="block text-xs font-bold text-zinc-500 uppercase tracking-wider text-blue-600 flex justify-between items-center">
+                                        <label className="flex text-xs font-bold uppercase tracking-wider text-blue-600 justify-between items-center">
                                             Google Drive Folder ID
                                             <button 
                                                 onClick={handleSyncDrive}
@@ -445,7 +444,7 @@ export const GenkitChat = ({
                                     <div 
                                         className={`max-w-[85%] mx-2 p-5 text-sm leading-relaxed shadow-sm ${
                                             msg.role === 'user' 
-                                                ? 'bg-gradient-to-br from-orange-500 to-rose-600 text-white rounded-2xl rounded-tr-sm shadow-orange-500/20' 
+                                                ? 'bg-linear-to-br from-orange-500 to-rose-600 text-white rounded-2xl rounded-tr-sm shadow-orange-500/20' 
                                                 : 'bg-white text-zinc-700 rounded-2xl rounded-tl-sm shadow-md border border-zinc-50'
                                         }`}
                                     >
@@ -532,7 +531,8 @@ export const GenkitChat = ({
                                     className="hidden" 
                                 />
                                 
-                                {user && (
+                                
+                                {authUser && (
                                     <button 
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
@@ -552,7 +552,7 @@ export const GenkitChat = ({
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder={user ? "Posez votre question..." : "Connectez-vous pour plus..."}
+                                    placeholder={authUser ? "Posez votre question..." : "Connectez-vous pour plus..."}
                                     className="flex-1 pl-2 py-2.5 bg-transparent border-none focus:outline-none text-zinc-700 placeholder:text-zinc-400 text-sm"
                                     disabled={isLoading}
                                 />
@@ -564,7 +564,7 @@ export const GenkitChat = ({
                                     <Send size={16} className={input.trim() ? "translate-x-0.5" : ""} />
                                 </button>
                             </form>
-                            {!user && (
+                            {!authUser && (
                                 <p className="text-[10px] text-center text-zinc-300 mt-2 font-medium">
                                     Connectez-vous pour envoyer des fichiers
                                 </p>

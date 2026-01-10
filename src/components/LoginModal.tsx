@@ -78,7 +78,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                     <Image src="/logo.png" alt="Oreegami" fill className="object-contain" unoptimized />
                   </div>
                   
-                  <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-linear-to-r from-pink-500 to-violet-500 mb-2">
+                  <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-500 mb-2">
                     Bienvenue
                   </h2>
                   <p className="text-gray-500 dark:text-gray-400">
@@ -94,7 +94,7 @@ const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                       onClick={() => handleOAuthSignIn('google')}
                       className="w-full relative group overflow-hidden rounded-xl p-px focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all hover:scale-[1.02]"
                     >
-                      <span className="absolute inset-0 bg-linear-to-r from-blue-500 via-blue-400 to-blue-500 opacity-20 group-hover:opacity-100 transition-opacity duration-300"></span>
+                      <span className="absolute inset-0 bg-gradient-to-r from-blue-500 via-blue-400 to-blue-500 opacity-20 group-hover:opacity-100 transition-opacity duration-300"></span>
                       <div className="relative flex items-center justify-center gap-3 bg-white dark:bg-gray-800 px-6 py-3.5 rounded-xl border border-gray-100 dark:border-gray-700">
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
                           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

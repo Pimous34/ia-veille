@@ -44,12 +44,10 @@ interface JtVideo {
 const globalFallbackImages = [
   "/images/placeholders/placeholder_0.jpg",
   "/images/placeholders/placeholder_1.jpg",
-  "/images/placeholders/placeholder_2.jpg",
   "/images/placeholders/placeholder_3.jpg",
   "/images/placeholders/placeholder_4.jpg",
   "/images/placeholders/placeholder_5.jpg",
   "/images/placeholders/placeholder_6.jpg",
-  "/images/placeholders/placeholder_7.jpg",
   "/images/placeholders/placeholder_8.jpg",
   "/images/placeholders/placeholder_9.jpg",
   "/images/placeholders/placeholder_11.jpg",
@@ -555,7 +553,7 @@ export default function Home() {
         <main className="main-content grow pt-20">
             {/* Hero Section */}
             <section className="hero-section" id="jtnews">
-                <div className="container">
+                <div className="container mx-auto">
                     {dataError && (
                        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-center shadow-xs border border-red-100 flex items-center justify-center gap-2">
                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -733,7 +731,7 @@ export default function Home() {
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     } else {
                                                         // It's a JT not in the main list? Should not happen if logic is correct.
-                                                        // Fallback: Just play it, but navigation controls might be out of sync.
+                                                        // Fallback:// (Aucun changement ici, juste une vérification) controls might be out of sync.
                                                         setJtVideo(video);
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                                     }
@@ -802,7 +800,7 @@ export default function Home() {
 
             {/* Trending Articles */}
             <section className="articles-section trending-articles" id="actualite">
-                <div className="container">
+                <div className="container mx-auto">
                     <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
                         <h2 className="section-title mb-0!">Les news de l&apos;IA</h2>
                         <div className="flex-1 flex gap-2 ml-12 flex-wrap">

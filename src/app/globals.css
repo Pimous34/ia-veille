@@ -62,9 +62,10 @@ body {
 }
 
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
+    width: 100%;
+    margin-inline: auto; /* Modern standard for centering */
+    max-width: 1440px; /* Wider canvas for modern dashboards */
+    padding-inline: 2rem; /* 32px padding for better breathing room */
 }
 
 /* Header */
@@ -88,10 +89,10 @@ body {
     margin-left: auto;
     margin-right: auto;
     z-index: 100;
-    padding: 0.5rem 0;
-    width: 90%;
-    /* Reserve 250px on each side for logo/button */
-    max-width: 1200px;
+    padding: 0.5rem 20px;
+    width: 100%;
+    /* Strict alignment with main content */
+    /* max-width: 1200px; Disabled for wider screens */
     border-radius: 50px;
 }
 
@@ -383,6 +384,7 @@ body {
 
 /* Hero Section (Video + Related Articles) */
 .hero-section {
+    width: 100%;
     margin-top: 120px;
     margin-bottom: 3rem;
     scroll-margin-top: 120px;
@@ -390,9 +392,11 @@ body {
 }
 
 .hero-container {
+    width: 100%;
     display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 5rem;
+    /* Fixed width for video column to prevent excessive whitespace */
+    grid-template-columns: 380px 1fr;
+    gap: 3rem;
     align-items: start;
 }
 

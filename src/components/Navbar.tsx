@@ -5,11 +5,11 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
+import { useAuth } from '@/contexts/AuthContext';
 
  const Navbar = () => {
    const [isScrolled, setIsScrolled] = useState(false);
-   const [user, setUser] = useState<User | null>(null);
+   const { user } = useAuth();
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [isSearchOpen, setIsSearchOpen] = useState(false);
    const [mounted, setMounted] = useState(false);
@@ -43,22 +43,7 @@ import type { User } from '@supabase/supabase-js';
     };
   }, []);
 
-  useEffect(() => {
-    // Récupérer l'utilisateur connecté
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-
-    getUser();
-
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  // Authentication logic removed as it's handled by AuthContext
 
   // Fermer le menu quand on clique en dehors
   useEffect(() => {
@@ -97,49 +82,55 @@ import type { User } from '@supabase/supabase-js';
           isScrolled ? 'h-16' : 'h-24'
         } hidden md:block`}
       >
-        <div className="container mx-auto h-full px-5 flex items-center justify-between relative">
-          {/* 1. Logo (Left) */}
-          <div className="shrink-0 z-10">
-            <Link href="/" aria-label="OREEGAM'IA">
-              <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <Image 
-                  src="/logo.png" 
-                  alt="OREEGAM'IA" 
-                  width={150} 
-                  height={50} 
-                  className={`${isScrolled ? 'h-[40px]' : 'h-[50px]'} w-auto drop-shadow-sm transition-all duration-300`}
-                  priority
-                  unoptimized
-                />
+        <div className="container mx-auto h-full px-5 relative flex items-center justify-center">
+          
+          {/* Center Group: Logo + Navigation Pill */}
+          {/* We treat them as a unit centered on the screen. 
+              The user wants the LOGO next to the BAR. 
+              If the bar is strictly centered, the logo sits to its left.
+          */}
+          <div className="flex items-center gap-6">
+             {/* Logo */}
+             <div className="shrink-0 transition-opacity hover:opacity-80">
+                <Link href="/" aria-label="OREEGAM'IA">
+                    <Image 
+                      src="/logo.png" 
+                      alt="OREEGAM'IA" 
+                      width={150} 
+                      height={50} 
+                      className={`${isScrolled ? 'h-[40px]' : 'h-[50px]'} w-auto drop-shadow-sm transition-all duration-300`}
+                      priority
+                      unoptimized
+                    />
+                </Link>
+             </div>
+
+            {/* Main Pill */}
+            <div className={`flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 pointer-events-auto min-w-[650px] justify-between transition-all duration-300 ${isScrolled ? 'h-[50px] scale-95' : 'h-[60px]'}`}>
+              {/* Navigation Links */}
+              <div className="flex items-center px-6 gap-8 flex-1 justify-center">
+                <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
+                <Link href="/categories" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
+                <Link href="/articles" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Actualité</Link>
+                <Link href="/formation" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Cours</Link>
+                <Link href="/short-news" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
               </div>
-            </Link>
-          </div>
 
-          {/* 2. Main Pill (Center - Absolutely centered in viewport) */}
-          <div className={`absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 pointer-events-auto min-w-[650px] justify-between transition-all duration-300 ${isScrolled ? 'h-[50px] scale-95' : 'h-[60px]'}`}>
-            {/* Navigation Links */}
-            <div className="flex items-center px-6 gap-8 flex-1 justify-center">
-              <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
-              <Link href="/categories" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
-              <Link href="/articles" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Actualité</Link>
-              <Link href="/formation" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Cours</Link>
-              <Link href="/short-news" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
+              {/* Search Icon */}
+              <button 
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all text-gray-600 hover:text-indigo-600"
+                aria-label="Rechercher"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+              </button>
             </div>
-
-            {/* Search Icon */}
-            <button 
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all text-gray-600 hover:text-indigo-600"
-              aria-label="Rechercher"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-            </button>
           </div>
 
-          {/* 3. Auth Button (Right) */}
-          <div className="shrink-0 z-10 whitespace-nowrap">
+          {/* 3. Auth Button (Positions Absolutely to the Right) */}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-10 whitespace-nowrap">
             {mounted && (
               user ? (
                 <div className="relative" ref={menuRef}>

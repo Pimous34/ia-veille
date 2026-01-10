@@ -6,8 +6,9 @@ import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import 'video.js/dist/video-js.css';
 import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
 import LoginModal from './LoginModal';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 interface DailyNewsVideo {
   id: string;
@@ -35,7 +36,7 @@ const Hero = () => {
   const [heroWidth, setHeroWidth] = useState<number | null>(null);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { user } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
   const [newsItems, setNewsItems] = useState<Array<{title: string; url: string}>>([]);
@@ -83,9 +84,9 @@ const Hero = () => {
           // Convertir les JT en format playlist
           const jtPlaylist: PlaylistItem[] = jts.map((jt: DailyNewsVideo) => ({
             src: jt.video_url,
-            poster: jt.thumbnail_url || '/videos/hero-phone-poster.jpg',
+            poster: (jt.thumbnail_url && jt.thumbnail_url.startsWith('http')) ? jt.thumbnail_url : '/videos/hero-phone-poster.jpg',
             news: {
-              imageSrc: jt.thumbnail_url || '/images/news-placeholder.jpg',
+              imageSrc: (jt.thumbnail_url && jt.thumbnail_url.startsWith('http')) ? jt.thumbnail_url : '/images/news-placeholder.jpg',
               title: jt.title,
             }
           }));
@@ -109,20 +110,7 @@ const Hero = () => {
     loadDailyJT();
   }, [supabase]);
 
-  useEffect(() => {
-    // Check for user
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
 
   const currentVideoRef = useRef(currentVideo);
 
@@ -364,7 +352,7 @@ const Hero = () => {
       />
       <div className="w-full px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 max-w-7xl mx-auto items-center">
-          <div className="md:col-span-5 lg:col-span-4 lg:col-start-3 flex flex-col items-center md:items-end">
+          <div className="md:col-span-5 lg:col-span-4 lg:col-start-2 flex flex-col items-center md:items-end">
             {!videoUnavailable && currentVideo ? (
               <div
                 ref={videoContainerRef}

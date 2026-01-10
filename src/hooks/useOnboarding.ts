@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User } from '@/types/user';
+import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 export interface OnboardingData {
@@ -17,29 +17,24 @@ export interface OnboardingData {
 
 export const useOnboarding = () => {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const { user: authUser, loading: authLoading } = useAuth();
 
   const checkOnboardingStatus = useCallback(async () => {
-    try {
-      // Get current user
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      if (!currentUser) {
-        console.log('Aucun utilisateur connecté');
-        setIsLoading(false);
-        return;
-      }
+    if (!authUser) {
+      setCheckingStatus(false);
+      return;
+    }
 
-      setUser(currentUser);
-      console.log('Utilisateur connecté:', currentUser.email);
+    try {
+      console.log('Utilisateur connecté:', authUser.email);
 
       // Check if user has completed onboarding
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('onboarding_completed')
-        .eq('id', currentUser.id)
-        .single();
+        .eq('id', authUser.id)
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking onboarding status:', error);
@@ -55,20 +50,20 @@ export const useOnboarding = () => {
     } catch (error) {
       console.error('Error in checkOnboardingStatus:', error);
     } finally {
-      setIsLoading(false);
+      setCheckingStatus(false);
     }
-  }, []);
+  }, [authUser]);
 
   const completeOnboarding = useCallback(async (data: OnboardingData) => {
-    if (!user) return;
+    if (!authUser) return;
 
     try {
       // Upsert user profile with onboarding data
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
-          id: user.id,
-          email: user.email,
+          id: authUser.id,
+          email: authUser.email,
           onboarding_completed: true,
           user_type: data.userType,
           experience_level: data.experienceLevel,
@@ -94,14 +89,15 @@ export const useOnboarding = () => {
       console.error('Error in completeOnboarding:', error);
       throw error;
     }
-  }, [user]);
+  }, [authUser]);
 
   useEffect(() => {
+    if (authLoading) return;
     checkOnboardingStatus();
     
     // Vérifier si des données d'onboarding sont en attente dans localStorage
     const savedOnboardingData = localStorage.getItem('onboarding-data');
-    if (savedOnboardingData) {
+    if (savedOnboardingData && authUser) {
       try {
         const data = JSON.parse(savedOnboardingData);
         // Sauvegarder automatiquement après connexion
@@ -114,29 +110,7 @@ export const useOnboarding = () => {
         localStorage.removeItem('onboarding-data');
       }
     }
-
-    // Écouter les changements d'authentification pour détecter les nouvelles connexions
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('Utilisateur vient de se connecter:', session.user.email);
-        
-        // Vérifier si c'est une nouvelle inscription
-        const justSignedIn = localStorage.getItem('just-signed-in');
-        if (justSignedIn) {
-          localStorage.removeItem('just-signed-in');
-          
-          // Attendre un peu pour que l'utilisateur soit bien créé en base
-          setTimeout(async () => {
-            await checkOnboardingStatus();
-          }, 500);
-        }
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [checkOnboardingStatus, completeOnboarding]);
+  }, [checkOnboardingStatus, completeOnboarding, authLoading, authUser]);
 
   const skipOnboarding = () => {
     setIsOnboardingOpen(false);
@@ -148,8 +122,8 @@ export const useOnboarding = () => {
 
   return {
     isOnboardingOpen,
-    isLoading,
-    user,
+    isLoading: checkingStatus || authLoading,
+    user: authUser,
     completeOnboarding,
     skipOnboarding,
     openOnboarding,

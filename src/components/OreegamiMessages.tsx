@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, MessageSquare, Bell, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
   id: number;
@@ -17,14 +18,15 @@ export default function OreegamiMessages() {
   const [isLoading, setIsLoading] = useState(true);
   const [fadingIds, setFadingIds] = useState<number[]>([]);
   const [showArchives, setShowArchives] = useState(false);
+  const { user, loading: authLoading } = useAuth();
   
   const supabase = createClient();
 
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        // 1. Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        if (authLoading) return; // Wait for auth to be ready
+        // User comes from context now
         
         let promoId: string | null = null;
 
@@ -34,7 +36,7 @@ export default function OreegamiMessages() {
                 .from('students')
                 .select('promo_id')
                 .eq('email', user.email)
-                .single();
+                .maybeSingle();
             
             if (studentData) {
                 promoId = studentData.promo_id;
@@ -102,7 +104,7 @@ export default function OreegamiMessages() {
     };
 
     fetchMessages();
-  }, [supabase]);
+  }, [supabase, user, authLoading]);
 
   const handleDismiss = async (id: number) => {
     if (fadingIds.includes(id)) return;
@@ -120,7 +122,6 @@ export default function OreegamiMessages() {
 
     // Persist to DB
     try {
-        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             await supabase.from('user_message_actions').upsert({
                 user_id: user.id,
@@ -149,7 +150,6 @@ export default function OreegamiMessages() {
 
     // Persist to DB
     try {
-        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             // Remove the archive record
             await supabase.from('user_message_actions').delete().match({ user_id: user.id, message_id: id });

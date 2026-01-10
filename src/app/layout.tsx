@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Patrick_Hand } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import ToastProvider from "@/components/ToastProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,10 +54,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${patrickHand.variable} antialiased`}
       >
-        {children}
-        <CookieBanner />
-        <ToastProvider />
-        <GenkitChat />
+        <AuthProvider>
+          {children}
+          <CookieBanner />
+          <ToastProvider />
+          <GenkitChat />
+        </AuthProvider>
       </body>
     </html>
   );
