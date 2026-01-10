@@ -1,11 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Flashcard, reviewFlashcard, getNextIntervals } from '@/lib/fsrs'
 import { Rating } from 'ts-fsrs'
 import Link from 'next/link'
-import { ArrowLeft, Check, BrainCircuit } from 'lucide-react'
+import { ArrowLeft, Check, BrainCircuit, Loader2, Sparkles, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { widgetsDb } from '@/lib/widgets-firebase'
+import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 // Extended Flashcard for UI with joined template data
 interface UIFlashcard extends Flashcard {
@@ -87,6 +92,10 @@ export default function FlashcardsPage() {
 
   const [hoveredZone, setHoveredZone] = useState<Rating | null>(null)
   const [userNotes, setUserNotes] = useState('')
+  const [isExplaining, setIsExplaining] = useState(false)
+  const [aiResponse, setAiResponse] = useState<string | null>(null)
+  const [isWaitingForAi, setIsWaitingForAi] = useState(false)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // Supabase client is stable
   const [supabase] = useState(() => createClient())
@@ -143,6 +152,13 @@ export default function FlashcardsPage() {
   useEffect(() => {
     fetchDueFlashcards()
   }, [fetchDueFlashcards])
+
+  // Auto-focus the input on mount or when coming back from explanation
+  useEffect(() => {
+    if (!isExplaining && !loading && flashcards.length > 0) {
+      inputRef.current?.focus()
+    }
+  }, [isExplaining, loading, flashcards.length])
   
   const handleFlip = () => {
     if (!isFlipped && flashcards[currentCardIndex]) {
@@ -277,6 +293,80 @@ export default function FlashcardsPage() {
     }
   };
 
+  const handleExplain = async () => {
+    if (!userNotes.trim() || isWaitingForAi) return;
+
+    setIsWaitingForAi(true);
+    setIsExplaining(true);
+    setAiResponse(null);
+
+    const currentCard = flashcards[currentCardIndex];
+    
+    // On utilise le Persona de l'IA OREEGAM'IA pour garantir la même qualité
+    const persona = `PERSONA:
+Tu es un expert de renommée mondiale en développement web, design et nouvelles technologies. 
+Ton ton est professionnel, précis et direct. Tu évites le "blabla" inutile, les analogies infantilisantes (ex: pas d'origami, pas de cuisine) et les expressions de remplissage.
+
+CONSIGNES DE RÉPONSE:
+1. Réponds avec une expertise technique de haut niveau, tout en restant clair.
+2. Ne fais JAMAIS de préambule (ex: pas de "D'accord", pas de "Voici une explication").
+3. N'utilise JAMAIS d'expressions comme "En termes simples" ou "Pour aller plus loin".
+4. Utilise un formatage propre (listes à puces, gras sur les mots-clés) mais sans en-têtes de section superflus.
+5. Si l'utilisateur propose une réflexion, confirme ou corrige sans détour.`;
+
+    const context = `CONTEXTE DE L'APPRENTISSAGE:
+Question étudiée: "${currentCard.front_content}"
+Réponse de référence: "${currentCard.back_content}"
+
+INPUT DE L'APPRENANT (Réflexion ou Question):
+"${userNotes}"`;
+
+    const instructions = `TA MISSION:
+1. Analyse l'intention de l'apprenant : "${userNotes}".
+2. Applique ces règles de style : 
+   - Commence ta réponse en mettant le terme principal recherché ("${userNotes}") EN GRAS tout au début.
+   - Mets systématiquement EN GRAS les mots-clés, termes techniques et concepts essentiels tout au long de ton explication pour favoriser la lecture rapide.
+3. Si sa question n'a AUCUN rapport avec la carte actuelle ("${currentCard.front_content}"), IGNORE totalement la carte. Ne mentionne JAMAIS son contenu, ne fais pas de phrase de transition. Réponds comme si la carte n'existait pas.
+4. Ne commence JAMAIS ta réponse par un préambule. Entre directement dans le vif du sujet.
+5. Si sa question demande une explication SUR la carte, utilise le contexte.
+6. Reste un expert pédagogue, clair et direct.`;
+
+    const prompt = `${persona}\n\n${context}\n\n${instructions}`;
+
+    try {
+      const docRef = await addDoc(collection(widgetsDb, 'generate'), {
+        prompt: prompt,
+        status: 'PENDING',
+        createdAt: serverTimestamp(),
+        valid_artisan_context_bot_id: 'ia_veille_bot'
+      });
+
+      // Listen for response
+      const unsubscribe = onSnapshot(docRef, (doc) => {
+        const data = doc.data();
+        if (data && data.response) {
+          setAiResponse(data.response);
+          setIsWaitingForAi(false);
+          unsubscribe();
+        } else if (data && data.status && data.status.state === 'ERROR') {
+          setAiResponse("Désolé, une erreur est survenue lors de la génération de l'explication.");
+          setIsWaitingForAi(false);
+          unsubscribe();
+        }
+      });
+    } catch (err) {
+      console.error("AI Error:", err);
+      setAiResponse("Erreur de connexion avec l'IA.");
+      setIsWaitingForAi(false);
+    }
+  };
+
+  const closeExplanation = () => {
+    setIsExplaining(false);
+    setAiResponse(null);
+    setUserNotes('');
+  };
+
   // UI Render Logic
   if (loading) {
     return (
@@ -362,171 +452,256 @@ export default function FlashcardsPage() {
                 <div className="relative group flex items-center border-b-2 border-black/10 pb-1 w-fit min-w-[300px]">
                     <textarea 
                         id="notes"
+                        ref={inputRef}
                         value={userNotes}
                         onChange={(e) => setUserNotes(e.target.value)}
+                        placeholder="Explique-moi..."
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
+                                handleExplain();
                             }
                         }}
-                        placeholder="Explique-moi..."
                         className="bg-transparent p-0 text-gray-900 placeholder-gray-300 outline-none resize-none text-2xl md:text-4xl font-black transition-all focus:placeholder-transparent overflow-hidden scrollbar-hide w-full text-center md:text-left"
                         style={{ fieldSizing: "content" } as React.CSSProperties}
                     />
+                    {userNotes.trim() && !isWaitingForAi && (
+                        <button 
+                            onClick={handleExplain}
+                            className="ml-4 p-2 bg-indigo-600 text-white rounded-full hover:scale-110 transition-transform shadow-lg cursor-pointer flex items-center justify-center pulse-indigo"
+                        >
+                            <Sparkles size={20} />
+                        </button>
+                    )}
                 </div>
             </div>
 
-            <div className="w-full h-[50vh] perspective-1000 relative group max-h-[600px] mb-8">
+            <div className={`w-full transition-all duration-700 ease-in-out relative group mb-8 ${isExplaining ? 'min-h-[60vh]' : 'h-[50vh] max-h-[600px] perspective-1000'}`}>
             
-            {/* Interactive Hover Zones (Visible ON TOP when flipped) */}
-            {isFlipped && (
-                <div className="absolute -inset-x-8 -top-8 -bottom-16 z-10 grid grid-cols-3 pointer-events-auto">
-                    {/* Left Zone: Again */}
-                    <div 
-                        className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Again ? 'bg-red-500/5' : ''}`}
-                        onMouseEnter={() => setHoveredZone(Rating.Again)}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleRate(Rating.Again)}
-                    />
-                    {/* Middle Zone: Hard */}
-                    <div 
-                        className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Hard ? 'bg-amber-500/5' : ''}`}
-                        onMouseEnter={() => setHoveredZone(Rating.Hard)}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleRate(Rating.Hard)}
-                    />
-                    {/* Right Zone: Easy */}
-                    <div 
-                        className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Easy ? 'bg-green-500/5' : ''}`}
-                        onMouseEnter={() => setHoveredZone(Rating.Easy)}
-                        onMouseLeave={() => setHoveredZone(null)}
-                        onClick={() => handleRate(Rating.Easy)}
-                    />
-                </div>
-            )}
+            <AnimatePresence mode="wait">
+            {!isExplaining ? (
+              <motion.div 
+                key="card"
+                initial={false}
+                exit={{ y: 500, opacity: 0, scale: 0.9, transition: { duration: 0.6, ease: "easeInOut" } }}
+                className="w-full h-full"
+              >
+                  {/* Interactive Hover Zones (Visible ON TOP when flipped) */}
+                  {isFlipped && (
+                      <div className="absolute -inset-x-8 -top-8 -bottom-16 z-10 grid grid-cols-3 pointer-events-auto">
+                          {/* Left Zone: Again */}
+                          <div 
+                              className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Again ? 'bg-red-500/5' : ''}`}
+                              onMouseEnter={() => setHoveredZone(Rating.Again)}
+                              onMouseLeave={() => setHoveredZone(null)}
+                              onClick={() => handleRate(Rating.Again)}
+                          />
+                          {/* Middle Zone: Hard */}
+                          <div 
+                              className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Hard ? 'bg-amber-500/5' : ''}`}
+                              onMouseEnter={() => setHoveredZone(Rating.Hard)}
+                              onMouseLeave={() => setHoveredZone(null)}
+                              onClick={() => handleRate(Rating.Hard)}
+                          />
+                          {/* Right Zone: Easy */}
+                          <div 
+                              className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Easy ? 'bg-green-500/5' : ''}`}
+                              onMouseEnter={() => setHoveredZone(Rating.Easy)}
+                              onMouseLeave={() => setHoveredZone(null)}
+                              onClick={() => handleRate(Rating.Easy)}
+                          />
+                      </div>
+                  )}
 
-            <div 
-                className={`relative w-full h-full duration-500 transform-style-3d transition-all cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
-                onClick={!isFlipped ? handleFlip : undefined}
-            >
-              {/* Front */}
-              <div className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar z-0">
-                 
-                 {/* Centered Question Label */}
-                 <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
-                     <span className="text-xl font-black uppercase tracking-widest text-blue-600 bg-blue-50/80 px-6 py-2 rounded-full border border-blue-100 backdrop-blur-sm">
-                        Question
-                     </span>
-                 </div>
+                  <div 
+                      className={`relative w-full h-full duration-500 transform-style-3d transition-all cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
+                      onClick={!isFlipped ? handleFlip : undefined}
+                  >
+                    {/* Front */}
+                    <div className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar z-0">
+                      
+                      {/* Centered Question Label */}
+                      <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
+                          <span className="text-xl font-black uppercase tracking-widest text-blue-600 bg-blue-50/80 px-6 py-2 rounded-full border border-blue-100 backdrop-blur-sm">
+                              Question
+                          </span>
+                      </div>
 
-                 <div className="absolute top-6 left-6 hidden md:block">
-                    <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                        {flashcards[currentCardIndex].category}
-                    </span>
-                 </div>
-                 
-                 <div className="flex-1 flex flex-col items-center justify-center w-full mt-16">
-                    <div className="text-2xl md:text-4xl font-bold text-center leading-snug text-gray-900 max-w-prose">
-                        {flashcards[currentCardIndex].front_content}
+                      <div className="absolute top-6 left-6 hidden md:block">
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                              {flashcards[currentCardIndex].category}
+                          </span>
+                      </div>
+                      
+                      <div className="flex-1 flex flex-col items-center justify-center w-full mt-16">
+                          <div className="text-2xl md:text-4xl font-bold text-center leading-snug text-gray-900 max-w-prose">
+                              {flashcards[currentCardIndex].front_content}
+                          </div>
+                      </div>
+                      
+                      <div className="mt-auto pt-6 text-sm font-semibold text-gray-400 animate-pulse flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                        Appuyez pour retourner
+                      </div>
                     </div>
-                 </div>
-                 
-                 <div className="mt-auto pt-6 text-sm font-semibold text-gray-400 animate-pulse flex items-center gap-2">
-                   <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-                   Appuyez pour retourner
-                 </div>
-              </div>
 
-              {/* Back */}
-              <div className="absolute w-full h-full bg-slate-50 border border-slate-200 rounded-3xl p-6 md:p-12 flex flex-col backface-hidden rotate-y-180 shadow-xl overflow-y-auto custom-scrollbar z-0">
-                 
-                 {/* Centered Response Label - Lowered */}
-                 <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
-                     <span className="text-xl font-black uppercase tracking-widest text-indigo-600 bg-white/90 px-6 py-2 rounded-full shadow-sm border border-indigo-100 backdrop-blur-sm">
-                        Réponse
-                     </span>
-                 </div>
+                    {/* Back */}
+                    <div className="absolute w-full h-full bg-slate-50 border border-slate-200 rounded-3xl p-6 md:p-12 flex flex-col backface-hidden rotate-y-180 shadow-xl overflow-y-auto custom-scrollbar z-0">
+                      
+                      {/* Centered Response Label - Lowered */}
+                      <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
+                          <span className="text-xl font-black uppercase tracking-widest text-indigo-600 bg-white/90 px-6 py-2 rounded-full shadow-sm border border-indigo-100 backdrop-blur-sm">
+                              Réponse
+                          </span>
+                      </div>
 
-                 {/* Corner Category */}
-                 <div className="absolute top-6 left-6 hidden md:block">
-                     <span className="text-xs font-semibold text-gray-400 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-                        {flashcards[currentCardIndex].category}
-                     </span>
-                 </div>
+                      {/* Corner Category */}
+                      <div className="absolute top-6 left-6 hidden md:block">
+                          <span className="text-xs font-semibold text-gray-400 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
+                              {flashcards[currentCardIndex].category}
+                          </span>
+                      </div>
 
-                 <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-32">
-                    <RichContent content={flashcards[currentCardIndex].back_content} />
-                 </div>
-              </div>
-            </div>
+                      <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-32">
+                          <RichContent content={flashcards[currentCardIndex].back_content} />
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Controls (Only visible when flipped) - Improved Overlay UI */}
-            {isFlipped && (
-               <div className="absolute -bottom-16 left-0 w-full px-4 md:px-12 grid grid-cols-3 gap-6 animate-slide-up z-20 pointer-events-none"> {/* Pointer events none on container to let clicks pass through to shared zones if needed, BUT buttons need pointer-events-auto */}
-                  
-                  {/* BUTTONS: Pointer events AUTO to catch direct clicks. 
-                      Styling reacts to hoveredZone state for 'remote hover' effect */}
+                  {/* Controls (Only visible when flipped) - Improved Overlay UI */}
+                  {isFlipped && (
+                    <div className="absolute -bottom-16 left-0 w-full px-4 md:px-12 grid grid-cols-3 gap-6 animate-slide-up z-20 pointer-events-none">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleRate(Rating.Again); }}
+                          className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl 
+                              ${hoveredZone === Rating.Again 
+                                  ? 'bg-red-500 border-red-600 text-white scale-110 -translate-y-4 shadow-red-500/40' 
+                                  : 'bg-white border-red-50 text-red-600 shadow-red-100/50 hover:bg-red-50 hover:border-red-200 hover:-translate-y-1'}`}
+                        >
+                          <span className="font-black text-lg md:text-2xl transition-transform">À revoir</span>
+                          <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
+                              {nextIntervals[Rating.Again]}
+                          </span>
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleRate(Rating.Hard); }} 
+                          className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
+                              ${hoveredZone === Rating.Hard 
+                                  ? 'bg-amber-500 border-amber-600 text-white scale-110 -translate-y-4 shadow-amber-500/40' 
+                                  : 'bg-white border-amber-50 text-amber-600 shadow-amber-100/50 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-1'}`}
+                        >
+                          <span className="font-black text-lg md:text-2xl transition-transform">Presque bon</span>
+                          <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
+                              {nextIntervals[Rating.Hard]}
+                          </span>
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleRate(Rating.Easy); }} 
+                          className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
+                              ${hoveredZone === Rating.Easy 
+                                  ? 'bg-green-500 border-green-600 text-white scale-110 -translate-y-4 shadow-green-500/40' 
+                                  : 'bg-white border-green-50 text-green-600 shadow-green-100/50 hover:bg-green-50 hover:border-green-200 hover:-translate-y-1'}`}
+                        >
+                          <span className="font-black text-lg md:text-2xl transition-transform">Je connais</span>
+                          <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
+                              {nextIntervals[Rating.Easy]}
+                          </span>
+                        </button>
+                    </div>
+                  )}
+
+                  {/* Feedback Button (Useless) */}
+                  {isFlipped && (
+                      <div className="absolute -bottom-40 left-0 w-full flex justify-center pointer-events-auto z-30 animate-fade-in-up">
+                          <button 
+                              onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
+                              className="flex items-center gap-3 px-8 py-4 bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 rounded-full transition-all border border-gray-200 hover:border-red-200 shadow-sm hover:scale-105"
+                              title="Cette question est inutile pour la formation"
+                          >
+                              <span className="text-2xl">👎</span>
+                              <span className="font-bold text-base">Inutile pour la formation</span>
+                          </button>
+                      </div>
+                  )}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="ai-response"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                className="w-full h-full flex flex-col relative"
+              >
+                  {/* Close button - Minimalist & Floating */}
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleRate(Rating.Again); }}
-                    className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl 
-                        ${hoveredZone === Rating.Again 
-                            ? 'bg-red-500 border-red-600 text-white scale-110 -translate-y-4 shadow-red-500/40' 
-                            : 'bg-white border-red-50 text-red-600 shadow-red-100/50 hover:bg-red-50 hover:border-red-200 hover:-translate-y-1'}`}
+                    onClick={closeExplanation}
+                    className="absolute -top-12 right-0 p-2 text-gray-400 hover:text-indigo-600 transition-colors z-50 cursor-pointer flex items-center gap-2 group"
                   >
-                    <span className="font-black text-lg md:text-2xl transition-transform">À revoir</span>
-                    <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
-                        {nextIntervals[Rating.Again]}
-                    </span>
-                  </button>
-                  
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleRate(Rating.Hard); }} 
-                    className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
-                        ${hoveredZone === Rating.Hard 
-                            ? 'bg-amber-500 border-amber-600 text-white scale-110 -translate-y-4 shadow-amber-500/40' 
-                            : 'bg-white border-amber-50 text-amber-600 shadow-amber-100/50 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-1'}`}
-                  >
-                    <span className="font-black text-lg md:text-2xl transition-transform">Presque bon</span>
-                    <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
-                        {nextIntervals[Rating.Hard]}
-                    </span>
+                    <span className="text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">Fermer</span>
+                    <X size={24} />
                   </button>
 
-                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleRate(Rating.Easy); }} 
-                    className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
-                        ${hoveredZone === Rating.Easy 
-                            ? 'bg-green-500 border-green-600 text-white scale-110 -translate-y-4 shadow-green-500/40' 
-                            : 'bg-white border-green-50 text-green-600 shadow-green-100/50 hover:bg-green-50 hover:border-green-200 hover:-translate-y-1'}`}
-                  >
-                    <span className="font-black text-lg md:text-2xl transition-transform">Je connais</span>
-                    <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
-                        {nextIntervals[Rating.Easy]}
-                    </span>
-                  </button>
-               </div>
+                  <div className="flex-1">
+                    {isWaitingForAi ? (
+                      <div className="flex flex-col items-center justify-center h-full space-y-4">
+                        <Loader2 className="animate-spin text-indigo-600/20" size={50} />
+                        <p className="text-indigo-600/40 font-black text-sm uppercase tracking-[0.4em] animate-pulse">On prépare la réponse</p>
+                      </div>
+                    ) : (
+                        <div className="max-w-4xl mx-auto space-y-8 py-8 w-full">
+                            {/* Header inside the transparent area */}
+                            <div className="flex items-center gap-4 mb-12 opacity-50">
+                                <Sparkles size={20} className="text-indigo-600" />
+                                <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-500">Expertise OREEGAMI</span>
+                            </div>
+
+                            <div className="text-gray-900 text-lg md:text-xl font-medium leading-[1.6] tracking-tight whitespace-pre-wrap selection:bg-indigo-100 prose prose-indigo max-w-none prose-p:leading-[1.6] prose-strong:text-indigo-600 prose-strong:font-black">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {aiResponse}
+                                </ReactMarkdown>
+                            </div>
+                            
+                            <div className="pt-24 h-40" />
+                        </div>
+                    )}
+                  </div>
+
+                  {/* Floating Action Bar - Quiz Style */}
+                  {!isWaitingForAi && aiResponse && (
+                      <div className="fixed bottom-10 inset-x-0 z-60 flex justify-center px-4 animate-fade-in-up pointer-events-none">
+                          <div className="flex items-center gap-6 p-4 pointer-events-auto">
+                                <button 
+                                    onClick={closeExplanation}
+                                    className="h-32 min-w-[280px] md:min-w-[320px] px-6 rounded-[35px] border-2 bg-white border-indigo-50 text-indigo-600 shadow-xl shadow-indigo-100/50 hover:bg-indigo-600 hover:border-indigo-700 hover:text-white hover:scale-110 hover:-translate-y-4 font-black transition-all flex flex-col items-center justify-center gap-0.5 group cursor-pointer"
+                                >
+                                    <Check size={28} strokeWidth={4} className="group-hover:scale-125 transition-transform" />
+                                    <span className="text-lg md:text-xl uppercase tracking-widest leading-tight">Utile,</span>
+                                    <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] opacity-80 leading-tight">rajouter au quizz</span>
+                                </button>
+
+                                <button 
+                                    onClick={closeExplanation}
+                                    className="h-32 min-w-[280px] md:min-w-[320px] px-8 rounded-[35px] border-2 bg-white border-gray-50 text-gray-400 shadow-xl shadow-gray-100/50 hover:bg-gray-100 hover:border-gray-200 hover:text-gray-600 hover:scale-105 hover:-translate-y-1 font-black transition-all flex flex-col items-center justify-center gap-2 group cursor-pointer"
+                                >
+                                    <X size={24} />
+                                    <span className="text-lg uppercase tracking-widest">Fermer</span>
+                                </button>
+                          </div>
+                      </div>
+                  )}
+              </motion.div>
             )}
-            
-            {/* Feedback Button (Useless) - Independent of Flipping, visible when flipped primarily, positioned below rating buttons */}
-            {isFlipped && (
-                 <div className="absolute -bottom-40 left-0 w-full flex justify-center pointer-events-auto z-30 animate-fade-in-up">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
-                        className="flex items-center gap-3 px-8 py-4 bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 rounded-full transition-all border border-gray-200 hover:border-red-200 shadow-sm hover:scale-105"
-                        title="Cette question est inutile pour la formation"
-                    >
-                        <span className="text-2xl">👎</span>
-                        <span className="font-bold text-base">Inutile pour la formation</span>
-                    </button>
-                 </div>
-            )}
+            </AnimatePresence>
           </div>
          </div>
         )}
 
-        <div className="fixed bottom-4 right-4 md:static md:mt-12 text-center text-xs font-medium text-gray-400">
-            Carte {flashcards.length > 0 ? currentCardIndex + 1 : 0} sur {flashcards.length}
-        </div>
+        {!isExplaining && (
+          <div className="fixed bottom-4 right-4 md:static md:mt-12 text-center text-xs font-medium text-gray-400">
+              Carte {flashcards.length > 0 ? currentCardIndex + 1 : 0} sur {flashcards.length}
+          </div>
+        )}
 
         </div>
       </main>
