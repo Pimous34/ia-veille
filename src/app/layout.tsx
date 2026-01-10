@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
 };
 
-import { GenkitChat } from "@/components/GenkitChat";
+import ExternalChatbot from "@/components/ExternalChatbot";
 
 export default function RootLayout({
   children,
@@ -58,7 +58,7 @@ export default function RootLayout({
           {children}
           <CookieBanner />
           <ToastProvider />
-          <GenkitChat />
+          <ExternalChatbot />
         </AuthProvider>
       </body>
     </html>

@@ -353,22 +353,26 @@ export default function FlashcardsPage() {
              </button>
           </div>
         ) : (
-            <div className="flex flex-col w-full h-full items-center">
+            <div className="flex flex-col w-full items-center gap-24 mt-8">
             {/* "Comprendre" Input Section - Horizontal Layout */}
-            <div className="w-full max-w-4xl flex items-center gap-4 animate-fade-in-down mb-16 px-4 shrink-0">
+            <div className="w-full max-w-max flex flex-col md:flex-row items-center justify-center gap-4 animate-fade-in-down px-4 shrink-0 mx-auto">
                 <label htmlFor="notes" className="text-black font-black uppercase tracking-tight text-2xl md:text-4xl whitespace-nowrap">
-                    Comprendre
+                    Comprendre :
                 </label>
-                <div className="flex-1 relative group flex items-center">
+                <div className="relative group flex items-center border-b-2 border-black/10 pb-1 w-fit min-w-[300px]">
                     <textarea 
                         id="notes"
                         value={userNotes}
                         onChange={(e) => setUserNotes(e.target.value)}
-                        placeholder="Notez vos réflexions ici..."
-                        className="w-full bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl p-4 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none shadow-sm text-lg font-medium min-h-[60px] flex items-center"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                            }
+                        }}
+                        placeholder="Explique-moi..."
+                        className="bg-transparent p-0 text-gray-900 placeholder-gray-300 outline-none resize-none text-2xl md:text-4xl font-black transition-all focus:placeholder-transparent overflow-hidden scrollbar-hide w-full text-center md:text-left"
                         style={{ fieldSizing: "content" } as React.CSSProperties}
                     />
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-linear-to-r from-transparent via-indigo-500/20 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 </div>
             </div>
 
