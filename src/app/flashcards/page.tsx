@@ -299,16 +299,19 @@ export default function FlashcardsPage() {
         </Link>
         
         {/* Center: Title - Bigger & Centered Pill */}
-        <div className="pointer-events-auto px-12 py-4 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 transition-all duration-300 transform hover:scale-[1.02]">
-            <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight text-center">
+        <div className="pointer-events-auto px-14 py-4 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 transition-all duration-300 transform hover:scale-[1.02]">
+            <h1 className="text-3xl md:text-4xl font-black text-gray-800 tracking-tight text-center">
                 Zone des <span className="text-indigo-600">connaissances</span>
             </h1>
         </div>
 
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center justify-end pb-12 pt-40 md:pt-32">
-        <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-8">
+      <main className="flex-1 w-full flex flex-col items-center justify-start overflow-y-auto pt-4 pb-12">
+        {/* Spacer to push content below fixed header */}
+        <div className="w-full h-32 md:h-40 shrink-0" />
+        
+        <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-4">
         
         {sessionComplete ? (
            <div className="w-full max-w-lg text-center space-y-6 animate-fade-in py-10 bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
@@ -350,19 +353,20 @@ export default function FlashcardsPage() {
              </button>
           </div>
         ) : (
-          <>
+            <div className="flex flex-col w-full h-full items-center">
             {/* "Comprendre" Input Section - Horizontal Layout */}
-            <div className="w-full max-w-4xl flex items-center md:items-start gap-6 animate-fade-in-down mb-2 px-4">
-                <label htmlFor="notes" className="text-black font-black uppercase tracking-tight text-3xl md:text-5xl pt-2">
+            <div className="w-full max-w-4xl flex items-center gap-4 animate-fade-in-down mb-16 px-4 shrink-0">
+                <label htmlFor="notes" className="text-black font-black uppercase tracking-tight text-2xl md:text-4xl whitespace-nowrap">
                     Comprendre
                 </label>
-                <div className="flex-1 relative group">
+                <div className="flex-1 relative group flex items-center">
                     <textarea 
                         id="notes"
                         value={userNotes}
                         onChange={(e) => setUserNotes(e.target.value)}
                         placeholder="Notez vos réflexions ici..."
-                        className="w-full bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl p-4 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none shadow-sm text-lg font-medium min-h-[80px]"
+                        className="w-full bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl p-4 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none shadow-sm text-lg font-medium min-h-[60px] flex items-center"
+                        style={{ fieldSizing: "content" } as React.CSSProperties}
                     />
                     <div className="absolute inset-x-0 bottom-0 h-1 bg-linear-to-r from-transparent via-indigo-500/20 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 </div>
@@ -513,7 +517,7 @@ export default function FlashcardsPage() {
                  </div>
             )}
           </div>
-          </>
+         </div>
         )}
 
         <div className="fixed bottom-4 right-4 md:static md:mt-12 text-center text-xs font-medium text-gray-400">
