@@ -85,8 +85,13 @@ export default function FlashcardsPage() {
   const [sessionComplete, setSessionComplete] = useState(false)
   const [nextIntervals, setNextIntervals] = useState<Record<number, string>>({})
 
+  const [hoveredZone, setHoveredZone] = useState<Rating | null>(null)
+  const [userNotes, setUserNotes] = useState('')
+
   // Supabase client is stable
   const [supabase] = useState(() => createClient())
+  
+  // ... (fetchDueFlashcards logic remains unchanged) ...
 
   const fetchDueFlashcards = useCallback(async () => {
     setLoading(true)
@@ -110,12 +115,10 @@ export default function FlashcardsPage() {
       `)
       .eq('user_id', user.id)
       .lte('due', new Date().toISOString()) 
-      // On retire l'order by SQL ici car on va trier plus finement en JS
 
     if (error) {
       console.error('Error fetching cards:', error)
     } else {
-        // Map to UI friendly structure
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapped: UIFlashcard[] = (data || []).map((card: any) => ({
             ...card,
@@ -124,31 +127,23 @@ export default function FlashcardsPage() {
             category: card.flashcard_templates?.category || 'Général'
         }))
 
-        // 🧠 ALGORITHME DE TRI PÉDAGOGIQUE
         const sortedCards = mapped.sort((a, b) => {
-            // 1. Tri par Ordre Curriculaire (Le parcours du Chef de Projet)
             const orderA = CURRICULUM_ORDER[a.category] || 99;
             const orderB = CURRICULUM_ORDER[b.category] || 99;
             if (orderA !== orderB) return orderA - orderB;
-    
-            // 2. Tri par Difficulté (Commencer par le plus simple dans le topic)
             return a.difficulty - b.difficulty;
         });
     
-        // 3. Paquet de 10 cartes max pour la session
         const sessionPack = sortedCards.slice(0, 10);
-
         setFlashcards(sessionPack)
     }
     setLoading(false)
   }, [supabase])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchDueFlashcards()
   }, [fetchDueFlashcards])
-
-
+  
   const handleFlip = () => {
     if (!isFlipped && flashcards[currentCardIndex]) {
         // Calculate intervals to show on buttons only when flipping
@@ -185,6 +180,7 @@ export default function FlashcardsPage() {
 
     // 3. Move to next card
     setIsFlipped(false)
+    setHoveredZone(null) // Reset hover state
     if (currentCardIndex < flashcards.length - 1) {
         setCurrentCardIndex(prev => prev + 1)
     } else {
@@ -242,6 +238,46 @@ export default function FlashcardsPage() {
     setSessionComplete(false); // Reset session if completed
   };
 
+  const handleMarkAsUseless = async () => {
+    const currentCard = flashcards[currentCardIndex];
+    if (!currentCard) return;
+
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette carte de vos révisions ?")) {
+        // Delete from DB
+        const { error } = await supabase
+            .from('user_flashcards')
+            .delete()
+            .eq('id', currentCard.id);
+
+        if (error) {
+            console.error('Error deleting card:', error);
+            alert("Erreur lors de la suppression de la carte.");
+            return;
+        }
+
+        // Move to next card
+        setIsFlipped(false);
+        setHoveredZone(null);
+        if (currentCardIndex < flashcards.length - 1) {
+            setCurrentCardIndex(prev => prev + 1);
+        } else {
+            // Remove the card from local state to avoid "empty" end screen if it was the last one
+            const newCards = [...flashcards];
+            newCards.splice(currentCardIndex, 1);
+            setFlashcards(newCards);
+            
+            if (newCards.length === 0) {
+                 // Check if session is truly complete or if we just emptied the list
+                 setSessionComplete(true);
+            } else {
+                 // If there are still cards but we deleted the last one, go back or finish
+                 setSessionComplete(true); 
+            }
+        }
+    }
+  };
+
+  // UI Render Logic
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -251,25 +287,28 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans overflow-hidden">
       {/* Header - Matching Homepage Style */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between relative">
-            <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-indigo-600 transition-colors font-medium">
-            <ArrowLeft size={20} />
-            <span className="hidden sm:inline">Retour à l&apos;accueil</span>
-            </Link>
-            
-            <h1 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-gray-800 tracking-tight">
-            Révisions <span className="text-indigo-600">Flashcards</span>
+      {/* Header - Separated & Lowered */}
+      <header className="fixed top-6 inset-x-0 z-50 px-4 pointer-events-none flex items-center justify-center h-20">
+        
+        {/* Left: Back Button - Independent Glass Pill */}
+        <Link href="/" className="pointer-events-auto absolute left-4 md:left-10 flex items-center gap-2 px-6 py-3 rounded-full bg-white/80 backdrop-blur-xl border border-white/60 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:bg-white hover:-translate-y-0.5 transition-all text-gray-600 hover:text-indigo-600 font-bold group z-50">
+            <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="hidden sm:inline text-base">Retour</span>
+        </Link>
+        
+        {/* Center: Title - Bigger & Centered Pill */}
+        <div className="pointer-events-auto px-12 py-4 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 transition-all duration-300 transform hover:scale-[1.02]">
+            <h1 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight text-center">
+                Zone des <span className="text-indigo-600">connaissances</span>
             </h1>
-
-            <div className="w-8"></div> {/* Spacer for centering */}
         </div>
+
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center justify-center py-8">
-        <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center">
+      <main className="flex-1 w-full flex flex-col items-center justify-end pb-12 pt-40 md:pt-32">
+        <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-8">
         
         {sessionComplete ? (
            <div className="w-full max-w-lg text-center space-y-6 animate-fade-in py-10 bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
@@ -311,13 +350,59 @@ export default function FlashcardsPage() {
              </button>
           </div>
         ) : (
-          <div className="w-full h-[60vh] perspective-1000 relative group max-h-[600px]">
+          <>
+            {/* "Comprendre" Input Section - Horizontal Layout */}
+            <div className="w-full max-w-4xl flex items-center md:items-start gap-6 animate-fade-in-down mb-2 px-4">
+                <label htmlFor="notes" className="text-black font-black uppercase tracking-tight text-3xl md:text-5xl pt-2">
+                    Comprendre
+                </label>
+                <div className="flex-1 relative group">
+                    <textarea 
+                        id="notes"
+                        value={userNotes}
+                        onChange={(e) => setUserNotes(e.target.value)}
+                        placeholder="Notez vos réflexions ici..."
+                        className="w-full bg-white/50 backdrop-blur-sm border-2 border-gray-200 rounded-2xl p-4 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none resize-none shadow-sm text-lg font-medium min-h-[80px]"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-linear-to-r from-transparent via-indigo-500/20 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                </div>
+            </div>
+
+            <div className="w-full h-[50vh] perspective-1000 relative group max-h-[600px] mb-8">
+            
+            {/* Interactive Hover Zones (Visible ON TOP when flipped) */}
+            {isFlipped && (
+                <div className="absolute -inset-x-8 -top-8 -bottom-16 z-10 grid grid-cols-3 pointer-events-auto">
+                    {/* Left Zone: Again */}
+                    <div 
+                        className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Again ? 'bg-red-500/5' : ''}`}
+                        onMouseEnter={() => setHoveredZone(Rating.Again)}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleRate(Rating.Again)}
+                    />
+                    {/* Middle Zone: Hard */}
+                    <div 
+                        className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Hard ? 'bg-amber-500/5' : ''}`}
+                        onMouseEnter={() => setHoveredZone(Rating.Hard)}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleRate(Rating.Hard)}
+                    />
+                    {/* Right Zone: Easy */}
+                    <div 
+                        className={`transition-colors duration-200 cursor-pointer ${hoveredZone === Rating.Easy ? 'bg-green-500/5' : ''}`}
+                        onMouseEnter={() => setHoveredZone(Rating.Easy)}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => handleRate(Rating.Easy)}
+                    />
+                </div>
+            )}
+
             <div 
                 className={`relative w-full h-full duration-500 transform-style-3d transition-all cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
                 onClick={!isFlipped ? handleFlip : undefined}
             >
               {/* Front */}
-              <div className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar">
+              <div className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar z-0">
                  
                  {/* Centered Question Label */}
                  <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
@@ -345,7 +430,7 @@ export default function FlashcardsPage() {
               </div>
 
               {/* Back */}
-              <div className="absolute w-full h-full bg-slate-50 border border-slate-200 rounded-3xl p-6 md:p-12 flex flex-col backface-hidden rotate-y-180 shadow-xl overflow-y-auto custom-scrollbar">
+              <div className="absolute w-full h-full bg-slate-50 border border-slate-200 rounded-3xl p-6 md:p-12 flex flex-col backface-hidden rotate-y-180 shadow-xl overflow-y-auto custom-scrollbar z-0">
                  
                  {/* Centered Response Label - Lowered */}
                  <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
@@ -361,39 +446,77 @@ export default function FlashcardsPage() {
                      </span>
                  </div>
 
-                 <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-8">
+                 <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-32">
                     <RichContent content={flashcards[currentCardIndex].back_content} />
                  </div>
               </div>
             </div>
 
-            {/* Controls (Only visible when flipped) */}
+            {/* Controls (Only visible when flipped) - Improved Overlay UI */}
             {isFlipped && (
-               <div className="absolute -bottom-24 left-0 w-full grid grid-cols-3 gap-4 animate-slide-up">
-                  <button onClick={() => handleRate(Rating.Again)} className="group py-4 rounded-2xl bg-white border border-red-100 text-red-600 shadow-sm hover:bg-red-50 hover:border-red-200 hover:shadow-md transition-all flex flex-col items-center">
-                    <span className="font-bold text-sm md:text-base group-hover:scale-105 transition-transform">À revoir</span>
-                    <span className="text-[10px] uppercase opacity-70 font-semibold tracking-wide mt-1 text-red-400">{nextIntervals[Rating.Again]}</span>
+               <div className="absolute -bottom-16 left-0 w-full px-4 md:px-12 grid grid-cols-3 gap-6 animate-slide-up z-20 pointer-events-none"> {/* Pointer events none on container to let clicks pass through to shared zones if needed, BUT buttons need pointer-events-auto */}
+                  
+                  {/* BUTTONS: Pointer events AUTO to catch direct clicks. 
+                      Styling reacts to hoveredZone state for 'remote hover' effect */}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleRate(Rating.Again); }}
+                    className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl 
+                        ${hoveredZone === Rating.Again 
+                            ? 'bg-red-500 border-red-600 text-white scale-110 -translate-y-4 shadow-red-500/40' 
+                            : 'bg-white border-red-50 text-red-600 shadow-red-100/50 hover:bg-red-50 hover:border-red-200 hover:-translate-y-1'}`}
+                  >
+                    <span className="font-black text-lg md:text-2xl transition-transform">À revoir</span>
+                    <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
+                        {nextIntervals[Rating.Again]}
+                    </span>
                   </button>
                   
-                  {/* Mapped 'Hard' button to 'Presque bon' - Changed to Amber for better distinction */}
-                  <button onClick={() => handleRate(Rating.Hard)} className="group py-4 rounded-2xl bg-white border border-amber-100 text-amber-600 shadow-sm hover:bg-amber-50 hover:border-amber-200 hover:shadow-md transition-all flex flex-col items-center">
-                    <span className="font-bold text-sm md:text-base group-hover:scale-105 transition-transform">Presque bon</span>
-                    <span className="text-[10px] uppercase opacity-70 font-semibold tracking-wide mt-1 text-amber-500">{nextIntervals[Rating.Hard]}</span>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleRate(Rating.Hard); }} 
+                    className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
+                        ${hoveredZone === Rating.Hard 
+                            ? 'bg-amber-500 border-amber-600 text-white scale-110 -translate-y-4 shadow-amber-500/40' 
+                            : 'bg-white border-amber-50 text-amber-600 shadow-amber-100/50 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-1'}`}
+                  >
+                    <span className="font-black text-lg md:text-2xl transition-transform">Presque bon</span>
+                    <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
+                        {nextIntervals[Rating.Hard]}
+                    </span>
                   </button>
 
-                  {/* Removed 'Good' button as requested */}
-
-                  {/* Mapped 'Easy' button to 'Je connais' */}
-                  <button onClick={() => handleRate(Rating.Easy)} className="group py-4 rounded-2xl bg-white border border-green-100 text-green-600 shadow-sm hover:bg-green-50 hover:border-green-200 hover:shadow-md transition-all flex flex-col items-center">
-                    <span className="font-bold text-sm md:text-base group-hover:scale-105 transition-transform">Je connais</span>
-                    <span className="text-[10px] uppercase opacity-70 font-semibold tracking-wide mt-1 text-green-400">{nextIntervals[Rating.Easy]}</span>
+                   <button 
+                    onClick={(e) => { e.stopPropagation(); handleRate(Rating.Easy); }} 
+                    className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
+                        ${hoveredZone === Rating.Easy 
+                            ? 'bg-green-500 border-green-600 text-white scale-110 -translate-y-4 shadow-green-500/40' 
+                            : 'bg-white border-green-50 text-green-600 shadow-green-100/50 hover:bg-green-50 hover:border-green-200 hover:-translate-y-1'}`}
+                  >
+                    <span className="font-black text-lg md:text-2xl transition-transform">Je connais</span>
+                    <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
+                        {nextIntervals[Rating.Easy]}
+                    </span>
                   </button>
                </div>
             )}
+            
+            {/* Feedback Button (Useless) - Independent of Flipping, visible when flipped primarily, positioned below rating buttons */}
+            {isFlipped && (
+                 <div className="absolute -bottom-40 left-0 w-full flex justify-center pointer-events-auto z-30 animate-fade-in-up">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
+                        className="flex items-center gap-3 px-8 py-4 bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 rounded-full transition-all border border-gray-200 hover:border-red-200 shadow-sm hover:scale-105"
+                        title="Cette question est inutile pour la formation"
+                    >
+                        <span className="text-2xl">👎</span>
+                        <span className="font-bold text-base">Inutile pour la formation</span>
+                    </button>
+                 </div>
+            )}
           </div>
+          </>
         )}
 
-        <div className="fixed bottom-4 right-4 md:static md:mt-24 text-center text-xs font-medium text-gray-400">
+        <div className="fixed bottom-4 right-4 md:static md:mt-12 text-center text-xs font-medium text-gray-400">
             Carte {flashcards.length > 0 ? currentCardIndex + 1 : 0} sur {flashcards.length}
         </div>
 
