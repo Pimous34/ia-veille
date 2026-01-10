@@ -93,13 +93,13 @@ import type { User } from '@supabase/supabase-js';
   return (
     <>
       <nav
-        className={`fixed inset-x-0 mx-auto z-50 transition-all duration-300 w-fit ${
-          isScrolled ? 'top-2' : 'top-6'
+        className={`fixed inset-x-0 top-0 w-full z-50 transition-all duration-300 ${
+          isScrolled ? 'h-16' : 'h-24'
         } hidden md:block`}
       >
-        <div className="relative flex items-center">
-          {/* 1. Logo (Left Wing) */}
-          <div className="absolute right-[calc(100%+2rem)] flex items-center pointer-events-auto">
+        <div className="container mx-auto h-full px-5 flex items-center justify-between relative">
+          {/* 1. Logo (Left) */}
+          <div className="shrink-0 z-10">
             <Link href="/" aria-label="OREEGAM'IA">
               <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <Image 
@@ -107,7 +107,7 @@ import type { User } from '@supabase/supabase-js';
                   alt="OREEGAM'IA" 
                   width={150} 
                   height={50} 
-                  className="h-[50px] w-auto drop-shadow-sm"
+                  className={`${isScrolled ? 'h-[40px]' : 'h-[50px]'} w-auto drop-shadow-sm transition-all duration-300`}
                   priority
                   unoptimized
                 />
@@ -115,8 +115,8 @@ import type { User } from '@supabase/supabase-js';
             </Link>
           </div>
 
-          {/* 2. Main Pill (Center) */}
-          <div className="flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 pointer-events-auto min-w-[650px] justify-between h-[60px]">
+          {/* 2. Main Pill (Center - Absolutely centered in viewport) */}
+          <div className={`absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 pointer-events-auto min-w-[650px] justify-between transition-all duration-300 ${isScrolled ? 'h-[50px] scale-95' : 'h-[60px]'}`}>
             {/* Navigation Links */}
             <div className="flex items-center px-6 gap-8 flex-1 justify-center">
               <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
@@ -138,8 +138,8 @@ import type { User } from '@supabase/supabase-js';
             </button>
           </div>
 
-          {/* 3. Auth Button (Right Wing) */}
-          <div className="absolute left-[calc(100%+2rem)] pointer-events-auto whitespace-nowrap">
+          {/* 3. Auth Button (Right) */}
+          <div className="shrink-0 z-10 whitespace-nowrap">
             {mounted && (
               user ? (
                 <div className="relative" ref={menuRef}>
@@ -168,13 +168,11 @@ import type { User } from '@supabase/supabase-js';
             )}
           </div>
         </div>
-
-        {/* Search Overlay/Expand functionality could go here if needed, keeping it simple for now */}
       </nav>
 
       {/* Mobile Navigation (Simplified Fallback) */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 bg-white/95 backdrop-blur-md md:hidden ${isScrolled ? 'shadow-md' : 'shadow-sm'}`}>
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-5">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center">
               <Image 

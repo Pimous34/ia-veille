@@ -3,7 +3,6 @@ import { Geist, Geist_Mono, Patrick_Hand } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import ToastProvider from "@/components/ToastProvider";
-import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,12 +57,6 @@ export default function RootLayout({
         <CookieBanner />
         <ToastProvider />
         <GenkitChat />
-        <Script
-          src="https://valid-artisan.web.app/widget.js"
-          data-artisan-id="trassy-fr-res-sarl-39"
-          data-review-url="https://search.google.com/local/writereview?placeid=ChIJ3eypf2SjthIRpoW3KVHENTY"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );
