@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['@grpc/grpc-js', 'firebase-admin'],
+  },
 
   images: {
 
@@ -35,6 +38,22 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias['@grpc/grpc-js'] = false;
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        "grpc-js": false,
+        "@grpc/grpc-js": false,
+        "fs": false,
+        "net": false,
+        "tls": false,
+        "child_process": false,
+        "http2": false,
+      };
+    }
+    return config;
   },
 };
 
