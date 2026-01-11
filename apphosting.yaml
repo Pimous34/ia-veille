@@ -1,9 +1,21 @@
 kind: "AppStack"
 apiVersion: "v1"
 runConfig:
-  minInstances: 0
+  minInstances: 1
   maxInstances: 10
   concurrency: 80
   cpu: 1
   memoryMiB: 512
-
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: oreegamia
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    secret: supabase_url
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    secret: supabase_anon_key
+  - variable: GOOGLE_PRIVATE_KEY
+    secret: google_private_key
+  - variable: GOOGLE_SERVICE_ACCOUNT_EMAIL
+    secret: google_service_account_email
+  - variable: GOOGLE_CALENDAR_ID
+    value: primary
