@@ -13,9 +13,9 @@ env:
     value: https://jrlecaepyoivtplpvwoe.supabase.co
   - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
     value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxMDI0ODEsImV4cCI6MjA4MDY3ODQ4MX0.-y5bw3WwHKGpR9FxNcZhyEWY-iLoAXnI4ZGlhH8DXYo
-  - variable: GOOGLE_PRIVATE_KEY
-    secret: google_private_key
-  - variable: GOOGLE_SERVICE_ACCOUNT_EMAIL
-    secret: google_service_account_email
+  # - variable: GOOGLE_PRIVATE_KEY
+  #   secret: google_private_key
+  # - variable: GOOGLE_SERVICE_ACCOUNT_EMAIL
+  #   secret: google_service_account_email
   - variable: GOOGLE_CALENDAR_ID
     value: primary
