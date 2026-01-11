@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { type Flashcard as DBFlashcard, reviewFlashcard, getNextIntervals } from '@/lib/fsrs'

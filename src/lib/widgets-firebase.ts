@@ -11,9 +11,11 @@ const widgetsConfig = {
     appId: "1:334895960508:web:3d184dfa5f5bc6fe991bb9"
 };
 
-// Initialisation d'une instance Firebase nommée pour ne pas entrer en conflit avec d'éventuels autres setups Firebase
-const app = getApps().find(a => a.name === "WidgetsChat") 
-    ? getApp("WidgetsChat") 
-    : initializeApp(widgetsConfig, "WidgetsChat");
+const getWidgetsDb = () => {
+    const app = getApps().find(a => a.name === "WidgetsChat") 
+        ? getApp("WidgetsChat") 
+        : initializeApp(widgetsConfig, "WidgetsChat");
+    return getFirestore(app);
+};
 
-export const widgetsDb = getFirestore(app);
+export const widgetsDb = typeof window !== 'undefined' ? getWidgetsDb() : null as any;
