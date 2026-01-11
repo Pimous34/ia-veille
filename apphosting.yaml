@@ -6,12 +6,4 @@ runConfig:
   concurrency: 80
   cpu: 1
   memoryMiB: 512
-env:
-  - variable: NEXT_PUBLIC_SUPABASE_URL
-    availability: ["BUILD", "RUNTIME"]
-  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    availability: ["BUILD", "RUNTIME"]
-  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    availability: ["BUILD", "RUNTIME"]
-  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    availability: ["BUILD", "RUNTIME"]
+
