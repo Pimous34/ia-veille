@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { calendar, defaultCalendarId } from '@/lib/google-calendar';
+import { getCalendarService, defaultCalendarId } from '@/lib/google-calendar';
 import { addMinutes, addDays } from 'date-fns'; // Removed unused imports
 import { getBookingConfig } from '@/lib/booking';
 
@@ -7,6 +7,7 @@ const BREAK_DURATION = 5; // minutes
 
 export async function GET(request: Request) {
   try {
+    const calendar = getCalendarService();
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || '');
     const month = parseInt(searchParams.get('month') || '');

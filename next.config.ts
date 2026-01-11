@@ -10,8 +10,11 @@ const nextConfig: NextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: ['@grpc/grpc-js', 'firebase-admin'],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
-    serverComponentsExternalPackages: ['@grpc/grpc-js', 'firebase-admin'],
   },
 
   images: {

@@ -1,10 +1,11 @@
 
 import { NextResponse } from 'next/server';
-import { calendar, defaultCalendarId } from '@/lib/google-calendar';
+import { getCalendarService, defaultCalendarId } from '@/lib/google-calendar';
 import { endOfMonth, eachDayOfInterval } from 'date-fns';
 
 export async function GET(request: Request) {
   try {
+    const calendar = getCalendarService();
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || '');
     const month = parseInt(searchParams.get('month') || ''); // 1-12

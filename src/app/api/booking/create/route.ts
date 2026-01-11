@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { calendar } from '@/lib/google-calendar';
+import { getCalendarService } from '@/lib/google-calendar';
 
 export async function POST(request: Request) {
   try {
+    const calendar = getCalendarService();
     const body = await request.json();
     const { summary, ownerEmail } = body;
 
