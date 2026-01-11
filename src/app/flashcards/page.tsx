@@ -565,8 +565,8 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
         ) : (
             <div className="flex flex-col w-full items-center gap-24 mt-8">
             {/* "Comprendre" Input Section - Horizontal Layout */}
-            <div className="w-full max-w-max flex flex-col md:flex-row items-center justify-center gap-4 animate-fade-in-down px-4 shrink-0 mx-auto">
-                <label htmlFor="notes" className="text-black font-black tracking-tight text-2xl md:text-4xl whitespace-nowrap">
+            <div className="w-full relative z-10 flex flex-col md:flex-row items-center justify-center gap-4 px-4 shrink-0 mx-auto mb-8">
+                <label htmlFor="notes" className="text-gray-900 font-black tracking-tight text-2xl md:text-4xl whitespace-nowrap">
                     Je veux comprendre :
                 </label>
                 <div className="relative group flex items-center border-b-2 border-black/10 pb-1 w-fit min-w-[300px]">
