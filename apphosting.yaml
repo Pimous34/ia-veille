@@ -10,7 +10,7 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: oreegamia
   - variable: NEXT_PUBLIC_SUPABASE_URL
-    secret: supabase_url
+    value: https://jrlecaepyoivtplpvwoe.supabase.co
   - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
     secret: supabase_anon_key
   - variable: GOOGLE_PRIVATE_KEY
