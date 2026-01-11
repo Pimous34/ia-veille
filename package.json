@@ -27,7 +27,7 @@
     "google-auth-library": "9.14.1",
     "googleapis": "144.0.0",
     "lucide-react": "0.446.0",
-    "next": "15.0.3",
+    "next": "15.1.0",
     "pdf-parse": "1.1.1",
     "pdfjs-dist": "4.4.168",
     "pg": "8.12.0",
@@ -51,7 +51,7 @@
     "@types/react-dom": "18.3.0",
     "autoprefixer": "10.4.20",
     "eslint": "8.57.0",
-    "eslint-config-next": "15.0.3",
+    "eslint-config-next": "15.1.0",
     "postcss": "8.4.45",
     "tailwindcss": "4.0.0",
     "typescript": "5.5.4"
