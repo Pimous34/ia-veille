@@ -63,7 +63,7 @@ import { useAuth } from '@/contexts/AuthContext';
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await (supabase.auth as any).signOut();
     setIsMenuOpen(false);
     router.push('/');
   };
@@ -93,15 +93,15 @@ import { useAuth } from '@/contexts/AuthContext';
              {/* Logo */}
              <div className="shrink-0 transition-opacity hover:opacity-80">
                 <Link href="/" aria-label="OREEGAM'IA">
-                    <Image 
-                      src="/logo.png" 
-                      alt="OREEGAM'IA" 
-                      width={150} 
-                      height={50} 
-                      className={`${isScrolled ? 'h-[40px]' : 'h-[50px]'} w-auto drop-shadow-sm transition-all duration-300`}
-                      priority
-                      unoptimized
-                    />
+                     <Image 
+                       src="/logo.png" 
+                       alt="OREEGAM'IA" 
+                       width={450} 
+                       height={120} 
+                       className={`${isScrolled ? 'h-[80px]' : 'h-[120px]'} w-auto drop-shadow-sm transition-all duration-300`}
+                       priority
+                       unoptimized
+                     />
                 </Link>
              </div>
 
@@ -112,7 +112,7 @@ import { useAuth } from '@/contexts/AuthContext';
                 <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
                 <Link href="/categories" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
                 <Link href="/articles" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Actualité</Link>
-                <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Cartes Mémo</Link>
+                <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Se former</Link>
                 <Link href="/short-news" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
               </div>
 
@@ -165,18 +165,18 @@ import { useAuth } from '@/contexts/AuthContext';
       {/* Mobile Navigation (Simplified Fallback) */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-300 bg-white/95 backdrop-blur-md md:hidden ${isScrolled ? 'shadow-md' : 'shadow-sm'}`}>
         <div className="container mx-auto px-5">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center">
-              <Image 
-                src="/logo.png" 
-                alt="OREEGAM'IA" 
-                width={120} 
-                height={40} 
-                className="h-[40px] w-auto drop-shadow-sm"
-                priority
-                unoptimized
-              />
-            </Link>
+            <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-16' : 'h-24'}`}>
+              <Link href="/" className="flex items-center">
+                <Image 
+                  src="/logo.png" 
+                  alt="OREEGAM'IA" 
+                  width={240} 
+                  height={80} 
+                  className={`${isScrolled ? 'h-[60px]' : 'h-[80px]'} w-auto drop-shadow-sm transition-all duration-300`}
+                  priority
+                  unoptimized
+                />
+              </Link>
             <div className="flex items-center gap-4 relative">
                <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">

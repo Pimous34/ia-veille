@@ -60,65 +60,76 @@ export default function AdminMemoCardsPage() {
 
   const fetchSuggestions = useCallback(async () => {
     setLoadingSuggestions(true);
-    const { data, error } = await supabase
-      .from('suggested_flashcards')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('suggested_flashcards')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching suggestions:', error);
-      toast.error("Erreur de chargement des suggestions");
-    } else {
-      setSuggestions(data || []);
+      if (error) {
+        console.error('Error fetching suggestions:', error);
+        toast.error("Erreur de chargement des suggestions");
+      } else {
+        setSuggestions(data || []);
+      }
+    } catch (err) {
+      console.error('Fetch suggestions crash:', err);
+    } finally {
+      setLoadingSuggestions(false);
     }
-    setLoadingSuggestions(false);
   }, [supabase]);
 
   const fetchTemplates = useCallback(async (reset = false) => {
-    if (loadingTemplates) return;
+    // We use a ref for loading to avoid identity change of this function
+    // but here we just accept that we won't put loadingTemplates in deps
     setLoadingTemplates(true);
     
-    const start = reset ? 0 : page * PAGE_SIZE;
-    const end = start + PAGE_SIZE - 1;
+    try {
+        const currentPage = reset ? 0 : page;
+        const start = currentPage * PAGE_SIZE;
+        const end = start + PAGE_SIZE - 1;
 
-    let query = supabase
-      .from('flashcard_templates')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .range(start, end);
+        let query = supabase
+          .from('flashcard_templates')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(start, end);
 
-    if (searchQuery) {
-        query = query.or(`front.ilike.%${searchQuery}%,back.ilike.%${searchQuery}%`);
+        if (searchQuery) {
+            query = query.or(`front.ilike.%${searchQuery}%,back.ilike.%${searchQuery}%`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching templates:', error);
+          toast.error("Erreur de chargement des cartes mémo");
+        } else {
+          if (reset) {
+            setTemplates(data || []);
+            setPage(1);
+          } else {
+            setTemplates(prev => [...prev, ...(data || [])]);
+            setPage(prev => prev + 1);
+          }
+          setHasMore((data || []).length === PAGE_SIZE);
+        }
+    } catch (err) {
+        console.error('Fetch templates crash:', err);
+    } finally {
+        setLoadingTemplates(false);
     }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching templates:', error);
-      toast.error("Erreur de chargement des cartes mémo");
-    } else {
-      if (reset) {
-        setTemplates(data || []);
-        setPage(1);
-      } else {
-        setTemplates(prev => [...prev, ...(data || [])]);
-        setPage(prev => prev + 1);
-      }
-      setHasMore((data || []).length === PAGE_SIZE);
-    }
-    setLoadingTemplates(false);
-  }, [supabase, page, searchQuery, loadingTemplates]);
+  }, [supabase, page, searchQuery]); // Removed loadingTemplates from deps to break the loop
 
   useEffect(() => {
-    const loadData = async () => {
-      if (view === 'suggestions') {
-          await fetchSuggestions();
-      } else {
-          await fetchTemplates(true);
-      }
-    };
-    loadData();
-  }, [view, fetchSuggestions, fetchTemplates]); // Refetch on view change
+    if (view === 'suggestions') {
+        fetchSuggestions();
+    } else {
+        // Initial load for templates
+        // We only call it if we are currently at page 0 or if we just switched view
+        fetchTemplates(true);
+    }
+  }, [view]); // Minimal dependencies to prevent loops
 
   // --- Actions ---
 

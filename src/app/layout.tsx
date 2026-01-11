@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
 };
 
-import ExternalChatbot from "@/components/ExternalChatbot";
+
 
 export default function RootLayout({
   children,
@@ -58,7 +58,7 @@ export default function RootLayout({
           {children}
           <CookieBanner />
           <ToastProvider />
-          <ExternalChatbot />
+
         </AuthProvider>
       </body>
     </html>
