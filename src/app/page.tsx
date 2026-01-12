@@ -158,9 +158,26 @@ const fallbackCoursePrepArticles: Article[] = [
 
 // --- Main Component ---
 
+import { useRouter } from 'next/navigation';
+
 // --- Main Component ---
 export default function Home() {
+  const router = useRouter();
   const [supabase] = useState(() => createClient());
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Auth Protection
+  useEffect(() => {
+    const checkAuth = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            router.replace('/auth'); // Use replace to prevent back-navigation loop
+        } else {
+            setCheckingAuth(false);
+        }
+    };
+    checkAuth();
+  }, [supabase, router]);
   
   // UI State
   const [isFormatMenuOpen, setIsFormatMenuOpen] = useState(false);
@@ -544,6 +561,18 @@ export default function Home() {
     }
   };
 
+
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+             <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+             <p className="text-gray-500 font-medium animate-pulse">Vérification de l'accès...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
