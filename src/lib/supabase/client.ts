@@ -8,14 +8,7 @@ export function createClient() {
     supabaseUrl,
     supabaseKey,
     {
-      auth: {
-        // Configuration pour la persistance de session
-        persistSession: true, // Active la persistance de session
-        storageKey: 'ia-veille-auth', // Clé de stockage personnalisée
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined, // Utilise localStorage
-        autoRefreshToken: true, // Rafraîchit automatiquement le token
-        detectSessionInUrl: true, // Détecte la session dans l'URL (pour OAuth)
-      },
+      // Remove manual storage config to allow cookie-based auth share with server
     }
   );
 }
