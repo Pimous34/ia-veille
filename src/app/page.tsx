@@ -550,7 +550,7 @@ export default function Home() {
       <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
         <Navbar />
 
-        <main className="main-content grow pt-20">
+        <main className="main-content grow pt-20 !ml-0">
             {/* Hero Section */}
             <section className="hero-section" id="jtnews">
                 <div className="container mx-auto">
