@@ -16,6 +16,7 @@ import remarkGfm from 'remark-gfm'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '@/contexts/AuthContext'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation' // Added import
 
 // Extended Flashcard for UI with joined template data
 interface UIFlashcard extends DBFlashcard {
@@ -89,6 +90,9 @@ const CURRICULUM_ORDER: Record<string, number> = {
 
 export default function MemoCardsPage() {
   const { user, loading: authLoading } = useAuth()
+  const searchParams = useSearchParams() // Hook usage
+  const initialQuery = searchParams.get('q') // Get query from URL
+
   const [loading, setLoading] = useState(true)
   const [flashcards, setFlashcards] = useState<UIFlashcard[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
@@ -97,7 +101,7 @@ export default function MemoCardsPage() {
   const [nextIntervals, setNextIntervals] = useState<Record<number, string>>({})
 
   const [hoveredZone, setHoveredZone] = useState<Rating | null>(null)
-  const [userNotes, setUserNotes] = useState('')
+  const [userNotes, setUserNotes] = useState(initialQuery || '') // Initialize with query if present
   const [isExplaining, setIsExplaining] = useState(false)
   const [aiResponse, setAiResponse] = useState<string | null>(null)
   const [isWaitingForAi, setIsWaitingForAi] = useState(false)
