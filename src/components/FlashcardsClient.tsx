@@ -380,6 +380,19 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
     }
   };
 
+  // Auto-trigger explanation if initialQuery is provided (e.g. from Home search)
+  const hasTriggeredAutoExplain = useRef(false);
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim() && !hasTriggeredAutoExplain.current) {
+        hasTriggeredAutoExplain.current = true;
+        // Small delay to ensure UI is mounted and visuals are ready
+        setTimeout(() => {
+            handleExplain(initialQuery);
+        }, 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
+
   const closeExplanation = () => {
     setIsExplaining(false);
     setAiResponse(null);
