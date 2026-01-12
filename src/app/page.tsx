@@ -166,17 +166,41 @@ export default function Home() {
   const [supabase] = useState(() => createClient());
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  // Auth Protection
+  // Auth Protection with Timeout Safety
   useEffect(() => {
+    let mounted = true;
+
     const checkAuth = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-            router.replace('/auth'); // Use replace to prevent back-navigation loop
-        } else {
-            setCheckingAuth(false);
+        try {
+            // Race between auth check and a 3s timeout
+            const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 3000));
+            const sessionPromise = supabase.auth.getSession();
+            
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result: any = await Promise.race([sessionPromise, timeoutPromise]);
+
+            if (!mounted) return;
+
+            if (result === 'timeout') {
+                console.warn("Auth check timed out, redirecting to login...");
+                router.replace('/auth');
+                return;
+            }
+
+            if (!result.data.session) {
+                router.replace('/auth');
+            } else {
+                setCheckingAuth(false);
+            }
+        } catch (err) {
+            console.error("Auth check error:", err);
+            if (mounted) router.replace('/auth');
         }
     };
+
     checkAuth();
+
+    return () => { mounted = false; };
   }, [supabase, router]);
   
   // UI State
