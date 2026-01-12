@@ -63,9 +63,20 @@ import { useAuth } from '@/contexts/AuthContext';
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
-    await (supabase.auth as any).signOut();
-    setIsMenuOpen(false);
-    router.push('/');
+    try {
+        console.log("Logging out...");
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error("Error signing out:", error);
+            // Force logout locally even if server errors
+        }
+    } catch (err) {
+        console.error("Unexpected error during logout:", err);
+    } finally {
+        setIsMenuOpen(false);
+        // Force full page reload to clear any application state
+        window.location.href = '/';
+    }
   };
 
   const getUserDisplayName = () => {
