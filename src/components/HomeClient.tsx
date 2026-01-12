@@ -162,7 +162,21 @@ import { useRouter } from 'next/navigation';
 
 // --- Main Component ---
 // --- Client Component ---
-export default function HomeClient() {
+// --- Props Interface ---
+interface HomeClientProps {
+  initialJtVideos: JtVideo[];
+  initialArticles: Article[];
+  initialTutorials: Tutorial[];
+  initialVideosColumn: JtVideo[];
+}
+
+// --- Client Component ---
+export default function HomeClient({ 
+  initialJtVideos, 
+  initialArticles, 
+  initialTutorials,
+  initialVideosColumn
+}: HomeClientProps) {
   const router = useRouter();
   const [supabase] = useState(() => createClient());
   // Auth check moved to Server Component wrapper
@@ -176,33 +190,30 @@ export default function HomeClient() {
   
   // Data State
 
-  
+  // Data State
   const [dataError, setDataError] = useState<string | null>(null);
 
-  // Use fallbacks IMMEDIATELY so the page is never empty
-  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([
-    {
+  // Initialize directly from Props
+  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>(initialJtVideos);
+  
+  // Set initial video if available
+  const [jtVideo, setJtVideo] = useState<JtVideo | null>(
+      initialJtVideos.length > 0 ? initialJtVideos[0] : {
         id: 'fallback-1',
         video_url: '#',
         title: "JT IA (Démo)",
         date: new Date().toISOString(),
         thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
-    }
-  ]);
-  const [jtVideo, setJtVideo] = useState<JtVideo | null>({
-        id: 'fallback-1',
-        video_url: '#',
-        title: "JT IA (Démo)",
-        date: new Date().toISOString(),
-        thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
-  });
-  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]);
+      }
+  );
+
+  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>(initialVideosColumn);
   const [currentJtIndex, setCurrentJtIndex] = useState(0);
   const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
   
-  // Initialize with fallback articles right away
-  const [trendingArticles, setTrendingArticles] = useState<Article[]>(fallbackJtArticles);
-  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [trendingArticles, setTrendingArticles] = useState<Article[]>(initialArticles);
+  const [tutorials, setTutorials] = useState<Tutorial[]>(initialTutorials);
+  
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [coursePrepArticles, _setCoursePrepArticles] = useState<Article[]>(fallbackCoursePrepArticles);
   
@@ -228,208 +239,7 @@ export default function HomeClient() {
   }, []);
 
   // Fetch Data
-   useEffect(() => {
-    async function fetchData() {
-      // Debug Env Vars
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const clientUrl = (supabase as any).supabaseUrl || (supabase as any).storedUrl;
-      
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || (clientUrl && clientUrl.includes('placeholder'))) {
-          console.error("❌ NEXT_PUBLIC_SUPABASE_URL is missing or client is dummy!");
-          setDataError("⚠️ Configuration non chargée. VEUILLEZ REDÉMARRER LE SERVEUR (Ctrl+C puis npm run dev).");
-          setTrendingArticles(fallbackJtArticles); // Show fallback immediately
-          return; // Stop fetching
-      }
-
-      try {
-        // 0. Get User and Promo Config
-       // Removed user-specific logic for now to fix build issues
-        const promoConfig: { tuto_sources?: string[], video_tags?: string[] } = {};
-
-        // if (user && user.email) { ... } logic removed
-
-        // 1. Fetch Latest JTs (History)
-        const { data: jtDataList, error: jtError } = await supabase
-          .from('daily_news_videos')
-          .select('*')
-          .eq('status', 'completed')
-          .order('date', { ascending: false })
-          .limit(10);
-
-        if (jtError) console.warn('Supabase JT Fetch Error:', jtError.message);
-
-        let fetchedJts: JtVideo[] = [];
-        if (jtDataList && jtDataList.length > 0) {
-          fetchedJts = jtDataList.map((jt: JtVideo) => ({
-            ...jt,
-            thumbnail_url: jt.thumbnail_url || getDeterministicImage(jt.title || 'JT IA')
-          }));
-          setJtVideosList(fetchedJts);
-          setJtVideo(fetchedJts[0]);
-          setCurrentJtIndex(0);
-        }
-
-        // 2. Fetch Articles for Buzz & Trending
-        const { data: articlesData, error: articlesError } = await supabase
-          .from('articles')
-          .select('*')
-          .order('published_at', { ascending: false })
-          .limit(30);
-
-        if (articlesError) console.warn('Supabase Articles Fetch Error:', articlesError.message);
-
-        if (articlesData && articlesData.length > 0) {
-          // Scoring logic logic from script.js
-          const interestingKeywords = ['nouveau', 'révolution', 'innovation', 'découverte', 'important', 'majeur', 'exclusif', 'outil', 'guide', 'comment', 'gpt-5', 'llm', 'agent'];
-          
-          const mapped = articlesData.map((article: { id: number; title: string; excerpt: string; tags: string[]; published_at: string; url: string; image_url: string }) => {
-             let score = 0;
-             const lowerTitle = article.title?.toLowerCase() || '';
-             // Keyword Bonus
-             interestingKeywords.forEach(k => {
-               if (lowerTitle.includes(k)) score += 10;
-             });
-             // Recency Bonus
-             if (new Date(article.published_at).toDateString() === new Date().toDateString()) score += 10;
-             
-             return {
-               id: article.id,
-               title: article.title,
-               excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
-               category: 'IA', // Default
-               tags: article.tags,
-               date: article.published_at,
-               link: article.url,
-               image: article.image_url || getDeterministicImage(article.title),
-               score
-             };
-          });
-
-          // Sort by score
-          mapped.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-          setTrendingArticles(mapped.slice(0, 15));
-        } else {
-          // Fallback if no data
-          setTrendingArticles(fallbackJtArticles); 
-        }
-
-        // 3. Fetch External Videos (Micode, Underscore_) & Mix with JTs
-        const { data: sourceIdsData } = await supabase
-          .from('sources')
-          .select('id')
-          .in('name', ['Micode', 'Underscore_', 'Ludovic Salenne', 'GEEK CONCEPT']);
-
-        let externalVideos: JtVideo[] = [];
-        
-        if (sourceIdsData && sourceIdsData.length > 0) {
-          const ids = sourceIdsData.map(s => s.id);
-          const { data: extArticles } = await supabase
-              .from('articles')
-              .select('*')
-              .in('source_id', ids)
-              .order('published_at', { ascending: false })
-              .limit(10);
-
-          if (extArticles) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              externalVideos = extArticles.map((a: any) => ({
-                  id: a.id,
-                  video_url: a.url,
-                  thumbnail_url: a.image_url || getDeterministicImage(a.title),
-                  title: a.title,
-                  date: a.published_at,
-                  article_ids: []
-              }));
-          }
-        }
-
-        // Merge JTs and External Videos for the Sidebar Column
-        // Sort combined list by date
-        const combinedVideos = [...fetchedJts, ...externalVideos].sort((a, b) => {
-            return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
-        
-        setVideosColumnList(combinedVideos);
-
-        // CRITICAL: We DO NOT update setJtVideosList with combinedVideos here.
-        // We keep setJtVideosList containing ONLY the real JTs (from step 1).
-        // This ensures the Main Player Playlist only cycles through JTs.
-
-        if (fetchedJts.length > 0) {
-            // If no video selected yet, select the first JT
-            if (!jtVideo) {
-                setJtVideo(fetchedJts[0]);
-                setCurrentJtIndex(0);
-            }
-        }
-
-        // 3. Fetch Tutorials with filtering
-        let tutoQuery = supabase
-          .from('tutorials')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
-            // Construct an OR filter for channel_name ILIKE any source or custom logic
-            // Simplification: We fetch 20 and filter in JS if simple query fails.
-            tutoQuery = tutoQuery.limit(20);
-        } else {
-            tutoQuery = tutoQuery.limit(5);
-        }
-
-        const { data: tutoData } = await tutoQuery;
-
-        if (tutoData) {
-          let filteredTutos = tutoData;
-          
-          // Client-side filtering for flexibility
-          if (promoConfig.tuto_sources && promoConfig.tuto_sources.length > 0) {
-               const lowerSources = promoConfig.tuto_sources.map(s => s.toLowerCase());
-               filteredTutos = tutoData.filter((t: { channel_name?: string; software?: string }) => {
-                   const c = (t.channel_name || '').toLowerCase();
-                   const s = (t.software || '').toLowerCase();
-                   return lowerSources.some(src => c.includes(src) || s.includes(src));
-               });
-          }
-          
-          // Take top 5 after filtering
-          const limitedTutos = filteredTutos.slice(0, 5);
-
-          const parsedTutos = limitedTutos.map((tuto: { id: number; image_url: string; software: string; channel_name: string; url: string }) => {
-              let bgImage = tuto.image_url;
-              if (bgImage && typeof bgImage === 'string' && (bgImage.startsWith('{') || bgImage.startsWith('['))) {
-                  try {
-                      const parsed = JSON.parse(bgImage);
-                      const imageObj = Array.isArray(parsed) ? parsed[0] : parsed;
-                      if (imageObj && imageObj.url) {
-                          bgImage = imageObj.url;
-                      }
-                  } catch (e) {
-                      console.warn('Failed to parse image JSON', e);
-                  }
-              }
-              return { ...tuto, image_url: bgImage };
-          });
-          setTutorials(parsedTutos);
-        }
-      } catch (err) {
-        console.error("CRITICAL: Failed to fetch data. Check network or AdBlock.", err);
-        const errorMessage = err instanceof Error ? err.message : "Erreur de chargement des données.";
-        setDataError(errorMessage);
-        
-        // Fallback Strategy
-        setTrendingArticles(fallbackJtArticles);
-        // Ensure we have at least the fallback video if list is empty
-        if (jtVideosList.length === 0) {
-             // Already initialized with fallback, but let's be safe
-        }
-      }
-    }
-
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase]);
+  // Removed fetchData useEffect as data is now passed via props
 
   // Fetch JT Subjects whenever jtVideo changes
   useEffect(() => {

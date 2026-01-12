@@ -5,7 +5,8 @@ import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'; // DEPRECATED
+import { createClient } from '@/utils/supabase/client';
 import { useParams } from 'next/navigation';
 import Player from 'video.js/dist/types/player';
 
@@ -16,7 +17,8 @@ export default function ClientJT() {
   const playerRef = useRef<Player | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
+  // const supabase = createClientComponentClient();
+  const [supabase] = useState(() => createClient());
 
   const jingleUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/jt-assets/assets/jingle.mp4`;
 
