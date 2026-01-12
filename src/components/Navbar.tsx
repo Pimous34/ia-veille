@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -14,8 +14,10 @@ import { useAuth } from '@/contexts/AuthContext';
    const [isSearchOpen, setIsSearchOpen] = useState(false);
    const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -23,6 +25,17 @@ import { useAuth } from '@/contexts/AuthContext';
     });
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  // Auto-focus search input on Homepage only
+  useEffect(() => {
+    if (pathname === '/' && searchInputRef.current) {
+        // Small timeout to ensure hydration/animations are done
+        const timer = setTimeout(() => {
+            searchInputRef.current?.focus();
+        }, 100);
+        return () => clearTimeout(timer);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -139,6 +152,7 @@ import { useAuth } from '@/contexts/AuthContext';
             <div className={`relative transition-all duration-300 ${isScrolled ? 'scale-95' : ''}`}>
                 <div className="relative flex items-center">
                      <input 
+                        ref={searchInputRef}
                         type="text" 
                         placeholder="Je veux comprendre..." 
                         className="pl-4 pr-10 py-2.5 rounded-full border-2 border-white/50 bg-white/40 backdrop-blur-xl shadow-lg focus:bg-white focus:border-indigo-400 focus:outline-none transition-all duration-300 w-[220px] focus:w-[280px] text-sm font-semibold text-gray-700 placeholder-gray-500"
