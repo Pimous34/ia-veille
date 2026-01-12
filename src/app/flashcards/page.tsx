@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { type Flashcard as DBFlashcard, reviewFlashcard, getNextIntervals } from '@/lib/fsrs'
 import { Rating } from 'ts-fsrs'
@@ -88,7 +88,7 @@ const CURRICULUM_ORDER: Record<string, number> = {
   'IA & Génération': 8,
 };
 
-export default function MemoCardsPage() {
+function MemoCardsContent() {
   const { user, loading: authLoading } = useAuth()
   const searchParams = useSearchParams() // Hook usage
   const initialQuery = searchParams.get('q') // Get query from URL
@@ -864,5 +864,17 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
         </div>
       </main>
     </div>
+  )
+}
+
+export default function MemoCardsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    }>
+      <MemoCardsContent />
+    </Suspense>
   )
 }
