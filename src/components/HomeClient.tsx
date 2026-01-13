@@ -495,8 +495,17 @@ CONSIGNES POUR METADATA :
 
                       if (parts.length > 1) {
                           try {
-                              // Clean potential markdown code blocks around JSON
-                              const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '');
+                              // Clean potential markdown code blocks around JSON and extract the JSON object
+                              let jsonStr = parts[1].trim();
+                              // Remove markdown code block markers
+                              jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '');
+                              // Extract just the JSON object part (first { to last })
+                              const firstBrace = jsonStr.indexOf('{');
+                              const lastBrace = jsonStr.lastIndexOf('}');
+                              if (firstBrace !== -1 && lastBrace !== -1) {
+                                  jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+                              }
+                              
                               metadata = JSON.parse(jsonStr);
                               
                               console.log("AI Metadata extracted:", metadata);

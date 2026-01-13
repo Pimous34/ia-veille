@@ -238,7 +238,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                             href="/parametres" 
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 bg-white"
                         >
-                            Paramètres
+                            Espace personnel
                         </Link>
                         <Link 
                             href="/admin" 
@@ -297,7 +297,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                     </button>
                     {isMenuOpen && (
                         <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl py-1 border border-gray-100 overflow-hidden z-50 animate-scale-in">
-                            <Link href="/parametres" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50">Paramètres</Link>
+                            <Link href="/parametres" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50">Espace personnel</Link>
                             <Link href="/admin" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-b border-gray-50">Espace Admin</Link>
                             <button onClick={handleLogout} className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50">Se déconnecter</button>
                         </div>
