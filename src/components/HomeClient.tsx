@@ -241,29 +241,43 @@ export default function HomeClient({
   // Fetch Data
   // Removed fetchData useEffect as data is now passed via props
 
+  // Data State
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+
   // Fetch JT Subjects whenever jtVideo changes
   useEffect(() => {
     async function fetchSubjects() {
-        if (!jtVideo?.article_ids || jtVideo.article_ids.length === 0) {
-            setJtSubjects([]);
-            return;
-        }
-        
-        const { data: articles } = await supabase
-            .from('articles')
-            .select('id, title, image_url, url, published_at')
-            .in('id', jtVideo.article_ids)
-            .limit(5);
+        setIsLoadingSubjects(true);
+        try {
+            if (!jtVideo?.article_ids || jtVideo.article_ids.length === 0) {
+                setJtSubjects([]);
+                return;
+            }
             
-        if (articles) {
-             setJtSubjects(articles.map((a: { id: number; title: string; image_url: string; url: string; published_at: string }) => ({
-              id: a.id,
-              title: a.title,
-              image: a.image_url || getDeterministicImage(a.title),
-              link: a.url,
-              date: a.published_at,
-              category: 'JT'
-            })));
+            const { data: articles, error } = await supabase
+                .from('articles')
+                .select('id, title, image_url, url, published_at')
+                .in('id', jtVideo.article_ids)
+                .limit(5);
+                
+            if (error) {
+                console.error("Error fetching subjects:", error);
+            }
+
+            if (articles) {
+                 setJtSubjects(articles.map((a: { id: number; title: string; image_url: string; url: string; published_at: string }) => ({
+                  id: a.id,
+                  title: a.title,
+                  image: a.image_url || getDeterministicImage(a.title),
+                  link: a.url,
+                  date: a.published_at,
+                  category: 'JT'
+                })));
+            }
+        } catch (err) {
+            console.error("Unexpected error fetching subjects:", err);
+        } finally {
+            setIsLoadingSubjects(false);
         }
     }
     fetchSubjects();
@@ -515,7 +529,10 @@ export default function HomeClient({
                                 <div className="vignette-column" style={{gap: '2rem'}}> {/* Added explicit gap */}
                                     <h3 className="vignette-title">Sujets du JT</h3>
                                     <div className="vignettes-list" style={{gap: '1.5rem'}}> {/* Added explicit gap */}
-                                        {jtSubjects.length > 0 ? jtSubjects.map(article => (
+                                        {isLoadingSubjects ? (
+                                             <div className="empty-state"><p>Chargement des sujets...</p></div>
+                                        ) : jtSubjects.length > 0 ? (
+                                            jtSubjects.map(article => (
                                             <div key={article.id} className="vignette-card" onClick={() => article.link && window.open(article.link, '_blank')}>
                                                 <div className="relative w-full h-[120px]">
                                                     <Image 
@@ -528,8 +545,9 @@ export default function HomeClient({
                                                 </div>
                                                 <div className="vignette-info">{article.title}</div>
                                             </div>
-                                        )) : (
-                                            <div className="empty-state"><p>Chargement...</p></div>
+                                        ))
+                                        ) : (
+                                            <div className="empty-state"><p>Aucun sujet associé à ce JT.</p></div>
                                         )}
                                     </div>
                                 </div>
