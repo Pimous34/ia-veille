@@ -19,13 +19,12 @@ const CURRICULUM_ORDER: Record<string, number> = {
 // Data Fetching Component
 async function FlashcardsDataFetcher({ searchParams }: { searchParams: { q?: string } }) {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/auth');
   }
 
-  const user = session.user;
   const initialQuery = searchParams?.q;
 
   // 1. Fetch DUE cards first
@@ -90,14 +89,15 @@ async function FlashcardsDataFetcher({ searchParams }: { searchParams: { q?: str
 }
 
 
-export default function MemoCardsPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function MemoCardsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const resolvedParams = await searchParams;
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
       </div>
     }>
-       <FlashcardsDataFetcher searchParams={searchParams} />
+       <FlashcardsDataFetcher searchParams={resolvedParams} />
     </Suspense>
   )
 }

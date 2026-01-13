@@ -61,20 +61,11 @@ export default function ClientJT() {
         autoplay: true,
         preload: 'auto',
         fluid: true,
+        aspectRatio: '9:16', // Enforcing portrait ratio
         sources: [{
-          src: jingleUrl,
+          src: videoUrl,
           type: 'video/mp4'
         }]
-      });
-
-      // Handle playlist logic
-      playerRef.current.on('ended', () => {
-        const currentPlayer = playerRef.current;
-        if (currentPlayer && currentPlayer.currentSrc() === jingleUrl) {
-          console.log('Jingle ended, playing main video...');
-          currentPlayer.src({ type: 'video/mp4', src: videoUrl });
-          currentPlayer.play();
-        }
       });
     }
 
@@ -87,33 +78,36 @@ export default function ClientJT() {
   }, [videoUrl]);
 
   return (
-    <div className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-black">
+    <div className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-gray-50">
       <Navbar />
       
       {/* Section 1: Video / JT */}
-      <section className="h-screen w-full snap-start relative flex items-center justify-center bg-gray-900 pt-16">
-        <div className="w-full max-w-6xl px-4 flex flex-col items-center">
-          <div className="w-full max-w-4xl aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black relative z-10">
+      <section className="h-screen w-full snap-start relative flex items-center justify-center pt-16">
+        <div className="w-full h-full flex flex-col items-center justify-center pb-20">
+          <div className="w-full max-w-sm md:max-w-md aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl bg-black relative z-10 border border-gray-200">
             {loading ? (
-              <div className="w-full h-full flex items-center justify-center text-white">
-                Chargement du JT...
+              <div className="w-full h-full flex items-center justify-center text-indigo-600 bg-white">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                  <p>Chargement du JT...</p>
+                </div>
               </div>
             ) : videoUrl ? (
-              <div data-vjs-player>
-                <video ref={videoRef} className="video-js vjs-big-play-centered" />
+              <div data-vjs-player className="w-full h-full">
+                <video ref={videoRef} className="video-js vjs-big-play-centered w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-white">
+              <div className="w-full h-full flex items-center justify-center text-gray-500 bg-white px-8 text-center">
                 JT non disponible pour cette date.
               </div>
             )}
           </div>
           
-          <div className="mt-8 text-white text-center animate-bounce cursor-pointer" onClick={() => {
+          <div className="mt-6 text-indigo-600 text-center animate-bounce cursor-pointer absolute bottom-8 z-20 hover:text-indigo-800 transition-colors" onClick={() => {
             document.getElementById('article-section')?.scrollIntoView({ behavior: 'smooth' });
           }}>
-            <p className="text-sm font-medium uppercase tracking-widest mb-2">Lire l&apos;article</p>
-            <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <p className="text-sm font-bold uppercase tracking-widest mb-2 drop-shadow-sm">Lire l&apos;article</p>
+            <svg className="w-6 h-6 mx-auto drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </div>
@@ -129,13 +123,13 @@ export default function ClientJT() {
               JT Quotidien - {slug}
             </h1>
             
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg">
-              <Image 
-                src="/images/news-placeholder.jpg" 
-                alt="Article Cover" 
-                fill 
-                className="object-cover"
-              />
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg hidden md:flex items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-600">
+              <div className="text-center p-8 text-white">
+                <svg className="w-16 h-16 mx-auto mb-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+                <div className="font-bold text-xl uppercase tracking-wider">Résumé de l&apos;actualité</div>
+              </div>
             </div>
           </div>
 

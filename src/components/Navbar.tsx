@@ -148,7 +148,7 @@ import { useAuth } from '@/contexts/AuthContext';
                 <Link href="/categories" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
                 <Link href="/articles" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Actualité</Link>
                 <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Se former</Link>
-                <Link href="/short-news" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
+                <Link href="/shorts" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
               </div>
 
               {/* Search Icon (Legacy - Kept for layout balance or future use) */}
