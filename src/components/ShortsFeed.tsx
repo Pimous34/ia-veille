@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // --- Types ---
 interface ShortItem {
@@ -83,6 +83,8 @@ export default function ShortsFeed() {
     const [loading, setLoading] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const initialId = searchParams.get('id');
     const [supabase] = useState(() => createClient());
 
     useEffect(() => {
@@ -126,7 +128,24 @@ export default function ShortsFeed() {
                 return;
             }
 
-            const mixedContent = rawContent || [];
+            let mixedContent = rawContent || [];
+
+            // Handle Initial ID (Specific Article)
+            if (initialId) {
+                 const exists = mixedContent.find(item => item.id.toString() === initialId);
+                 if (!exists) {
+                     // Fetch specific item if not in the random batch
+                     const { data: specificItem } = await supabase
+                        .from('articles')
+                        .select('*')
+                        .eq('id', initialId)
+                        .single();
+                     
+                     if (specificItem) {
+                         mixedContent = [specificItem, ...mixedContent];
+                     }
+                 }
+            }
 
             // 3. Separate & Verify Items
             const formattedItems: ShortItem[] = mixedContent.map(item => {
@@ -155,9 +174,17 @@ export default function ShortsFeed() {
                 };
             });
 
-            // Shuffle
-            const shuffled = formattedItems.sort(() => Math.random() - 0.5);
-            setItems(shuffled);
+            // Shuffle logic with Initial ID priority
+            const otherItems = formattedItems.filter(i => i.id.toString() !== initialId);
+            const firstItem = formattedItems.find(i => i.id.toString() === initialId);
+
+            // Shuffle others
+            otherItems.sort(() => Math.random() - 0.5);
+
+            // Construct final list
+            const finalItems = firstItem ? [firstItem, ...otherItems] : otherItems;
+            
+            setItems(finalItems);
 
         } catch (error) {
             console.error('Error in fetchContent:', error);

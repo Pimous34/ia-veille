@@ -4387,9 +4387,9 @@ body.shorts-page .short-category {
     .vignettes-container {
         grid-template-columns: repeat(2, 1fr);
     }
-    .vignette-column:last-child {
+    /* .vignette-column:last-child {
         display: none;
-    }
+    } */
 }
 
 @media (max-width: 768px) {

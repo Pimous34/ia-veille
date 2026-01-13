@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
-import OreegamiMessages from '@/components/OreegamiMessages';
+import Chatbot from '@/components/Chatbot';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
@@ -564,9 +564,9 @@ export default function HomeClient({
                         <div className="articles-column">
                             <div className="vignettes-container" style={{gap: '2.5rem'}}> {/* Increased internal gap */}
                                 {/* Sujets du JT Column */}
-                                <div className="vignette-column" style={{gap: '2rem'}}> {/* Added explicit gap */}
-                                    <h3 className="vignette-title">Sujets du JT</h3>
-                                    <div className="vignettes-list" style={{gap: '1.5rem'}}> {/* Added explicit gap */}
+                                <div className="vignette-column" style={{gap: '1rem'}}>
+                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Sujets du JT</h3>
+                                    <div className="vignettes-list" style={{gap: '1rem'}}>
                                         {isLoadingSubjects ? (
                                              <div className="empty-state"><p>Chargement des sujets...</p></div>
                                         ) : jtSubjects.length > 0 ? (
@@ -593,8 +593,8 @@ export default function HomeClient({
 
                                 {/* Vidéos Column (formerly Tutos) */}
                                 <div className="vignette-column">
-                                    <h3 className="vignette-title">Vidéos</h3>
-                                    <div className="vignettes-list" style={{gap: '1.5rem'}}>
+                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Vidéos</h3>
+                                    <div className="vignettes-list" style={{gap: '1rem'}}>
                                         {videosColumnList.map((video, index) => (
                                             <div key={video.id || index} className="vignette-card" onClick={() => {
                                                 const isYouTube = video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be');
@@ -644,31 +644,12 @@ export default function HomeClient({
 
                                 {/* Oreegami Messages & Tutos Column */}
                                 <div className="vignette-column" style={{gap: '2.5rem'}}> {/* Increased vertical gap */}
-                                    <div style={{flex: '0 0 auto', maxHeight: '45%', overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
-                                        <OreegamiMessages />
-                                    </div>
+
                                     
-                                    <div style={{flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
-                                        <h3 className="vignette-title">Tutos</h3>
-                                        <div className="vignettes-list" style={{gap: '1.5rem'}}>
-                                            {tutorials.map(tuto => (
-                                                <div key={tuto.id} className="vignette-card" onClick={() => window.open(tuto.url, '_blank')}>
-                                                    <div className="relative w-full h-[120px]">
-                                                        <SafeImage 
-                                                            src={tuto.image_url || getDeterministicImage(tuto.software)} 
-                                                            fallbackTitle={tuto.software}
-                                                            className="vignette-image object-cover" 
-                                                            alt={tuto.software} 
-                                                            fill
-                                                        />
-                                                    </div>
-                                                    <div className="vignette-info">
-                                                        <div style={{fontWeight: 900, fontSize: '1.1em', color: '#000', marginBottom: '4px'}}>{tuto.software}</div>
-                                                        <div style={{fontSize: '0.9em', color: '#666'}}>{tuto.channel_name}</div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Assistant IA</h3>
+                                    {/* Tutos moved to dedicated section below */}
+                                    <div style={{width: '100%', maxWidth: '100%', overflow: 'hidden'}}>
+                                        <Chatbot embedded={true} />
                                     </div>
                                 </div>
                             </div>
@@ -692,7 +673,7 @@ export default function HomeClient({
                     </div>
                     <div className="articles-grid">
                         {trendingArticles.map(article => (
-                             <article key={article.id} className="article-card" onClick={() => article.link && window.open(article.link, '_blank')}>
+                             <article key={article.id} className="article-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
                                 <div className="article-image-container relative h-48 w-full">
                                     <Image 
                                         src={article.image} 
@@ -722,6 +703,35 @@ export default function HomeClient({
                                         <span className="article-link" onClick={(e) => { e.stopPropagation(); if (article.link) window.open(article.link, '_blank'); }}>
                                             Lire →
                                         </span>
+                                    </div>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Tutos Section */}
+             <section className="articles-section" id="tutos">
+                <div className="container mx-auto">
+                    <h2 className="section-title">Nos Tutos</h2>
+                    <div className="articles-grid">
+                        {tutorials.map(tuto => (
+                             <article key={tuto.id} className="article-card" onClick={() => window.open(tuto.url, '_blank')}>
+                                <div className="article-image-container relative h-48 w-full">
+                                    <SafeImage 
+                                        src={tuto.image_url || getDeterministicImage(tuto.software)} 
+                                        fallbackTitle={tuto.software}
+                                        className="article-image object-cover" 
+                                        alt={tuto.software} 
+                                        fill
+                                    />
+                                </div>
+                                <div className="article-content">
+                                    <h3 className="article-title">{tuto.software}</h3>
+                                    <div className="article-meta">
+                                        <span className="article-link" style={{color: 'var(--text-light)', fontWeight: 'normal'}}>{tuto.channel_name}</span>
+                                        <span className="article-link ml-auto" style={{cursor: 'pointer'}}>Voir →</span>
                                     </div>
                                 </div>
                             </article>

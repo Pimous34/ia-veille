@@ -24,14 +24,22 @@ function AuthContent() {
 
   // Social Login Handler
   const handleOAuthSignIn = async (provider: 'google') => {
+    console.log("🔵 Click bouton connexion :", provider);
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log("🔵 Redirection prévue vers :", redirectUrl);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
-      if (error) throw error;
+      if (error) {
+          console.error("🔴 Erreur Supabase OAuth:", error);
+          throw error;
+      }
+      console.log("🟢 Appel OAuth réussi, redirection en cours...");
     } catch (error: unknown) {
       console.error(`Erreur Auth ${provider}:`, error);
       const message = error instanceof Error ? error.message : 'Une erreur est survenue';
@@ -139,7 +147,10 @@ function AuthContent() {
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={<div className="auth-page"><div className="auth-container"><div className="auth-logo"><div className="logo-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}><Image src="/logo.png" alt="Logo" width={300} height={150} className="logo-img" style={{ display: 'block', height: '150px', width: 'auto', margin: '0 auto' }} unoptimized /></div></div></div></div>}>
+    <Suspense fallback={<div className="auth-page"><div className="auth-container"><div className="auth-logo"><div className="logo-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Logo" className="logo-img" style={{ display: 'block', height: '150px', width: 'auto', margin: '0 auto' }} />
+    </div></div></div></div>}>
       <AuthContent />
     </Suspense>
   );

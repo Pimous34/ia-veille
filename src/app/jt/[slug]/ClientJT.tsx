@@ -13,138 +13,182 @@ import Player from 'video.js/dist/types/player';
 export default function ClientJT() {
   const params = useParams();
   const slug = params?.slug as string;
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<Player | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isArticleOpen, setIsArticleOpen] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState<any>(null);
+  
   // const supabase = createClientComponentClient();
   const [supabase] = useState(() => createClient());
 
-  const jingleUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/jt-assets/assets/jingle.mp4`;
+  // Refs for observers
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sectionsRef = useRef<(HTMLElement | null)[]>([]);
 
   useEffect(() => {
-    async function fetchVideo() {
+    async function fetchVideos() {
       if (!slug) return;
       
-      console.log('Fetching video for date:', slug);
+      console.log('Fetching videos starting from date:', slug);
+      // Fetch current video and previous ones (older dates)
       const { data, error } = await supabase
         .from('daily_news_videos')
         .select('*')
-        .eq('date', slug)
-        .maybeSingle();
+        .lte('date', slug)
+        .eq('status', 'completed')
+        .order('date', { ascending: false })
+        .limit(5);
 
       if (error) {
-        console.error('Error fetching video:', error);
-        setLoading(false);
-        return;
-      }
-
-      if (data && data.video_url) {
-        console.log('Video found:', data.video_url);
-        setVideoUrl(data.video_url);
-      } else {
-        console.log('No video found for this date');
+        console.error('Error fetching videos:', error);
+      } else if (data) {
+        setVideos(data);
+        if (data.length > 0) {
+            setCurrentVideo(data[0]);
+        }
       }
       setLoading(false);
     }
 
-    fetchVideo();
+    fetchVideos();
   }, [slug, supabase]);
 
+  // Handle Scroll / URL update
   useEffect(() => {
-    if (!videoRef.current || !videoUrl) return;
+    if (loading || videos.length === 0) return;
 
-    // Initialize player only once
-    if (!playerRef.current) {
-      playerRef.current = videojs(videoRef.current, {
-        controls: true,
-        autoplay: true,
-        preload: 'auto',
-        fluid: true,
-        aspectRatio: '9:16', // Enforcing portrait ratio
-        sources: [{
-          src: videoUrl,
-          type: 'video/mp4'
-        }]
-      });
-    }
+    observerRef.current = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                const index = Number(entry.target.getAttribute('data-index'));
+                const video = videos[index];
+                if (video) {
+                    setCurrentVideo(video);
+                    // Update URL without reload if needed, or just track state
+                    // window.history.replaceState(null, '', `/jt/${video.date}`);
+                }
+            }
+        });
+    }, { threshold: 0.6 });
+
+    sectionsRef.current.forEach((section) => {
+        if (section) observerRef.current?.observe(section);
+    });
 
     return () => {
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
+        observerRef.current?.disconnect();
     };
-  }, [videoUrl]);
+  }, [loading, videos]);
+
 
   return (
-    <div className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth bg-gray-50">
+    <div className="h-screen w-full bg-gray-900 text-white overflow-y-scroll snap-y snap-mandatory scroll-smooth">
       <Navbar />
-      
-      {/* Section 1: Video / JT */}
-      <section className="h-screen w-full snap-start relative flex items-center justify-center pt-16">
-        <div className="w-full h-full flex flex-col items-center justify-center pb-20">
-          <div className="w-full max-w-sm md:max-w-md aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl bg-black relative z-10 border border-gray-200">
-            {loading ? (
-              <div className="w-full h-full flex items-center justify-center text-indigo-600 bg-white">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                  <p>Chargement du JT...</p>
+
+      {loading ? (
+         <div className="h-screen w-full flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+         </div>
+      ) : (
+        videos.map((video, index) => (
+            <JTVideoSection 
+                key={video.id} 
+                video={video} 
+                index={index}
+                isActive={currentVideo?.id === video.id}
+                onOpenArticle={() => setIsArticleOpen(true)}
+                sectionRef={(el) => (sectionsRef.current[index] = el)}
+            />
+        ))
+      )}
+
+      {/* Article Modal */}
+      {isArticleOpen && currentVideo && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-end transition-opacity duration-300">
+            <div className="w-full md:w-2/3 lg:w-1/2 h-full bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto transform transition-transform duration-300 animate-slide-in-right p-8 relative">
+                <button 
+                    onClick={() => setIsArticleOpen(false)}
+                    className="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                >
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+                
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-8">JT du {currentVideo.date}</h1>
+                
+                {currentVideo.thumbnail_url && !currentVideo.thumbnail_url.endsWith('.mp4') && (
+                     <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-8">
+                        <Image src={currentVideo.thumbnail_url} alt={currentVideo.title} fill className="object-cover" />
+                     </div>
+                )}
+
+                <div className="prose dark:prose-invert max-w-none">
+                    <p className="lead text-xl text-gray-600 dark:text-gray-300">
+                        {currentVideo.title || "Retrouvez les actualités essentielles de l'intelligence artificielle."}
+                    </p>
+                    <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <p className="text-sm text-gray-500 text-center italic">Transcription et détails générés automatiquement.</p>
+                    </div>
                 </div>
-              </div>
-            ) : videoUrl ? (
-              <div data-vjs-player className="w-full h-full">
-                <video ref={videoRef} className="video-js vjs-big-play-centered w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-500 bg-white px-8 text-center">
-                JT non disponible pour cette date.
-              </div>
-            )}
-          </div>
-          
-          <div className="mt-6 text-indigo-600 text-center animate-bounce cursor-pointer absolute bottom-8 z-20 hover:text-indigo-800 transition-colors" onClick={() => {
-            document.getElementById('article-section')?.scrollIntoView({ behavior: 'smooth' });
-          }}>
-            <p className="text-sm font-bold uppercase tracking-widest mb-2 drop-shadow-sm">Lire l&apos;article</p>
-            <svg className="w-6 h-6 mx-auto drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 2: Article */}
-      <section id="article-section" className="min-h-screen w-full snap-start bg-white dark:bg-gray-900 py-24 px-4 md:px-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Header: Title & Image */}
-          <div className="mb-10 space-y-6">
-            <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight">
-              JT Quotidien - {slug}
-            </h1>
-            
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg hidden md:flex items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-600">
-              <div className="text-center p-8 text-white">
-                <svg className="w-16 h-16 mx-auto mb-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-                <div className="font-bold text-xl uppercase tracking-wider">Résumé de l&apos;actualité</div>
-              </div>
             </div>
-          </div>
-
-          {/* Text Content (Champs de texte) */}
-          <div className="prose dark:prose-invert lg:prose-xl max-w-none">
-            <p className="lead text-xl text-gray-600 dark:text-gray-300 mb-6">
-              Retrouvez les actualités essentielles de l&apos;intelligence artificielle sélectionnées pour vous.
-            </p>
-            
-            <p>
-              Ce JT est généré automatiquement par notre système d&apos;IA pour vous offrir un résumé concis et pertinent des dernières avancées technologiques.
-            </p>
-          </div>
         </div>
-      </section>
+      )}
     </div>
   );
+}
+
+// Sub-component for individual Video Section
+const JTVideoSection = ({ video, index, isActive, onOpenArticle, sectionRef }: { video: any, index: number, isActive: boolean, onOpenArticle: () => void, sectionRef: (el: HTMLElement | null) => void }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const playerRef = useRef<Player | null>(null);
+
+    // Init Player logic similar to before, but handled per section
+    useEffect(() => {
+        if (!videoRef.current || !isActive) return;
+
+        if (!playerRef.current) {
+            playerRef.current = videojs(videoRef.current, {
+                controls: true,
+                autoplay: false, // Don't auto-play all, strict control via isActive could be added
+                preload: 'auto',
+                fill: true,
+                responsive: true,
+                sources: [{ src: video.video_url, type: 'video/mp4' }]
+            });
+        }
+        
+        // Auto play if active
+        if (isActive && playerRef.current) {
+             playerRef.current.play()?.catch(() => console.log('Autoplay prevented'));
+        } else if (!isActive && playerRef.current) {
+             playerRef.current.pause();
+        }
+
+    }, [isActive, video.video_url]);
+
+    // Cleanup
+    useEffect(() => {
+        return () => {
+            if (playerRef.current) {
+                playerRef.current.dispose();
+                playerRef.current = null;
+            }
+        };
+    }, []);
+
+    return (
+      <section ref={sectionRef} data-index={index} className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black border-b border-gray-800">
+        <div className="w-full h-full max-w-6xl relative">
+            <div data-vjs-player className="w-full h-full">
+                <video ref={videoRef} className="video-js vjs-big-play-centered w-full h-full object-contain" />
+            </div>
+            
+             <div className="absolute bottom-20 left-0 right-0 flex justify-center z-20 pointer-events-none">
+                <div onClick={onOpenArticle} className="pointer-events-auto bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-2 rounded-full cursor-pointer hover:bg-white/20 transition-all flex items-center gap-2 group">
+                    <span className="font-bold text-sm tracking-widest uppercase">Lire l&apos;article</span>
+                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </div>
+            </div>
+        </div>
+      </section>
+    );
 }

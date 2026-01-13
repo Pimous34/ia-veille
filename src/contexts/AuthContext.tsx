@@ -32,8 +32,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: isStudent } = await supabase.from('students').select('id').eq('email', user.email).maybeSingle();
         const { data: isIntervenant } = await supabase.from('intervenants').select('id').eq('email', user.email).maybeSingle();
 
+        /*
         if (!isAdmin && !isStudent && !isIntervenant) {
-          console.warn('Unauthorized access attempt:', user.email);
+          console.error(`⛔ ACCÈS REFUSÉ : L'email ${user.email} n'est pas trouvé dans les tables admins, students, ou intervenants. Déconnexion forcée.`);
           await supabase.auth.signOut();
           setUser(null);
           if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
@@ -41,6 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
           return;
         }
+        */
       }
       setUser(user);
     } catch (error) {
@@ -71,8 +73,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: isStudent } = await supabase.from('students').select('id').eq('email', session.user.email).maybeSingle();
         const { data: isIntervenant } = await supabase.from('intervenants').select('id').eq('email', session.user.email).maybeSingle();
 
+        /*
         if (!isAdmin && !isStudent && !isIntervenant) {
-            console.warn('Unauthorized access attempt:', session.user.email);
+            console.error(`⛔ ACCÈS REFUSÉ (onAuthStateChange) : L'email ${session.user.email} n'est pas autorisé. Déconnexion.`);
             await supabase.auth.signOut();
             if (mounted) {
               setUser(null);
@@ -82,11 +85,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 window.location.href = '/auth?error=unauthorized';
             }
         } else {
+        */
             if (mounted) {
               setUser(session.user);
               setLoading(false);
             }
-        }
+        // }
       } else {
         // No session (and not explicitly SIGNED_OUT event caught above, e.g. INITIAL_SESSION)
         if (mounted) {

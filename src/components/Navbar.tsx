@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
    const [isSearchOpen, setIsSearchOpen] = useState(false);
    const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const supabase = createClient();
   const router = useRouter();
   const pathname = usePathname();
@@ -27,15 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
   }, []);
 
   // Auto-focus search input on Homepage only
-  useEffect(() => {
-    if (pathname === '/' && searchInputRef.current) {
-        // Small timeout to ensure hydration/animations are done
-        const timer = setTimeout(() => {
-            searchInputRef.current?.focus();
-        }, 100);
-        return () => clearTimeout(timer);
-    }
-  }, [pathname]);
+
 
   useEffect(() => {
     // Close menu on route change
@@ -160,34 +152,7 @@ import { useAuth } from '@/contexts/AuthContext';
             </div>
 
             {/* NEW: Je veux comprendre Input */}
-            <div className={`relative transition-all duration-300 ${isScrolled ? 'scale-95' : ''}`}>
-                <div className="relative flex items-center">
-                     <input 
-                        ref={searchInputRef}
-                        type="text" 
-                        placeholder="Je veux comprendre..." 
-                        className="pl-4 pr-10 py-2.5 rounded-full border-2 border-white/50 bg-white/40 backdrop-blur-xl shadow-lg focus:bg-white focus:border-indigo-400 focus:outline-none transition-all duration-300 w-[220px] focus:w-[280px] text-sm font-semibold text-gray-700 placeholder-gray-500"
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                const target = e.target as HTMLInputElement;
-                                if (target.value.trim()) {
-                                    if (user) {
-                                        router.push(`/flashcards?q=${encodeURIComponent(target.value.trim())}`);
-                                    } else {
-                                        router.push('/auth');
-                                    }
-                                    target.value = ''; // Reset after search
-                                }
-                            }
-                        }}
-                     />
-                     <div className="absolute right-3 pointer-events-none text-indigo-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2v4"/><path d="m16.2 7.8 2.9-2.9"/><path d="M18 12h4"/><path d="m16.2 16.2 2.9 2.9"/><path d="M12 18v4"/><path d="m7.8 16.2-2.9 2.9"/><path d="M6 12H2"/><path d="m7.8 7.8-2.9-2.9"/><circle cx="12" cy="12" r="3"/>
-                        </svg>
-                     </div>
-                </div>
-            </div>
+
           </div>
 
           {/* 3. Auth Button (Positions Absolutely to the Right) */}

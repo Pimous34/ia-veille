@@ -1,5 +1,6 @@
 import ShortsFeed from '@/components/ShortsFeed';
 import { Metadata } from 'next';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'ShortNews - OREEGAM\'IA',
@@ -19,7 +20,9 @@ export default async function ShortsPage() {
 
   return (
     <div className="h-screen w-full bg-black overflow-hidden relative">
-      <ShortsFeed />
+      <Suspense fallback={<div className="h-screen w-full flex items-center justify-center text-white">Chargement...</div>}>
+        <ShortsFeed />
+      </Suspense>
     </div>
   );
 }
