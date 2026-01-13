@@ -194,13 +194,26 @@ import { useAuth } from '@/contexts/AuthContext';
                     <span className="text-sm font-semibold text-gray-700">{getUserDisplayName()}</span>
                   </button>
 
-                  {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 overflow-hidden">
-                      <Link href="/parametres" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Paramètres</Link>
-                      <Link href="/admin" className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50">Espace Admin</Link>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50">Se déconnecter</button>
-                    </div>
-                  )}
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 overflow-hidden z-[100]" onClick={(e) => e.stopPropagation()}>
+                        <div 
+                            onClick={() => { router.push('/parametres'); setIsMenuOpen(false); }} 
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 bg-white cursor-pointer select-none"
+                        >
+                            Paramètres
+                        </div>
+                        <div 
+                            onClick={() => { router.push('/admin'); setIsMenuOpen(false); }} 
+                            className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white cursor-pointer select-none"
+                        >
+                            Espace Admin
+                        </div>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleLogout(); }} 
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50 bg-white cursor-pointer select-none"
+                        >
+                            Se déconnecter
+                        </button>
+                      </div>
                 </div>
               ) : (
                 <Link href="/auth" className="px-6 py-3 rounded-full font-bold text-slate-700 text-sm bg-blue-50/80 backdrop-blur-sm border border-white shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
