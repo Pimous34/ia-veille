@@ -132,7 +132,8 @@ import { useAuth } from '@/contexts/AuthContext';
                        alt="OREEGAM'IA" 
                        width={450} 
                        height={120} 
-                       className={`${isScrolled ? 'h-[80px]' : 'h-[120px]'} w-auto drop-shadow-sm transition-all duration-300`}
+                       className="w-auto drop-shadow-sm transition-all duration-300"
+                       style={{ height: isScrolled ? '80px' : '120px', width: 'auto' }}
                        priority
                        unoptimized
                      />

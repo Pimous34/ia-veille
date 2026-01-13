@@ -6,6 +6,7 @@ import Image from 'next/image';
 import OreegamiMessages from '@/components/OreegamiMessages';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useRouter } from 'next/navigation';
 
 // --- Types ---
 
@@ -156,9 +157,46 @@ const fallbackCoursePrepArticles: Article[] = [
   }
 ];
 
-// --- Main Component ---
+// --- Helper Components ---
 
-import { useRouter } from 'next/navigation';
+interface SafeImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+  fallbackTitle: string;
+  fill?: boolean;
+  priority?: boolean;
+}
+
+const SafeImage = ({ src, alt, className, fallbackTitle, fill, priority = false }: SafeImageProps) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setImgSrc(src);
+    setHasError(false);
+  }, [src]);
+
+  const handleError = () => {
+    if (!hasError) {
+      setImgSrc(getDeterministicImage(fallbackTitle));
+      setHasError(true);
+    }
+  };
+
+  return (
+    <Image
+      src={imgSrc || getDeterministicImage(fallbackTitle)}
+      alt={alt}
+      className={className}
+      fill={fill}
+      priority={priority}
+      unoptimized
+      onError={handleError}
+    />
+  );
+};
+
 
 // --- Main Component ---
 // --- Client Component ---
@@ -532,15 +570,16 @@ export default function HomeClient({
                                         {isLoadingSubjects ? (
                                              <div className="empty-state"><p>Chargement des sujets...</p></div>
                                         ) : jtSubjects.length > 0 ? (
-                                            jtSubjects.map(article => (
+                                            jtSubjects.map((article, index) => (
                                             <div key={article.id} className="vignette-card" onClick={() => article.link && window.open(article.link, '_blank')}>
                                                 <div className="relative w-full h-[120px]">
-                                                    <Image 
+                                                    <SafeImage 
                                                         src={article.image} 
+                                                        fallbackTitle={article.title}
                                                         className="vignette-image object-cover" 
                                                         alt={article.title} 
                                                         fill
-                                                        unoptimized
+                                                        priority={index < 2}
                                                     />
                                                 </div>
                                                 <div className="vignette-info">{article.title}</div>
@@ -577,12 +616,13 @@ export default function HomeClient({
                                                 }
                                             }}>
                                                 <div className="relative w-full h-[120px]">
-                                                    <Image 
+                                                    <SafeImage 
                                                         src={video.thumbnail_url || "https://placehold.co/1920x1080?text=Vidéo"} 
+                                                        fallbackTitle={video.title || "Vidéo JT"}
                                                         className="vignette-image object-cover" 
                                                         alt={video.title || "Vidéo JT"} 
                                                         fill
-                                                        unoptimized
+                                                        priority={index < 2}
                                                     />
                                                     {/* Optional: Add a YouTube badge or icon for external videos */}
                                                     {(video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be')) && (
@@ -614,12 +654,12 @@ export default function HomeClient({
                                             {tutorials.map(tuto => (
                                                 <div key={tuto.id} className="vignette-card" onClick={() => window.open(tuto.url, '_blank')}>
                                                     <div className="relative w-full h-[120px]">
-                                                        <Image 
+                                                        <SafeImage 
                                                             src={tuto.image_url || getDeterministicImage(tuto.software)} 
+                                                            fallbackTitle={tuto.software}
                                                             className="vignette-image object-cover" 
                                                             alt={tuto.software} 
                                                             fill
-                                                            unoptimized
                                                         />
                                                     </div>
                                                     <div className="vignette-info">
