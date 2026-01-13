@@ -7,13 +7,19 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
- const Navbar = () => {
+ interface NavbarProps {
+    onSearch?: (query: string) => void;
+}
+
+const Navbar = ({ onSearch }: NavbarProps) => {
    const [isScrolled, setIsScrolled] = useState(false);
    const { user } = useAuth();
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [isSearchOpen, setIsSearchOpen] = useState(false);
+   const [searchValue, setSearchValue] = useState('');
    const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const supabase = createClient();
   const router = useRouter();
@@ -27,6 +33,17 @@ import { useAuth } from '@/contexts/AuthContext';
   }, []);
 
   // Auto-focus search input on Homepage only
+  useEffect(() => {
+    if (pathname === '/') {
+        // Delay slightly to ensure mount/animation
+        setTimeout(() => {
+            if (searchInputRef.current) {
+                searchInputRef.current.focus();
+                setIsSearchOpen(true);
+            }
+        }, 300);
+    }
+  }, [pathname]);
 
 
   useEffect(() => {
@@ -144,10 +161,45 @@ import { useAuth } from '@/contexts/AuthContext';
               </div>
 
               {/* Search Icon (Legacy - Kept for layout balance or future use) */}
-               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400 cursor-default">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                  </svg>
+{/* Search Input */}
+               <div className="relative group ml-4">
+                  <div className={`flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden ${isSearchOpen ? 'w-[250px]' : 'w-[40px] hover:w-[250px] focus-within:w-[250px]'}`}>
+                      <div className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                        </svg>
+                      </div>
+                      <input 
+                        ref={searchInputRef}
+                        type="text" 
+                        value={searchValue}
+                        placeholder="Je veux comprendre..." 
+                        className="bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-600 h-full w-full pr-2 py-2"
+                        onChange={(e) => {
+                            setSearchValue(e.target.value);
+                            if (onSearch) onSearch(e.target.value);
+                        }}
+                        onFocus={() => setIsSearchOpen(true)}
+                        onBlur={(e) => {
+                            if (!searchValue) setIsSearchOpen(false);
+                        }}
+                      />
+                      {searchValue && (
+                        <button
+                            onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking clear
+                            onClick={() => {
+                                setSearchValue('');
+                                if (onSearch) onSearch('');
+                            }}
+                            className="mr-3 p-1 rounded-full hover:bg-gray-200 text-gray-500 transition-colors shrink-0"
+                            aria-label="Effacer la recherche"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                      )}
+                  </div>
                </div>
             </div>
 

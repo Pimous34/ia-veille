@@ -521,37 +521,6 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
           </div>
         ) : (
             <div className="flex flex-col w-full items-center gap-24 mt-8">
-            <div className="w-full relative z-10 flex flex-col md:flex-row items-center justify-center gap-4 px-4 shrink-0 mx-auto mb-8">
-                <label htmlFor="notes" className="text-gray-900 font-black tracking-tight text-2xl md:text-4xl whitespace-nowrap">
-                    Je veux comprendre :
-                </label>
-                <div className="relative group flex items-center border-b-2 border-black/10 pb-1 w-fit min-w-[300px]">
-                    <textarea 
-                        id="notes"
-                        ref={inputRef}
-                        value={userNotes}
-                        onChange={(e) => setUserNotes(e.target.value)}
-                        placeholder="Explique-moi..."
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleExplain();
-                            }
-                        }}
-                        className="bg-transparent p-0 text-gray-900 placeholder-gray-300 outline-none resize-none text-2xl md:text-4xl font-black transition-all focus:placeholder-transparent overflow-hidden scrollbar-hide w-full text-center md:text-left"
-                        style={{ fieldSizing: "content" } as React.CSSProperties}
-                    />
-                    {userNotes.trim() && !isWaitingForAi && (
-                        <button 
-                            onClick={() => handleExplain()}
-                            className="ml-4 p-2 bg-indigo-600 text-white rounded-full hover:scale-110 transition-transform shadow-lg cursor-pointer flex items-center justify-center pulse-indigo"
-                        >
-                            <Sparkles size={20} />
-                        </button>
-                    )}
-                </div>
-            </div>
-
             <div className={`w-full transition-all duration-700 ease-in-out relative group mb-8 ${isExplaining ? 'min-h-[40vh] h-auto' : 'h-[50vh] max-h-[600px] perspective-1000'}`}>
             
             <AnimatePresence mode="wait">
@@ -797,7 +766,8 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
         )}
 
         </div>
-      </main>
-    </div>
-  )
+       )}
+    </main>
+  </div>
+)
 }

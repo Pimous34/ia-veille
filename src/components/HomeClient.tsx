@@ -7,6 +7,11 @@ import Chatbot from '@/components/Chatbot';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
+import { widgetsDb } from '@/lib/widgets-firebase';
+import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Sparkles, Loader2 } from 'lucide-react';
 
 // --- Types ---
 
@@ -197,6 +202,16 @@ const SafeImage = ({ src, alt, className, fallbackTitle, fill, priority = false 
   );
 };
 
+const getYoutubeThumbnail = (url: string) => {
+  if (!url) return null;
+  const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+  if (videoIdMatch && videoIdMatch[1]) {
+    return `https://img.youtube.com/vi/${videoIdMatch[1]}/mqdefault.jpg`;
+  }
+  return null;
+};
+
+
 
 // --- Main Component ---
 // --- Client Component ---
@@ -254,6 +269,17 @@ export default function HomeClient({
   
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [coursePrepArticles, _setCoursePrepArticles] = useState<Article[]>(fallbackCoursePrepArticles);
+
+  // --- Search State ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResultArticles, setSearchResultArticles] = useState<Article[]>([]);
+  const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]);
+  // We'll use the first article as the "Hero Answer" for now
+  const [searchAnswer, setSearchAnswer] = useState<Article | null>(null);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [isWaitingForAi, setIsWaitingForAi] = useState(false);
+  const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -319,7 +345,270 @@ export default function HomeClient({
         }
     }
     fetchSubjects();
+
   }, [jtVideo, supabase]);
+
+
+  // --- Search Logic ---
+  const handleSearch = (query: string) => {
+      setSearchQuery(query);
+      if (!query || query.length < 2) {
+          setIsSearching(false);
+          setSearchResultArticles([]);
+          setSearchResultVideos([]);
+          setSearchResultVideos([]);
+          setSearchAnswer(null);
+          setAiResponse(null);
+          setIsWaitingForAi(false);
+      } else {
+          setIsSearching(true);
+      }
+  };
+
+  useEffect(() => {
+      const fetchSearchResults = async () => {
+          if (!searchQuery || searchQuery.length < 2) return;
+
+          try {
+              // Search Articles (Title & Excerpt)
+              const { data: articles } = await supabase
+                  .from('articles')
+                  .select('*')
+                  .or(`title.ilike.%${searchQuery}%,excerpt.ilike.%${searchQuery}%`)
+                  .limit(10);
+
+              // Search Videos (Title)
+              const { data: videos } = await supabase
+                  .from('daily_news_videos')
+                  .select('*')
+                  .ilike('title', `%${searchQuery}%`)
+                  .limit(10);
+
+              if (articles) {
+                  const mappedArticles = articles.map((article: any) => ({
+                      id: article.id,
+                      title: article.title,
+                      excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
+                      category: 'Recherche',
+                      tags: article.tags,
+                      date: article.published_at,
+                      link: article.url,
+                      image: article.image_url || getDeterministicImage(article.title),
+                  }));
+                  setSearchResultArticles(mappedArticles);
+                  setSearchAnswer(mappedArticles.length > 0 ? mappedArticles[0] : null);
+              }
+
+              if (videos) {
+                  setSearchResultVideos(videos.map((v: any) => ({
+                      ...v,
+                      thumbnail_url: v.thumbnail_url || getDeterministicImage(v.title || 'Video')
+                  })));
+              }
+
+          } catch (error) {
+              console.error("Search error:", error);
+          }
+
+      };
+
+      const fetchRealYoutubeVideos = async () => {
+        try {
+            const res = await fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}`);
+            const data = await res.json();
+            
+            if (data.videos && Array.isArray(data.videos)) {
+                const realVideos = data.videos.map((v: any) => ({
+                    id: v.id,
+                    video_url: v.url,
+                    thumbnail_url: v.thumbnail,
+                    title: v.title || `Vidéo YouTube : ${searchQuery}`, // Use real title if available
+                    date: new Date().toISOString()
+                }));
+                // Set these as the primary video results
+                setSearchResultVideos(realVideos);
+            }
+        } catch (e) {
+            console.error("Youtube API Error:", e);
+        }
+      };
+
+      const generateAiResponse = async (promptText: string) => {
+          setIsWaitingForAi(true);
+          setAiResponse(null);
+          setLoadingAiMessage(`Recherche sur : ${promptText}...`);
+
+          const persona = `PERSONA: Tu es le Senior Mentor d'OREEGAMI.
+Ton rôle est de transformer des concepts complexes en insights clairs.
+
+CONTEXTE DOMAINE PRIORITAIRE :
+Tu es un expert en Informatique, Intelligence Artificielle, Développement Logiciel et Tech.
+Si un terme a plusieurs sens (ex: "Antigravity", "Eclipse", "Pipeline", "Virus"), TU DOIS TOUJOURS DONNER LA DÉFINITION LIÉE À LA TECH/LOGICIEL/IA.
+Ignore les sens liés à la physique, la biologie ou la mécanique classique, sauf si l'utilisateur le précise explicitement.
+
+CONNAISSANCES SPÉCIFIQUES (A UTILISER EN PRIORITÉ) :
+- "Antigravity" : C'est le nouvel IDE agentique de Google Deepmind conçu pour le "Vibe Coding" (programmation fluide assistée par IA). Ce n'est PAS de la physique.
+
+ATTENTION - FORMAT DE RÉPONSE STRICT:
+Tu dois répondre en deux parties séparées par "---METADATA---".
+
+PARTIE 1 : L'EXPLICATION (Markdown)
+Structure :
+- ## [TITRE]
+- **L'essentiel :** (1 phrase)
+- **Comment ça marche ?** (3 bullets)
+- **L'œil de l'Expert :** (1 conseil)
+(Ne mets pas de titre "PARTIE 1", commence direct).
+
+---METADATA---
+{
+  "keywords": ["mot_cle_1", "mot_cle_2"],
+  "youtube": ["url_youtube_1", "url_youtube_2"]
+}
+
+CONSIGNES POUR METADATA :
+- "keywords": Donne 2-3 termes de recherche (français ou anglais) pour trouver des articles techniques liés dans une base de données (ex: pour "prompts", mets ["Prompt Engineering", "LLM"]).
+- "youtube": Suggère 1 à 3 liens.
+  - Si tu connais une vidéo OFFICIELLE et CÉLÈBRE (ex: "Google Keynote", "Tuto Fireship"), mets son URL directe.
+  - SINON, génère des liens de RECHERCHE YouTube très ciblés pour aider l'utilisateur.
+    Format : 'https://www.youtube.com/results?search_query=Mots+Clés+Précis'
+    Exemple : 'https://www.youtube.com/results?search_query=Antigravity+Google+Deepmind+Demo'
+  - Donne 3 liens variés (ex: 1 Démo, 1 Tuto, 1 Avis).
+`;
+
+          const context = `CONTEXTE: L'utilisateur veut comprendre : "${promptText}"`;
+          const instructions = `TA MISSION: Explique le concept et fournis les métadonnées JSON à la fin.`;
+          const prompt = `${persona}\n\n${context}\n\n${instructions}`;
+
+          try {
+              if (!widgetsDb) throw new Error("Firebase not initialized");
+              
+              const docRef = await addDoc(collection(widgetsDb, 'generate'), {
+                  prompt: prompt,
+                  status: 'PENDING',
+                  createdAt: serverTimestamp(),
+                  valid_artisan_context_bot_id: 'ia_veille_bot'
+              });
+
+              const unsubscribe = onSnapshot(docRef, async (doc) => {
+                  const data = doc.data();
+                  if (data && data.response) {
+                      const fullResponse = data.response;
+                      
+                      // Parsing Metadata
+                      const parts = fullResponse.split('---METADATA---');
+                      const displayText = parts[0].trim();
+                      let metadata = { keywords: [], youtube: [] };
+
+                      if (parts.length > 1) {
+                          try {
+                              // Clean potential markdown code blocks around JSON
+                              const jsonStr = parts[1].trim().replace(/```json/g, '').replace(/```/g, '');
+                              metadata = JSON.parse(jsonStr);
+                              
+                              console.log("AI Metadata extracted:", metadata);
+                              
+                              // 1. Trigger Refined Search using Keywords
+                              if (metadata.keywords && metadata.keywords.length > 0) {
+                                  // Create a compound OR query for all keywords
+                                  const keywordQuery = metadata.keywords.map((k: string) => `title.ilike.%${k}%,excerpt.ilike.%${k}%`).join(',');
+                                  
+                                  // Fetch Articles with AI Keywords
+                                  const { data: aiArticles } = await supabase
+                                    .from('articles')
+                                    .select('*')
+                                    .or(keywordQuery)
+                                    .limit(5);
+
+                                  if (aiArticles && aiArticles.length > 0) {
+                                      const mappedAiArticles = aiArticles.map((article: any) => ({
+                                          id: article.id,
+                                          title: article.title,
+                                          excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
+                                          category: 'Suggéré par IA',
+                                          tags: article.tags,
+                                          date: article.published_at,
+                                          link: article.url,
+                                          image: article.image_url || getDeterministicImage(article.title),
+                                      }));
+                                      setSearchResultArticles(mappedAiArticles);
+                                  }
+
+                                  // Fetch Videos with AI Keywords (Internal DB)
+                                  const videoKeywordQuery = metadata.keywords.map((k: string) => `title.ilike.%${k}%`).join(',');
+                                  const { data: aiDbVideos } = await supabase
+                                    .from('daily_news_videos')
+                                    .select('*')
+                                    .or(videoKeywordQuery)
+                                    .limit(5);
+                                    
+                                    let newVideosList: JtVideo[] = [];
+                                    
+                                    // 2. Add AI suggested YouTube links (External)
+                                    // DISABLED: We now use real YouTube Search API results
+                                    /*
+                                    if (metadata.youtube && Array.isArray(metadata.youtube)) {
+                                       ...
+                                    }
+                                    */
+
+                                    // 3. Fallback: Removed as we fetch real videos now
+                                    
+                                    if (aiDbVideos) {
+                                        // We append internal DB videos AFTER real YouTube results if needed, 
+                                        // or we can decide to keep only real YouTube results.
+                                        // For now let's keep internal DB matches as bonus.
+                                        const mappedDbVideos = aiDbVideos.map((v: any) => ({
+                                            ...v,
+                                            thumbnail_url: v.thumbnail_url || getDeterministicImage(v.title || 'Video')
+                                        }));
+                                        // We append to existing state (which has Real Youtube videos)
+                                        setSearchResultVideos(prev => [...prev, ...mappedDbVideos]); 
+                                    }
+
+                                    if (aiDbVideos) {
+                                        const mappedDbVideos = aiDbVideos.map((v: any) => ({
+                                            ...v,
+                                            thumbnail_url: v.thumbnail_url || getDeterministicImage(v.title || 'Video')
+                                        }));
+                                        newVideosList = [...newVideosList, ...mappedDbVideos];
+                                    }
+                                    
+                                    if(newVideosList.length > 0) {
+                                        setSearchResultVideos(newVideosList);
+                                    }
+                              }
+
+                          } catch (e) {
+                              console.error("Error parsing AI metadata:", e);
+                          }
+                      }
+
+                      setAiResponse(displayText);
+                      setIsWaitingForAi(false);
+                      unsubscribe();
+                  } else if (data && data.status && data.status.state === 'ERROR') {
+                      setAiResponse("Désolé, je n'ai pas pu générer d'explication pour le moment.");
+                      setIsWaitingForAi(false);
+                      unsubscribe();
+                  }
+              });
+          } catch (err) {
+              console.error("AI Error:", err);
+              setAiResponse("Erreur de connexion à l'assistant IA.");
+              setIsWaitingForAi(false);
+          }
+      };
+
+      const timeoutId = setTimeout(() => {
+          fetchSearchResults();
+          fetchRealYoutubeVideos(); // Call real YouTube search
+          if (searchQuery && searchQuery.length > 2) {
+             generateAiResponse(searchQuery);
+          }
+      }, 800); // Debounce increased to 800ms for AI
+      return () => clearTimeout(timeoutId);
+  }, [searchQuery, supabase]);
 
   const handlePrevJt = () => {
     if (currentJtIndex < jtVideosList.length - 1) {
@@ -371,6 +660,12 @@ export default function HomeClient({
     };
 
     if (isNavigatingRef.current) {
+        // Check for YouTube Search URL (AI Fallback)
+        if (mainVideoUrl && mainVideoUrl.includes('youtube.com/results')) {
+            window.open(mainVideoUrl, '_blank');
+            return; // Don't try to play this in the video tag
+        }
+
         // Skip jingle if navigating
         if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
             video.src = mainVideoUrl;
@@ -420,8 +715,8 @@ export default function HomeClient({
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Navbar />
+<div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+        <Navbar onSearch={handleSearch} />
 
         <main className="main-content grow pt-20 !ml-0">
             {/* Hero Section */}
@@ -438,140 +733,188 @@ export default function HomeClient({
                        </div>
                     )}
                     <div className="hero-container">
-                        <div className={`video-column ${isFullscreen ? 'fullscreen' : ''}`} ref={videoContainerRef}>
+                        {/* Search Results Mode for Hero */}
+                        {isSearching && aiResponse ? (
+        <div className="video-column border-2 border-dashed border-gray-800 rounded-2xl p-6 bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden">
+             {searchAnswer && (
+                 <div className="flex gap-4 items-center bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-800 mb-2">
+                     <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                         <SafeImage 
+                             src={searchAnswer.image} 
+                             alt={searchAnswer.title} 
+                             fallbackTitle={searchAnswer.title}
+                             fill 
+                             className="object-cover"
+                         />
+                     </div>
+                     <div className="flex-1">
+                        <h4 className="font-bold text-white line-clamp-1">{searchAnswer.title}</h4>
+                        <button 
+                            onClick={() => router.push(`/shorts?id=${searchAnswer.id}`)}
+                            className="text-xs text-indigo-400 font-semibold hover:underline"
+                        >
+                            Lire l'article complet →
+                        </button>
+                     </div>
+                 </div>
+             )}
 
-                            <div className="video-wrapper">
-                                <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label="Plein écran">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d={isFullscreen ? "M4 14h6v6M10 14L3 21M20 10h-6V4M14 10l7-7" : "M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7"} />
-                                    </svg>
-                                </button>
-                                
-                                <div className="format-controls">
-                                    <button className="format-btn" onClick={() => setIsFormatMenuOpen(!isFormatMenuOpen)}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
-                                            <path d="M12 8v8"></path>
-                                            <path d="M8 12h8"></path>
-                                        </svg>
-                                        Changer de format
-                                    </button>
-                                    <div className={`format-menu ${isFormatMenuOpen ? 'show' : ''}`} id="formatMenu">
-                                        <button className="format-option" onClick={() => { setActiveFormat('video'); setIsFormatMenuOpen(false); }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                                            </svg>
-                                            Vidéo
-                                        </button>
-                                        <button className="format-option" onClick={() => { setActiveFormat('podcast'); setIsFormatMenuOpen(false); }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                                <line x1="12" y1="19" x2="12" y2="23"></line>
-                                                <line x1="8" y1="23" x2="16" y2="23"></line>
-                                            </svg>
-                                            Podcast
-                                        </button>
-                                        <button className="format-option" onClick={() => { setActiveFormat('text'); setIsFormatMenuOpen(false); }}>
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                                <polyline points="10 9 9 9 8 9"></polyline>
-                                            </svg>
-                                            Texte
-                                        </button>
-                                    </div>
-                                </div>
+             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 prose prose-sm prose-invert max-w-none">
+                 <div className="p-4 rounded-xl">
+                    <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            h2: ({node, ...props}) => <h2 className="text-xl font-black text-white mt-0 mb-4 pb-2 border-b-2 border-gray-700" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-black text-indigo-400" {...props} />,
+                            ul: ({node, ...props}) => <ul className="space-y-2 my-4 text-gray-300" {...props} />,
+                            li: ({node, ...props}) => <li className="flex gap-2 items-start" {...props} />,
+                            p: ({node, ...props}) => <p className="text-gray-300 leading-relaxed" {...props} />,
+                        }}
+                    >
+                        {aiResponse}
+                    </ReactMarkdown>
+                </div>
+            </div>
+        </div>
+    ) : (
+        <div className={`video-column ${isFullscreen ? 'fullscreen' : ''}`} ref={videoContainerRef}>
 
-                                <div id="format-video" className={`format-content ${activeFormat === 'video' ? 'active' : ''}`} style={activeFormat !== 'video' ? {display: 'none'} : {}}>
-                                    <video 
-                                        ref={videoRef}
-                                        className="video-player" 
-                                        controls 
-                                        poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
-                                        style={{width: '100%', height: '100%', objectFit: 'cover', background: 'black'}}
-                                    >
-                                        {jtVideo?.video_url && (
-                                            <source src="/video/Jingle.mp4" type="video/mp4" />
-                                        )}
-                                        {/* Fallback managed by JS via video.src */}
-                                        Votre navigateur ne supporte pas la lecture de vidéos.
-                                    </video>
+            <div className="video-wrapper">
+                <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label="Plein écran">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d={isFullscreen ? "M4 14h6v6M10 14L3 21M20 10h-6V4M14 10l7-7" : "M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7"} />
+                    </svg>
+                </button>
+                
+                <div className="format-controls">
+                    <button className="format-btn" onClick={() => setIsFormatMenuOpen(!isFormatMenuOpen)}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+                            <path d="M12 8v8"></path>
+                            <path d="M8 12h8"></path>
+                        </svg>
+                        Changer de format
+                    </button>
+                    <div className={`format-menu ${isFormatMenuOpen ? 'show' : ''}`} id="formatMenu">
+                        <button className="format-option" onClick={() => { setActiveFormat('video'); setIsFormatMenuOpen(false); }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                            </svg>
+                            Vidéo
+                        </button>
+                        <button className="format-option" onClick={() => { setActiveFormat('podcast'); setIsFormatMenuOpen(false); }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                            Podcast
+                        </button>
+                        <button className="format-option" onClick={() => { setActiveFormat('text'); setIsFormatMenuOpen(false); }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Texte
+                        </button>
+                    </div>
+                </div>
 
-                                    
-                                </div>
-                                <div id="format-podcast" className={`format-content ${activeFormat === 'podcast' ? 'active' : ''}`} style={activeFormat !== 'podcast' ? {display: 'none'} : {}}>
-                                    <div className="placeholder-content">
-                                        <div className="audio-player-mock">
-                                            <div className="play-btn">▶</div>
-                                            <div className="progress-bar">
-                                                <div className="progress" style={{width: '30%'}}></div>
-                                            </div>
-                                            <div className="time">04:20 / 12:45</div>
-                                        </div>
-                                        <h3>Version Audio (Podcast)</h3>
-                                        <p>Écoutez le résumé de l&apos;actualité IA & No-Code de la semaine.</p>
-                                    </div>
-                                </div>
-                                <div id="format-text" className={`format-content ${activeFormat === 'text' ? 'active' : ''}`} style={activeFormat !== 'text' ? {display: 'none'} : {}}>
-                                    <div className="placeholder-content text-mode">
-                                        <h3>Transcription du JT</h3>
-                                        <p><strong>00:00</strong> - Introduction et sommaire...</p>
-                                        <p><strong>01:15</strong> - L&apos;IA générative bouleverse le marché...</p>
-                                        <button className="read-more-btn">Lire la transcription complète</button>
-                                    </div>
-                                </div>
-                            </div>
-                        
-                        {/* JT Navigation Controls - Moved outside wrapper to avoid overflow clipping */}
-                        {activeFormat === 'video' && (
-                            <div className="flex items-center justify-center gap-6 mt-4 pb-2 select-none">
-                                <button 
-                                    onClick={handlePrevJt} 
-                                    disabled={currentJtIndex >= jtVideosList.length - 1}
-                                    className={`p-2 rounded-full transition-colors flex items-center justify-center group ${currentJtIndex >= jtVideosList.length - 1 ? 'opacity-30 cursor-not-allowed text-gray-400' : 'hover:bg-gray-200 text-black'}`}
-                                    aria-label="JT Précédent"
-                                >
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:-translate-x-1 transition-transform">
-                                        <polyline points="15 18 9 12 15 6"></polyline>
-                                    </svg>
-                                </button>
-
-                                <div className="text-lg font-bold text-black min-w-[150px] text-center">
-                                    {jtVideo ? getJtDateLabel(jtVideo.date) : "Chargement..."}
-                                </div>
-
-                                <div className="min-w-[40px]">
-                                    {currentJtIndex > 0 && (
-                                        <button 
-                                            onClick={handleNextJt} 
-                                            className="p-2 rounded-full hover:bg-gray-200 text-black transition-colors flex items-center justify-center group"
-                                            aria-label="JT Suivant"
-                                        >
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
-                                                <polyline points="9 18 15 12 9 6"></polyline>
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
+                <div id="format-video" className={`format-content ${activeFormat === 'video' ? 'active' : ''}`} style={activeFormat !== 'video' ? {display: 'none'} : {}}>
+                    <video 
+                        ref={videoRef}
+                        className="video-player" 
+                        controls 
+                        poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
+                        style={{width: '100%', height: '100%', objectFit: 'cover', background: 'black'}}
+                    >
+                        {jtVideo?.video_url && (
+                            <source src="/video/Jingle.mp4" type="video/mp4" />
                         )}
+                        {/* Fallback managed by JS via video.src */}
+                        Votre navigateur ne supporte pas la lecture de vidéos.
+                    </video>
+
+                    
+                </div>
+                <div id="format-podcast" className={`format-content ${activeFormat === 'podcast' ? 'active' : ''}`} style={activeFormat !== 'podcast' ? {display: 'none'} : {}}>
+                    <div className="placeholder-content">
+                        <div className="audio-player-mock">
+                            <div className="play-btn">▶</div>
+                            <div className="progress-bar">
+                                <div className="progress" style={{width: '30%'}}></div>
+                            </div>
+                            <div className="time">04:20 / 12:45</div>
                         </div>
+                        <h3>Version Audio (Podcast)</h3>
+                        <p>Écoutez le résumé de l&apos;actualité IA & No-Code de la semaine.</p>
+                    </div>
+                </div>
+                <div id="format-text" className={`format-content ${activeFormat === 'text' ? 'active' : ''}`} style={activeFormat !== 'text' ? {display: 'none'} : {}}>
+                    <div className="placeholder-content text-mode">
+                        <h3>Transcription du JT</h3>
+                        <p><strong>00:00</strong> - Introduction et sommaire...</p>
+                        <p><strong>01:15</strong> - L&apos;IA générative bouleverse le marché...</p>
+                        <button className="read-more-btn">Lire la transcription complète</button>
+                    </div>
+                </div>
+            </div>
+        
+        {/* JT Navigation Controls - Moved outside wrapper to avoid overflow clipping */}
+        {activeFormat === 'video' && (
+            <div className="flex items-center justify-center gap-6 mt-4 pb-2 select-none">
+                <button 
+                    onClick={handlePrevJt} 
+                    disabled={currentJtIndex >= jtVideosList.length - 1}
+                    className={`p-2 rounded-full transition-colors flex items-center justify-center group ${currentJtIndex >= jtVideosList.length - 1 ? 'opacity-30 cursor-not-allowed text-gray-400' : 'hover:bg-gray-200 text-black'}`}
+                    aria-label="JT Précédent"
+                >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:-translate-x-1 transition-transform">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+
+                <div className="text-lg font-bold text-black min-w-[150px] text-center">
+                    {jtVideo ? getJtDateLabel(jtVideo.date) : "Chargement..."}
+                </div>
+
+                <div className="min-w-[40px]">
+                    {currentJtIndex > 0 && (
+                        <button 
+                            onClick={handleNextJt} 
+                            className="p-2 rounded-full hover:bg-gray-200 text-black transition-colors flex items-center justify-center group"
+                            aria-label="JT Suivant"
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    )}
+                </div>
+            </div>
+        )}
+        </div>
+    )
+}{/* End Search Rendering */
 
                         <div className="articles-column">
                             <div className="vignettes-container" style={{gap: '2.5rem'}}> {/* Increased internal gap */}
                                 {/* Sujets du JT Column */}
                                 <div className="vignette-column" style={{gap: '1rem'}}>
-                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Sujets du JT</h3>
+                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                        {isSearching ? "Actualités liées" : "Sujets du JT"}
+                                    </h3>
                                     <div className="vignettes-list" style={{gap: '1rem'}}>
                                         {isLoadingSubjects ? (
                                              <div className="empty-state"><p>Chargement des sujets...</p></div>
-                                        ) : jtSubjects.length > 0 ? (
-                                            jtSubjects.map((article, index) => (
-                                            <div key={article.id} className="vignette-card" onClick={() => article.link && window.open(article.link, '_blank')}>
+                                        ) : (isSearching ? searchResultArticles : jtSubjects).length > 0 ? (
+                                            (isSearching ? searchResultArticles : jtSubjects).map((article, index) => (
+                                            <div key={article.id} className="vignette-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
                                                 <div className="relative w-full h-[120px]">
                                                     <SafeImage 
                                                         src={article.image} 
@@ -586,16 +929,24 @@ export default function HomeClient({
                                             </div>
                                         ))
                                         ) : (
-                                            <div className="empty-state"><p>Aucun sujet associé à ce JT.</p></div>
+                                            <div className="empty-state">
+                                                <p>
+                                                    {isSearching 
+                                                        ? (isWaitingForAi ? "🧠 L'IA explore vos articles..." : "Aucune actualité trouvée.") 
+                                                        : "Aucun sujet associé à ce JT."}
+                                                </p>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
 
                                 {/* Vidéos Column (formerly Tutos) */}
                                 <div className="vignette-column">
-                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Vidéos</h3>
+                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                        {isSearching ? "Vidéos liées" : "Vidéos"}
+                                    </h3>
                                     <div className="vignettes-list" style={{gap: '1rem'}}>
-                                        {videosColumnList.map((video, index) => (
+                                        {(isSearching ? searchResultVideos : videosColumnList).map((video, index) => (
                                             <div key={video.id || index} className="vignette-card" onClick={() => {
                                                 const isYouTube = video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be');
                                                 if (isYouTube) {
@@ -654,7 +1005,7 @@ export default function HomeClient({
                                 </div>
                             </div>
                         </div>
-                    </div>
+}                   </div>
                 </div>
             </section>
 
@@ -662,13 +1013,13 @@ export default function HomeClient({
             <section className="articles-section trending-articles" id="actualite">
                 <div className="container mx-auto">
                     <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-                        <h2 className="section-title mb-0!">Les news de l&apos;IA</h2>
+                        <h2 className="section-title !mb-0">Les news de l&apos;IA</h2>
                         <div className="flex-1 flex gap-2 ml-12 flex-wrap">
-                            <a href="/category.html?category=IA" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-blue-600 to-cyan-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">IA</a>
-                            <a href="/category.html?category=No-Code" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-purple-600 to-pink-600 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">No-Code</a>
-                            <a href="/category.html?category=Automatisation" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-orange-600 to-amber-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Automatisation</a>
-                            <a href="/category.html?category=Vibe-coding" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-violet-500 via-pink-500 to-rose-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Vibe-coding</a>
-                            <a href="/category.html?category=Multimedia" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-linear-to-br from-emerald-500 to-blue-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Multimédia</a>
+                            <a href="/category.html?category=IA" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-blue-600 to-cyan-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">IA</a>
+                            <a href="/category.html?category=No-Code" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-purple-600 to-pink-600 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">No-Code</a>
+                            <a href="/category.html?category=Automatisation" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-orange-600 to-amber-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Automatisation</a>
+                            <a href="/category.html?category=Vibe-coding" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-violet-500 via-pink-500 to-rose-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Vibe-coding</a>
+                            <a href="/category.html?category=Multimedia" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-emerald-500 to-blue-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Multimédia</a>
                         </div>
                     </div>
                     <div className="articles-grid">
