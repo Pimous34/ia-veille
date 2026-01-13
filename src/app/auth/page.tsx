@@ -53,20 +53,14 @@ function AuthContent() {
                 </div>
             )}
             {/* Logo */}
-            <div className="auth-logo">
+            <div className="flex justify-center w-full mb-8">
                 <Link href="/">
-                    <div className="logo-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <Image 
-                            src="/logo.png" 
-                            alt="OREEGAM'IA Logo" 
-                            width={300}
-                            height={150}
-                            className="logo-img"
-                            style={{ display: 'block', height: '150px', width: 'auto', margin: '0 auto', transform: 'none' }}
-                            priority
-                            unoptimized
-                        />
-                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                        src="/logo.png" 
+                        alt="OREEGAM'IA Logo" 
+                        className="h-64 w-auto object-contain mx-auto"
+                    />
                 </Link>
             </div>
 
@@ -110,20 +104,15 @@ function AuthContent() {
   return (
     <div className="auth-page">
       <div className="auth-container">
-        <div className="auth-logo">
+        <div className="flex justify-center w-full mb-8">
             <Link href="/">
-                <div className="logo-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <Image 
-                        src="/logo.png" 
-                        alt="OREEGAM'IA Logo" 
-                        width={300}
-                        height={150}
-                        className="logo-img"
-                        style={{ display: 'block', height: '150px', width: 'auto', margin: '0 auto', transform: 'none' }}
-                        priority
-                        unoptimized
-                    />
-                </div>
+                 {/* Utilisation de img standard pour éviter les problèmes de Next/Image */}
+                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                 <img 
+                     src="/logo.png" 
+                     alt="OREEGAM'IA Logo" 
+                     className="h-64 w-auto object-contain mx-auto"
+                 />
             </Link>
         </div>
 

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
  const Navbar = () => {
@@ -81,19 +81,24 @@ import { useAuth } from '@/contexts/AuthContext';
   }, [isMenuOpen]);
 
   const handleLogout = async () => {
+    console.log("Navbar: Logout initiated");
+    // 1. Close menu immediately for feedback
+    setIsMenuOpen(false);
+
     try {
-        console.log("Logging out...");
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            console.error("Error signing out:", error);
-            // Force logout locally even if server errors
-        }
+        // 2. Attempt sign out with a safety timeout
+        console.log("Navbar: Calling supabase.auth.signOut()");
+        const signOutPromise = supabase.auth.signOut();
+        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2000)); // 2s max wait
+        
+        await Promise.race([signOutPromise, timeoutPromise]);
+        console.log("Navbar: Sign out completed or timed out");
     } catch (err) {
-        console.error("Unexpected error during logout:", err);
+        console.error("Navbar: Error during logout:", err);
     } finally {
-        setIsMenuOpen(false);
-        // Force full page reload to clear any application state
-        window.location.href = '/';
+        console.log("Navbar: Redirecting to /auth");
+        // 3. Force hard redirect to /auth to clear state and ensure login screen
+        window.location.href = '/auth';
     }
   };
 
@@ -216,7 +221,11 @@ import { useAuth } from '@/contexts/AuthContext';
                             Espace Admin
                         </Link>
                         <button 
-                            onClick={() => handleLogout()} 
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleLogout();
+                            }} 
                             className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50 bg-white"
                         >
                             Se déconnecter
