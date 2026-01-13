@@ -5,6 +5,8 @@ import CookieBanner from "@/components/CookieBanner";
 import ToastProvider from "@/components/ToastProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 
+import Chatbot from "@/components/Chatbot";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -58,6 +60,7 @@ export default function RootLayout({
           {children}
           <CookieBanner />
           <ToastProvider />
+          <Chatbot />
 
         </AuthProvider>
       </body>

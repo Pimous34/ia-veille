@@ -462,18 +462,11 @@ Structure :
 
 ---METADATA---
 {
-  "keywords": ["mot_cle_1", "mot_cle_2"],
-  "youtube": ["url_youtube_1", "url_youtube_2"]
+  "keywords": ["mot_cle_1", "mot_cle_2"]
 }
 
 CONSIGNES POUR METADATA :
 - "keywords": Donne 2-3 termes de recherche (français ou anglais) pour trouver des articles techniques liés dans une base de données (ex: pour "prompts", mets ["Prompt Engineering", "LLM"]).
-- "youtube": Suggère 1 à 3 liens.
-  - Si tu connais une vidéo OFFICIELLE et CÉLÈBRE (ex: "Google Keynote", "Tuto Fireship"), mets son URL directe.
-  - SINON, génère des liens de RECHERCHE YouTube très ciblés pour aider l'utilisateur.
-    Format : 'https://www.youtube.com/results?search_query=Mots+Clés+Précis'
-    Exemple : 'https://www.youtube.com/results?search_query=Antigravity+Google+Deepmind+Demo'
-  - Donne 3 liens variés (ex: 1 Démo, 1 Tuto, 1 Avis).
 `;
 
           const context = `CONTEXTE: L'utilisateur veut comprendre : "${promptText}"`;
@@ -498,7 +491,7 @@ CONSIGNES POUR METADATA :
                       // Parsing Metadata
                       const parts = fullResponse.split('---METADATA---');
                       const displayText = parts[0].trim();
-                      let metadata = { keywords: [], youtube: [] };
+                      let metadata = { keywords: [] };
 
                       if (parts.length > 1) {
                           try {
@@ -554,28 +547,17 @@ CONSIGNES POUR METADATA :
 
                                     // 3. Fallback: Removed as we fetch real videos now
                                     
-                                    if (aiDbVideos) {
-                                        // We append internal DB videos AFTER real YouTube results if needed, 
-                                        // or we can decide to keep only real YouTube results.
-                                        // For now let's keep internal DB matches as bonus.
+                                    if (aiDbVideos && aiDbVideos.length > 0) {
                                         const mappedDbVideos = aiDbVideos.map((v: any) => ({
                                             ...v,
                                             thumbnail_url: v.thumbnail_url || getDeterministicImage(v.title || 'Video')
                                         }));
-                                        // We append to existing state (which has Real Youtube videos)
-                                        setSearchResultVideos(prev => [...prev, ...mappedDbVideos]); 
-                                    }
-
-                                    if (aiDbVideos) {
-                                        const mappedDbVideos = aiDbVideos.map((v: any) => ({
-                                            ...v,
-                                            thumbnail_url: v.thumbnail_url || getDeterministicImage(v.title || 'Video')
-                                        }));
-                                        newVideosList = [...newVideosList, ...mappedDbVideos];
-                                    }
-                                    
-                                    if(newVideosList.length > 0) {
-                                        setSearchResultVideos(newVideosList);
+                                        // Merge with existing results, avoiding duplicates if possible (simple append for now)
+                                        setSearchResultVideos(prev => {
+                                            const existingIds = new Set(prev.map(p => p.id));
+                                            const uniqueNew = mappedDbVideos.filter(n => !existingIds.has(n.id));
+                                            return [...prev, ...uniqueNew];
+                                        });
                                     }
                               }
 
@@ -993,14 +975,19 @@ CONSIGNES POUR METADATA :
                                     </div>
                                 </div>
 
-                                {/* Oreegami Messages & Tutos Column */}
-                                <div className="vignette-column" style={{gap: '2.5rem'}}> {/* Increased vertical gap */}
-
-                                    
-                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Assistant IA</h3>
-                                    {/* Tutos moved to dedicated section below */}
-                                    <div style={{width: '100%', maxWidth: '100%', overflow: 'hidden'}}>
-                                        <Chatbot embedded={true} />
+                                {/* Infos Column */}
+                                <div className="vignette-column">
+                                    <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Infos</h3>
+                                    <div className="vignettes-list" style={{gap: '1rem'}}>
+                                        {/* Placeholder content for now */}
+                                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
+                                            <p className="font-bold mb-1">Mises à jour</p>
+                                            <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
+                                        </div>
+                                         <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-sm text-indigo-800">
+                                            <p className="font-bold mb-1">Événements</p>
+                                            <p>Webinaire "IA & No-Code" ce mardi à 18h.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

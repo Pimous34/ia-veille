@@ -766,7 +766,6 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
         )}
 
         </div>
-       )}
     </main>
   </div>
 )

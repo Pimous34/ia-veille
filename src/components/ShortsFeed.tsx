@@ -237,7 +237,7 @@ export default function ShortsFeed() {
                     </div>
 
                     {/* Main Content Card */}
-                    <div className="relative z-20 w-full max-w-md h-[85vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 my-auto animate-in fade-in duration-500">
+                    <div className="relative z-20 w-full max-w-2xl h-[85vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 my-auto animate-in fade-in duration-500">
                         
                         {/* Image or Video Section (Top 45%) */}
                         <div className="relative h-[45%] w-full bg-black">
@@ -274,23 +274,23 @@ export default function ShortsFeed() {
                         </div>
 
                         {/* Text Content Logic (Bottom) */}
-                        <div className="flex-1 p-6 flex flex-col relative bg-white">
+                        <div className="flex-1 p-8 flex flex-col relative bg-white">
                             {/* Tags */}
-                            <div className="flex flex-wrap gap-2 mb-3">
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 {(item.tags || []).slice(0, 3).map(tag => (
-                                    <span key={tag} className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md uppercase">
+                                    <span key={tag} className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md uppercase">
                                         #{tag}
                                     </span>
                                 ))}
                             </div>
 
                             {/* Title */}
-                            <h2 className="text-xl font-bold text-gray-900 leading-tight mb-3 line-clamp-3">
+                            <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-4 line-clamp-3">
                                 {item.title}
                             </h2>
 
                             {/* Description / Excerpt */}
-                            <div className="text-sm text-gray-600 mb-6 overflow-y-auto max-h-[150px] leading-relaxed pr-2">
+                            <div className="text-lg text-gray-700 mb-6 overflow-y-auto max-h-[200px] leading-relaxed pr-2">
                                 {item.description}
                             </div>
 

@@ -154,8 +154,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
               {/* Navigation Links */}
               <div className="flex items-center px-6 gap-8 flex-1 justify-center">
                 <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
-                <Link href="/categories" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
-                <Link href="/articles" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Actualité</Link>
+                <Link href="/#actualite" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
                 <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Se former</Link>
                 <Link href="/shorts" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
               </div>
@@ -164,7 +163,14 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 {/* Search Input */}
                <div className="relative group ml-4">
                   <div className={`flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden ${isSearchOpen ? 'w-[250px]' : 'w-[40px] hover:w-[250px] focus-within:w-[250px]'}`}>
-                      <div className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700">
+                      <div 
+                          className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700"
+                          onClick={() => {
+                              if (onSearch && searchValue) onSearch(searchValue);
+                              setIsSearchOpen(true);
+                              if (searchInputRef.current) searchInputRef.current.focus();
+                          }}
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                         </svg>
@@ -175,9 +181,11 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                         value={searchValue}
                         placeholder="Je veux comprendre..." 
                         className="bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-600 h-full w-full pr-2 py-2"
-                        onChange={(e) => {
-                            setSearchValue(e.target.value);
-                            if (onSearch) onSearch(e.target.value);
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                if (onSearch) onSearch(searchValue);
+                            }
                         }}
                         onFocus={() => setIsSearchOpen(true)}
                         onBlur={(e) => {
