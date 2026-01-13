@@ -54,6 +54,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth State Change:', event); // Debug log
+
+      if (event === 'SIGNED_OUT') {
+         if (mounted) {
+            setUser(null);
+            setLoading(false);
+         }
+         // Optional: Redirect to auth page if needed, but usually just clearing state is enough for UI to react
+         return;
+      }
+
       if (session?.user) {
         // Verification of existence in students, admins or intervenants
         const { data: isAdmin } = await supabase.from('admins').select('id').eq('email', session.user.email).maybeSingle();
@@ -77,6 +88,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         }
       } else {
+        // No session (and not explicitly SIGNED_OUT event caught above, e.g. INITIAL_SESSION)
         if (mounted) {
           setUser(null);
           setLoading(false);
@@ -92,9 +104,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
 
+    // Revalidate on window focus (user comes back to tab)
+    const handleFocus = () => {
+        refreshUser(); 
+    };
+    window.addEventListener('focus', handleFocus);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      window.removeEventListener('focus', handleFocus);
     };
   }, [refreshUser, supabase]);
 
