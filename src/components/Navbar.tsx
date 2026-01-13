@@ -38,6 +38,11 @@ import { useAuth } from '@/contexts/AuthContext';
   }, [pathname]);
 
   useEffect(() => {
+    // Close menu on route change
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -67,11 +72,11 @@ import { useAuth } from '@/contexts/AuthContext';
     };
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [isMenuOpen]);
 
@@ -180,7 +185,7 @@ import { useAuth } from '@/contexts/AuthContext';
           </div>
 
           {/* 3. Auth Button (Positions Absolutely to the Right) */}
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-10 whitespace-nowrap">
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-50 whitespace-nowrap pointer-events-auto">
             {mounted && (
               user ? (
                 <div className="relative" ref={menuRef}>
@@ -194,26 +199,30 @@ import { useAuth } from '@/contexts/AuthContext';
                     <span className="text-sm font-semibold text-gray-700">{getUserDisplayName()}</span>
                   </button>
 
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 overflow-hidden z-[100]" onClick={(e) => e.stopPropagation()}>
-                        <div 
-                            onClick={() => { router.push('/parametres'); setIsMenuOpen(false); }} 
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 bg-white cursor-pointer select-none"
+                  {isMenuOpen && (
+                      <div 
+                        className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-[100]"
+                      >
+                        <Link 
+                            href="/parametres" 
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 bg-white"
                         >
                             Paramètres
-                        </div>
-                        <div 
-                            onClick={() => { router.push('/admin'); setIsMenuOpen(false); }} 
-                            className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white cursor-pointer select-none"
+                        </Link>
+                        <Link 
+                            href="/admin" 
+                            className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white"
                         >
                             Espace Admin
-                        </div>
+                        </Link>
                         <button 
-                            onClick={(e) => { e.stopPropagation(); handleLogout(); }} 
-                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50 bg-white cursor-pointer select-none"
+                            onClick={() => handleLogout()} 
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50 bg-white"
                         >
                             Se déconnecter
                         </button>
                       </div>
+                  )}
                 </div>
               ) : (
                 <Link href="/auth" className="px-6 py-3 rounded-full font-bold text-slate-700 text-sm bg-blue-50/80 backdrop-blur-sm border border-white shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">
