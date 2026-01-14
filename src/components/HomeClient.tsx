@@ -1088,6 +1088,7 @@ CONSIGNES POUR METADATA :
                             <a href="/category.html?category=Automatisation" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-orange-600 to-amber-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Automatisation</a>
                             <a href="/category.html?category=Vibe-coding" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-violet-500 via-pink-500 to-rose-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Vibe-coding</a>
                             <a href="/category.html?category=Multimedia" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-emerald-500 to-blue-500 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Multimédia</a>
+                            <a href="/category.html?category=Backend" className="flex-1 text-center justify-center flex items-center px-3 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-slate-700 to-zinc-600 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300">Back-end</a>
                         </div>
                     </div>
                     <div className="articles-grid">
