@@ -44,6 +44,14 @@ interface JtVideo {
   article_ids?: number[];
 }
 
+interface NextCourse {
+    title: string;
+    location: string;
+    instructor?: string;
+    meetLink?: string;
+    date: string;
+}
+
 // --- Constants & Helpers ---
 // Removed unused categoryTags
 
@@ -259,28 +267,56 @@ export default function HomeClient({
         thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
       }
   );
-
-  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>(initialVideosColumn);
-  const [currentJtIndex, setCurrentJtIndex] = useState(0);
-  const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
+  /* ---------------------- STATE ---------------------- */
+  const [activeTab, setActiveTab] = useState('tous');
+  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
+  const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]);
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   
-  const [trendingArticles, setTrendingArticles] = useState<Article[]>(initialArticles);
-  const [tutorials, setTutorials] = useState<Tutorial[]>(initialTutorials);
-  
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [coursePrepArticles, _setCoursePrepArticles] = useState<Article[]>(fallbackCoursePrepArticles);
-
-  // --- Search State ---
-  const [searchQuery, setSearchQuery] = useState('');
+  // JT & AI States
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResultArticles, setSearchResultArticles] = useState<Article[]>([]);
-  const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]);
-  // We'll use the first article as the "Hero Answer" for now
+  const [isWaitingForAi, setIsWaitingForAi] = useState(false);
+  const [searchResultArticles, setSearchResultArticles] = useState<Article[]>([]); // To display AI results (vignettes)
+  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
+  const [searchResultSummary, setSearchResultSummary] = useState(''); // Text summary from AI
+  
+  // --- Restored AI Search Missing States ---
   const [searchAnswer, setSearchAnswer] = useState<Article | null>(null);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [isWaitingForAi, setIsWaitingForAi] = useState(false);
   const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
+
+  // New States for Videos and Next Course
   
+  // New States for Videos and Next Course
+  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([]);
+  const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [currentJtIndex, setCurrentJtIndex] = useState(0); // Index of currently playing JT in the list
+  const [jtVideo, setJtVideo] = useState<JtVideo | null>(null); // The actual detailed object (if needed separate)
+  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]); // List for right column (mixed)
+  const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]); // List for right column (search results)
+  const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
+
+  /* ---------------------- EFFECTS ---------------------- */
+
+  // Fetch Next Course
+  useEffect(() => {
+    const fetchNextCourse = async () => {
+        try {
+            const response = await fetch('/api/next-course');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.found) {
+                    setNextCourse(data);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch next course", error);
+        }
+    };
+    fetchNextCourse();
+  }, []);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const isNavigatingRef = useRef(false);
@@ -985,17 +1021,48 @@ CONSIGNES POUR METADATA :
                                 </div>
 
                                 {/* Infos Column */}
-                                <div className="vignette-column">
                                     <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Infos</h3>
                                     <div className="vignettes-list" style={{gap: '1rem'}}>
-                                        {/* Placeholder content for now */}
+                                        {nextCourse ? (
+                                            <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">Prochain cours</span>
+                                                    <span className="text-xs text-gray-500">{new Date(nextCourse.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                                                </div>
+                                                <p className="font-bold text-base mb-2 leading-tight">{nextCourse.title}</p>
+                                                
+                                                <div className="space-y-1.5 text-xs text-gray-700">
+                                                    {nextCourse.location && (
+                                                        <div className="flex items-center gap-2">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                            <span>
+                                                                {nextCourse.location}
+                                                                {nextCourse.meetLink && (
+                                                                    <a href={nextCourse.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
+                                                                        Lien Google Meet
+                                                                    </a>
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {nextCourse.instructor && (
+                                                        <div className="flex items-center gap-2">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                            <span>Formateur : <span className="font-medium">{nextCourse.instructor}</span></span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-500 italic text-center">
+                                                Aucun cours demain.
+                                            </div>
+                                        )}
+                                        
                                         <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
                                             <p className="font-bold mb-1">Mises à jour</p>
                                             <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
-                                        </div>
-                                         <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-sm text-indigo-800">
-                                            <p className="font-bold mb-1">Événements</p>
-                                            <p>Webinaire "IA & No-Code" ce mardi à 18h.</p>
                                         </div>
                                     </div>
                                 </div>
