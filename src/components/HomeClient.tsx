@@ -1027,7 +1027,12 @@ CONSIGNES POUR METADATA :
                                             <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">Prochain cours</span>
-                                                    <span className="text-xs text-gray-500">{new Date(nextCourse.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {new Date(nextCourse.date).toDateString() === new Date().toDateString() 
+                                                            ? "Aujourd'hui" 
+                                                            : new Date(nextCourse.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+                                                        }
+                                                    </span>
                                                 </div>
                                                 <p className="font-bold text-base mb-2 leading-tight">{nextCourse.title}</p>
                                                 
@@ -1068,7 +1073,7 @@ CONSIGNES POUR METADATA :
                                 </div>
                             </div>
                         </div>
-                    </div>
+     }     </div>
                 </div>
             </section>
 
