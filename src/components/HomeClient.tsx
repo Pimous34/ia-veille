@@ -7,6 +7,7 @@ import Chatbot from '@/components/Chatbot';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
+import { useReadTracking } from '@/hooks/useReadTracking';
 import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
@@ -239,6 +240,7 @@ export default function HomeClient({
   initialVideosColumn
 }: HomeClientProps) {
   const router = useRouter();
+  const { isRead } = useReadTracking();
   const [supabase] = useState(() => createClient());
   // Auth check moved to Server Component wrapper
   
@@ -950,6 +952,12 @@ CONSIGNES POUR METADATA :
                                                         fill
                                                         priority={index < 2}
                                                     />
+                                                    {isRead(article.id) && (
+                                                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                            Lu
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="vignette-info">{article.title}</div>
                                             </div>
@@ -1001,6 +1009,12 @@ CONSIGNES POUR METADATA :
                                                         fill
                                                         priority={index < 2}
                                                     />
+                                                    {isRead(video.id) && (
+                                                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                            Lu
+                                                        </div>
+                                                    )}
                                                     {/* Optional: Add a YouTube badge or icon for external videos */}
                                                     {(video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be')) && (
                                                         <div className="absolute top-1 right-1 bg-red-600 text-white text-[10px] px-1 rounded shadow">
@@ -1102,6 +1116,12 @@ CONSIGNES POUR METADATA :
                                         className="article-image object-cover" 
                                         unoptimized 
                                     />
+                                    {isRead(article.id) && (
+                                        <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            Lu
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="article-content">
                                     {article.tags && (

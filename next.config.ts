@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
-  serverExternalPackages: ['@grpc/grpc-js', 'firebase-admin'],
+  serverExternalPackages: ['@grpc/grpc-js', '@grpc/proto-loader', 'firebase-admin', 'google-gax'],
   eslint: {
     ignoreDuringBuilds: true,
   },

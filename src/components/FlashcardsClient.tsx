@@ -604,16 +604,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                           </span>
                       </div>
 
-                      <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleExplain(flashcards[currentCardIndex].front_content);
-                        }}
-                        className="absolute top-8 right-8 z-30 pointer-events-auto flex items-center gap-3 px-10 py-4 bg-[linear-gradient(135deg,rgba(255,235,59,0.1)_0%,rgba(255,152,0,0.1)_25%,rgba(255,107,157,0.1)_50%,rgba(156,39,176,0.1)_75%,rgba(33,150,243,0.1)_100%)] backdrop-blur-xl shadow-lg border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-indigo-600/30 border-r-2 border-r-indigo-600/30 hover:scale-105 hover:-translate-y-0.5 transition-all text-gray-800 font-black text-sm uppercase tracking-widest group rounded-[40px]"
-                      >
-                        <Info size={18} className="text-indigo-600 group-hover:rotate-12 transition-transform" />
-                        <span>En savoir plus</span>
-                      </button>
+                      {/* Button moved to bottom bar */}
 
                       <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-32">
                           <RichContent content={flashcards[currentCardIndex].back_content} />
@@ -622,7 +613,18 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                   </div>
 
                   {isFlipped && (
-                    <div className="absolute -bottom-16 left-0 w-full px-4 md:px-12 grid grid-cols-3 gap-6 animate-slide-up z-20 pointer-events-none">
+                    <div className="absolute -bottom-16 left-0 w-full px-2 md:px-12 grid grid-cols-5 gap-2 md:gap-4 animate-slide-up z-20 pointer-events-none">
+                        {/* 1. Inutile */}
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
+                          className="pointer-events-auto group h-32 rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center"
+                          title="Supprimer cette carte"
+                        >
+                          <span className="text-2xl md:text-3xl mb-2 grayscale group-hover:grayscale-0 transition-all">👎</span>
+                          <span className="font-bold text-[10px] md:text-xs uppercase tracking-wider">Inutile</span>
+                        </button>
+
+                        {/* 2. À revoir */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Again); }}
                           className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl 
@@ -630,11 +632,13 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                                   ? 'bg-red-500 border-red-600 text-white scale-110 -translate-y-4 shadow-red-500/40' 
                                   : 'bg-white border-red-50 text-red-600 shadow-red-100/50 hover:bg-red-50 hover:border-red-200 hover:-translate-y-1'}`}
                         >
-                          <span className="font-black text-lg md:text-2xl transition-transform">À revoir</span>
-                          <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
+                          <span className="font-black text-sm md:text-xl transition-transform text-center">À revoir</span>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
                               {nextIntervals[Rating.Again]}
                           </span>
                         </button>
+
+                        {/* 3. Presque bon */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Hard); }} 
                           className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
@@ -642,11 +646,13 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                                   ? 'bg-amber-500 border-amber-600 text-white scale-110 -translate-y-4 shadow-amber-500/40' 
                                   : 'bg-white border-amber-50 text-amber-600 shadow-amber-100/50 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-1'}`}
                         >
-                          <span className="font-black text-lg md:text-2xl transition-transform">Presque bon</span>
-                          <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
+                          <span className="font-black text-sm md:text-xl transition-transform text-center">Moyen</span>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
                               {nextIntervals[Rating.Hard]}
                           </span>
                         </button>
+
+                        {/* 4. Je connais */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Easy); }} 
                           className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
@@ -654,26 +660,27 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                                   ? 'bg-green-500 border-green-600 text-white scale-110 -translate-y-4 shadow-green-500/40' 
                                   : 'bg-white border-green-50 text-green-600 shadow-green-100/50 hover:bg-green-50 hover:border-green-200 hover:-translate-y-1'}`}
                         >
-                          <span className="font-black text-lg md:text-2xl transition-transform">Je connais</span>
-                          <span className={`text-xs uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
+                          <span className="font-black text-sm md:text-xl transition-transform text-center">Facile</span>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
                               {nextIntervals[Rating.Easy]}
                           </span>
+                        </button>
+
+                         {/* 5. En savoir plus */}
+                         <button 
+                          onClick={(e) => {
+                              e.stopPropagation();
+                              handleExplain(flashcards[currentCardIndex].front_content);
+                          }}
+                          className="pointer-events-auto group h-32 rounded-3xl border-2 bg-white border-indigo-50 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 hover:-translate-y-1 shadow-xl shadow-indigo-100/50 transition-all flex flex-col items-center justify-center"
+                        >
+                          <Info size={28} className="mb-2 group-hover:scale-110 transition-transform" />
+                          <span className="font-bold text-[10px] md:text-xs uppercase tracking-wider text-center">En savoir +</span>
                         </button>
                     </div>
                   )}
 
-                  {isFlipped && (
-                      <div className="absolute -bottom-32 left-0 w-full flex justify-center pointer-events-auto z-30 animate-fade-in-up">
-                          <button 
-                              onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
-                              className="flex items-center gap-3 px-8 py-4 bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 rounded-full transition-all border border-gray-200 hover:border-red-200 shadow-sm hover:scale-105"
-                              title="Cette question est inutile pour la formation"
-                          >
-                              <span className="text-2xl">👎</span>
-                              <span className="font-bold text-base">Inutile pour la formation</span>
-                          </button>
-                      </div>
-                  )}
+
               </motion.div>
             ) : (
               <motion.div 
