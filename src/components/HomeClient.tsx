@@ -255,7 +255,33 @@ export default function HomeClient({
   const [dataError, setDataError] = useState<string | null>(null);
 
   // Initialize directly from Props
-  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>(initialJtVideos);
+  // const [jtVideosList, setJtVideosList] = useState<JtVideo[]>(initialJtVideos); // REMOVED DUPLICATE
+
+  /* ---------------------- STATE ---------------------- */
+  const [activeTab, setActiveTab] = useState('tous');
+  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
+  const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]);
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  
+  // JT & AI States
+  const [isSearching, setIsSearching] = useState(false);
+  const [isWaitingForAi, setIsWaitingForAi] = useState(false);
+  const [searchResultArticles, setSearchResultArticles] = useState<Article[]>([]); // To display AI results (vignettes)
+  const [searchQuery, setSearchQuery] = useState(''); // Renamed back from currentSearchQuery for consistency with existing code usage or refactoring
+  const [searchResultSummary, setSearchResultSummary] = useState(''); // Text summary from AI
+  
+  // --- Restored AI Search Missing States ---
+  const [searchAnswer, setSearchAnswer] = useState<Article | null>(null);
+  const [aiResponse, setAiResponse] = useState<string | null>(null);
+  const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
+
+  // New States for Videos and Next Course
+  
+  // New States for Videos and Next Course
+  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>(initialJtVideos); // Kept this one, initialized with props
+  const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [currentJtIndex, setCurrentJtIndex] = useState(0); // Index of currently playing JT in the list
   
   // Set initial video if available
   const [jtVideo, setJtVideo] = useState<JtVideo | null>(
@@ -267,32 +293,7 @@ export default function HomeClient({
         thumbnail_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
       }
   );
-  /* ---------------------- STATE ---------------------- */
-  const [activeTab, setActiveTab] = useState('tous');
-  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
-  const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]);
-  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
-  
-  // JT & AI States
-  const [isSearching, setIsSearching] = useState(false);
-  const [isWaitingForAi, setIsWaitingForAi] = useState(false);
-  const [searchResultArticles, setSearchResultArticles] = useState<Article[]>([]); // To display AI results (vignettes)
-  const [currentSearchQuery, setCurrentSearchQuery] = useState('');
-  const [searchResultSummary, setSearchResultSummary] = useState(''); // Text summary from AI
-  
-  // --- Restored AI Search Missing States ---
-  const [searchAnswer, setSearchAnswer] = useState<Article | null>(null);
-  const [aiResponse, setAiResponse] = useState<string | null>(null);
-  const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
 
-  // New States for Videos and Next Course
-  
-  // New States for Videos and Next Course
-  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>([]);
-  const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
-  const [currentJtIndex, setCurrentJtIndex] = useState(0); // Index of currently playing JT in the list
-  const [jtVideo, setJtVideo] = useState<JtVideo | null>(null); // The actual detailed object (if needed separate)
   const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]); // List for right column (mixed)
   const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]); // List for right column (search results)
   const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
@@ -340,9 +341,6 @@ export default function HomeClient({
 
   // Fetch Data
   // Removed fetchData useEffect as data is now passed via props
-
-  // Data State
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
 
   // Fetch JT Subjects whenever jtVideo changes
   useEffect(() => {
@@ -1065,10 +1063,9 @@ CONSIGNES POUR METADATA :
                                             <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
                                         </div>
                                     </div>
-                                </div>
                             </div>
                         </div>
-}                   </div>
+ } </div>
                 </div>
             </section>
 
