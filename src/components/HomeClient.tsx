@@ -259,9 +259,9 @@ export default function HomeClient({
 
   /* ---------------------- STATE ---------------------- */
   const [activeTab, setActiveTab] = useState('tous');
-  const [trendingArticles, setTrendingArticles] = useState<Article[]>([]);
-  const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]);
-  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [trendingArticles, setTrendingArticles] = useState<Article[]>(initialArticles || []);
+  const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]); // Assuming this needs separate logic or filter from articles
+  const [tutorials, setTutorials] = useState<Tutorial[]>(initialTutorials || []);
   
   // JT & AI States
   const [isSearching, setIsSearching] = useState(false);
@@ -278,14 +278,14 @@ export default function HomeClient({
   // New States for Videos and Next Course
   
   // New States for Videos and Next Course
-  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>(initialJtVideos); // Kept this one, initialized with props
+  const [jtVideosList, setJtVideosList] = useState<JtVideo[]>(initialJtVideos || []); // Kept this one, initialized with props
   const [jtSubjects, setJtSubjects] = useState<Article[]>([]);
-  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false); // Restored missing state
   const [currentJtIndex, setCurrentJtIndex] = useState(0); // Index of currently playing JT in the list
   
   // Set initial video if available
   const [jtVideo, setJtVideo] = useState<JtVideo | null>(
-      initialJtVideos.length > 0 ? initialJtVideos[0] : {
+      initialJtVideos && initialJtVideos.length > 0 ? initialJtVideos[0] : {
         id: 'fallback-1',
         video_url: '#',
         title: "JT IA (Démo)",
@@ -294,7 +294,7 @@ export default function HomeClient({
       }
   );
 
-  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>([]); // List for right column (mixed)
+  const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>(initialVideosColumn || []); // List for right column (mixed)
   const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]); // List for right column (search results)
   const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
 
@@ -447,6 +447,7 @@ export default function HomeClient({
       };
 
       const fetchRealYoutubeVideos = async () => {
+        if (!searchQuery || searchQuery.length < 2) return;
         try {
             const res = await fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}`);
             const data = await res.json();

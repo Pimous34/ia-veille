@@ -78,13 +78,13 @@ export default function Chatbot({ embedded = false }: ChatbotProps) {
             const [articlesResult, videosResult] = await Promise.all([
                 supabase
                     .from('articles')
-                    .select('id, title, excerpt, summary, resume_ia, category, tags, published_at, url')
+                    .select('id, title, excerpt, category_id, tags, published_at, url') // Fixed columns
                     .order('published_at', { ascending: false })
                     .limit(50),
                 supabase
-                    .from('videos_youtube')
-                    .select('id_video, titre, nom_chaine, date_publication, lien')
-                    .order('date_publication', { ascending: false })
+                    .from('daily_news_videos') // Fixed table name
+                    .select('id, title, date, video_url') // Fixed columns
+                    .order('date', { ascending: false })
                     .limit(30)
             ]);
 
@@ -129,16 +129,16 @@ export default function Chatbot({ embedded = false }: ChatbotProps) {
                 articles: siteData.articles.map(a => ({
                     id: a.id,
                     title: a.title,
-                    summary: a.resume_ia || a.excerpt || a.summary,
-                    category: a.category,
+                    summary: a.excerpt || "", // Use excerpt as summary
+                    category: a.category_id, // Use category_id
                     tags: a.tags,
                     url: `shortnews.html?article=${a.id}`
                 })),
                 videos: siteData.videos.map(v => ({
-                    id: v.id_video,
-                    title: v.titre,
-                    channel: v.nom_chaine,
-                    url: `shortnews.html?article=${v.id_video}`
+                    id: v.id,
+                    title: v.title,
+                    channel: 'Oreegami', // Default channel name
+                    url: `shortnews.html?article=${v.id}`
                 }))
             };
 

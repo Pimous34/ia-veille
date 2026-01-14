@@ -1,12 +1,23 @@
 
 import { NextResponse } from 'next/server';
-import ical from 'node-ical';
+const ical = require('node-ical');
 
 const CALENDAR_URL = 'https://calendar.google.com/calendar/ical/c_648df9e785e29f211ec640213ba3a539239574b9adfdc67e69c8d5aac6dffbc2%40group.calendar.google.com/public/basic.ics';
 
 export async function GET() {
   try {
-    const data = await ical.async.fromURL(CALENDAR_URL);
+    console.log("Fetching calendar from:", CALENDAR_URL);
+    const response = await fetch(CALENDAR_URL, {
+        next: { revalidate: 300 } // Cache for 5 minutes
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ICS: ${response.status} ${response.statusText}`);
+    }
+
+    const icsText = await response.text();
+    // Use standard parseICS for string content (it is synchronous in node-ical)
+    const data = ical.parseICS(icsText);
     
     // Get target date (Tomorrow)
     const now = new Date();
@@ -21,7 +32,17 @@ export async function GET() {
     const events = Object.values(data).filter((event: any) => {
         if (event.type !== 'VEVENT') return false;
         
-        const eventStart = new Date(event.start);
+        let eventStart: Date;
+        // Handle date strings (YYYYMMDD) or Date objects
+        if (event.start instanceof Date) {
+            eventStart = event.start;
+        } else if (typeof event.start === 'string') {
+             // Basic YYYYMMDD parsing if needed, but node-ical usually gives Date
+             eventStart = new Date(event.start);
+        } else {
+            return false;
+        }
+
         return eventStart >= startTarget && eventStart <= endTarget;
     });
 
