@@ -1068,7 +1068,7 @@ CONSIGNES POUR METADATA :
                                 </div>
                             </div>
                         </div>
-       }       </div>
+                    </div>
                 </div>
             </section>
 

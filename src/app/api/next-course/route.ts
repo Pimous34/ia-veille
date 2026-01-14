@@ -19,39 +19,39 @@ export async function GET() {
     // Use standard parseICS for string content (it is synchronous in node-ical)
     const data = ical.parseICS(icsText);
     
-    // Get target date (Tomorrow)
-    const now = new Date();
-    const targetDate = new Date(now);
-    targetDate.setDate(targetDate.getDate() + 1);
+    // Get current date
+    const now = new Date(); // Server time
+    // Ensure we are comparing correctly
     
-    // Reset time for comparison
-    const startTarget = new Date(targetDate.setHours(0, 0, 0, 0));
-    const endTarget = new Date(targetDate.setHours(23, 59, 59, 999));
-
-    // Filter events for tomorrow
+    // Filter events for future
     const events = Object.values(data).filter((event: any) => {
         if (event.type !== 'VEVENT') return false;
         
         let eventStart: Date;
-        // Handle date strings (YYYYMMDD) or Date objects
         if (event.start instanceof Date) {
             eventStart = event.start;
         } else if (typeof event.start === 'string') {
-             // Basic YYYYMMDD parsing if needed, but node-ical usually gives Date
              eventStart = new Date(event.start);
         } else {
             return false;
         }
 
-        return eventStart >= startTarget && eventStart <= endTarget;
+        // Keep events strictly in the future (or starting now)
+        return eventStart >= now;
     });
 
     if (events.length === 0) {
-       return NextResponse.json({ found: false, message: 'No events for tomorrow' });
+       return NextResponse.json({ found: false, message: 'No upcoming events found' });
     }
 
-    // Sort by start time if specific time, but these seem to be course days
-    const nextEvent: any = events[0]; // Take the first one
+    // Sort by start time to get the very next one
+    events.sort((a: any, b: any) => {
+        const dateA = a.start instanceof Date ? a.start : new Date(a.start);
+        const dateB = b.start instanceof Date ? b.start : new Date(b.start);
+        return dateA.getTime() - dateB.getTime();
+    });
+
+    const nextEvent: any = events[0];
 
     // Processing Logic
     
