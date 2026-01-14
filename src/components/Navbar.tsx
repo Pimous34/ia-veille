@@ -155,6 +155,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
               <div className="flex items-center px-6 gap-8 flex-1 justify-center">
                 <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
                 <Link href="/#actualite" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
+                <Link href="/#tutos" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Tutos</Link>
                 <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Se former</Link>
                 <Link href="/shorts" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
               </div>

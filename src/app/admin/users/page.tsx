@@ -76,49 +76,82 @@ export default function AdminUsersPage() {
   };
 
   const handleImport = async () => {
+    if (!importText.trim()) {
+        toast.error("Veuillez entrer des données à importer.");
+        return;
+    }
+
     const lines = importText.split('\n');
     const newStudentsData: { first_name: string; last_name: string; email: string; promo_id: string | null; status: string }[] = [];
     let addedCount = 0;
+    let skippedCount = 0;
 
-    lines.forEach(line => {
+    console.log("Starting import processing...");
+
+    lines.forEach((line, index) => {
       line = line.trim();
       if (!line) return;
 
-      const parts = line.split(/\s+/);
+      // Handle common CSV separators (comma, semicolon, tab) by replacing them with spaces
+      // Also handle multiple spaces
+      const normalizedLine = line.replace(/[,;]/g, ' ').replace(/\s+/g, ' ').trim();
+      const parts = normalizedLine.split(' ');
+      
+      console.log(`Processing line ${index + 1}: "${line}" -> Parts:`, parts);
+
       if (parts.length >= 3) {
         const email = parts.pop() || '';
         const lastName = parts.pop() || '';
-        const firstName = parts.join(' ');
+        const firstName = parts.join(' '); // Rejoin remaining parts as first name (e.g. "Jean Pierre")
         
+        // Basic email validation
+        if (!email.includes('@')) {
+            console.warn(`Line ${index + 1}: Invalid email "${email}"`);
+            skippedCount++;
+            return;
+        }
+
         newStudentsData.push({
           first_name: firstName,
           last_name: lastName,
-          email: email,
+          email: email, // Should be lowered case? stick to input for now
           promo_id: selectedPromoId || null,
           status: 'active'
         });
         addedCount++;
+      } else {
+        console.warn(`Line ${index + 1}: Not enough parts (needs 3). Found: ${parts.length}`);
+        skippedCount++;
       }
     });
 
+    console.log(`Import summary: ${addedCount} to add, ${skippedCount} skipped.`);
+
     if (addedCount > 0) {
-      const { error } = await supabase.from('students').insert(newStudentsData);
+      const { data, error } = await supabase
+        .from('students')
+        .insert(newStudentsData)
+        .select(); // Select returned data to update state locally
+
       if (error) {
-        console.error('Import error details:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        toast.error(`Erreur lors de l'import : ${error.message || 'Erreur inconnue'}`);
+        console.error('Import error details:', error);
+        toast.error(`Erreur lors de l'import : ${error.message}`);
       } else {
-        toast.success(`${addedCount} apprenant(s) ajouté(s) avec succès !`);
+        const successMsg = skippedCount > 0 
+            ? `${addedCount} ajouté(s), ${skippedCount} ignoré(s) (format incorrect).`
+            : `${addedCount} utilisateur(s) ajouté(s) avec succès !`;
+        
+        toast.success(successMsg);
         setImportText('');
         setIsModalOpen(false);
-        fetchData();
+        
+        // Optimistic / Immediate update
+        // We need to fetch data again to get the promo names joined, 
+        // but we can also just trigger a refresh.
+        fetchData(); 
       }
     } else {
-      toast.error('Aucun apprenant valide trouvé. Format: Prénom Nom Email');
+      toast.error('Aucun utilisateur valide trouvé. Format: Prénom Nom Email (séparé par espace, virgule ou point-virgule).');
     }
   };
 
