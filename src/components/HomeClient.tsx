@@ -1020,6 +1020,7 @@ CONSIGNES POUR METADATA :
                                 </div>
 
                                 {/* Infos Column */}
+                                <div className="vignette-column" style={{gap: '1rem'}}>
                                     <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Infos</h3>
                                     <div className="vignettes-list" style={{gap: '1rem'}}>
                                         {nextCourse ? (
@@ -1064,9 +1065,10 @@ CONSIGNES POUR METADATA :
                                             <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
                                         </div>
                                     </div>
+                                </div>
                             </div>
                         </div>
- } </div>
+       }       </div>
                 </div>
             </section>
 
