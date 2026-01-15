@@ -356,13 +356,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
             {isMenuOpen && (
                 <div className="absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 z-40 flex flex-col animate-slide-in-top">
                     <div className="p-4 space-y-2">
-                        {user ? (
-                           <div className="mb-4 pb-4 border-b border-gray-100">
-                               <p className="text-sm text-gray-500 mb-1">Bonjour, <span className="font-bold text-indigo-600">{getUserDisplayName()}</span></p>
-                               <Link href="/parametres" className="block py-2 text-gray-800 font-medium">Mon Espace Personnel</Link>
-                               <Link href="/admin" className="block py-2 text-indigo-600 font-medium">Espace Admin</Link>
-                           </div>
-                        ) : (
+                        {user ? null : (
                             <div className="mb-4 pb-4 border-b border-gray-100">
                                 <Link href="/auth" className="flex items-center justify-center w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md">Se connecter</Link>
                             </div>
