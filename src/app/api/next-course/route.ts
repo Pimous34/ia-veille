@@ -1,14 +1,53 @@
-
 import { NextResponse } from 'next/server';
-const ical = require('node-ical');
 
 const CALENDAR_URL = 'https://calendar.google.com/calendar/ical/c_648df9e785e29f211ec640213ba3a539239574b9adfdc67e69c8d5aac6dffbc2%40group.calendar.google.com/public/basic.ics';
+
+export const dynamic = 'force-dynamic';
+
+// Helper to parse ICS date strings like 20260114T083000Z or 20260114
+function parseICSDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const cleanStr = dateStr.replace('Z', '').trim();
+    
+    // YYYYMMDD
+    if (cleanStr.length === 8) {
+        const y = parseInt(cleanStr.substring(0, 4));
+        const m = parseInt(cleanStr.substring(4, 6)) - 1;
+        const d = parseInt(cleanStr.substring(6, 8));
+        return new Date(y, m, d);
+    }
+    // YYYYMMDDTHHMMSS
+    if (cleanStr.length >= 15) {
+        const y = parseInt(cleanStr.substring(0, 4));
+        const m = parseInt(cleanStr.substring(4, 6)) - 1;
+        const d = parseInt(cleanStr.substring(6, 8));
+        const h = parseInt(cleanStr.substring(9, 11));
+        const min = parseInt(cleanStr.substring(11, 13));
+        const s = parseInt(cleanStr.substring(13, 15));
+        
+        // Assume simple parsing. If Z is present, it's UTC.
+        if (dateStr.endsWith('Z')) {
+            return new Date(Date.UTC(y, m, d, h, min, s));
+        }
+        return new Date(y, m, d, h, min, s);
+    }
+    return null;
+}
+
+// Helper to unescape ICS text
+function unescapeICS(str: string) {
+    if (!str) return '';
+    return str.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+}
 
 export async function GET() {
   try {
     console.log("Fetching calendar from:", CALENDAR_URL);
     const response = await fetch(CALENDAR_URL, {
-        next: { revalidate: 300 } // Cache for 5 minutes
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Node.js/Next.js)'
+        },
+        next: { revalidate: 60 } // Lower cache for debugging
     });
     
     if (!response.ok) {
@@ -16,92 +55,119 @@ export async function GET() {
     }
 
     const icsText = await response.text();
-    // Use standard parseICS for string content (it is synchronous in node-ical)
-    const data = ical.parseICS(icsText);
     
-    // Get current date
-    const now = new Date(); // Server time
-    // Ensure we are comparing correctly
-    
-    // Filter events for future
-    const events = Object.values(data).filter((event: any) => {
-        if (event.type !== 'VEVENT') return false;
-        
-        let eventStart: Date;
-        if (event.start instanceof Date) {
-            eventStart = event.start;
-        } else if (typeof event.start === 'string') {
-             eventStart = new Date(event.start);
+    // --- 1. Manual ICS Parsing (Line Unfolding) ---
+    const rawLines = icsText.split(/\r\n|\n|\r/);
+    const lines: string[] = [];
+    for (const line of rawLines) {
+        if (line.startsWith(' ') || line.startsWith('\t')) {
+            // Folded line: append to previous
+            if (lines.length > 0) {
+                lines[lines.length - 1] += line.substring(1);
+            }
         } else {
-            return false;
+            lines.push(line);
         }
-
-        // Keep events strictly in the future (or starting now)
-        return eventStart >= now;
-    });
-
-    if (events.length === 0) {
-       return NextResponse.json({ found: false, message: 'No upcoming events found' });
     }
 
-    // Sort by start time to get the very next one
-    events.sort((a: any, b: any) => {
-        const dateA = a.start instanceof Date ? a.start : new Date(a.start);
-        const dateB = b.start instanceof Date ? b.start : new Date(b.start);
-        return dateA.getTime() - dateB.getTime();
+    // --- 2. Extract Events (VEVENT) ---
+    const events: any[] = [];
+    let currentEvent: any = null;
+    let inEvent = false;
+
+    for (const line of lines) {
+        if (line.startsWith('BEGIN:VEVENT')) {
+            inEvent = true;
+            currentEvent = {};
+            continue;
+        }
+        if (line.startsWith('END:VEVENT')) {
+            inEvent = false;
+            // Validate event has dates
+            if (currentEvent && currentEvent.dtstart) {
+                // If no end date, assume start time
+                if (!currentEvent.dtend) currentEvent.dtend = currentEvent.dtstart;
+                events.push(currentEvent);
+            }
+            currentEvent = null;
+            continue;
+        }
+
+        if (inEvent && currentEvent) {
+            // Key:Value splitting
+            // Careful with colons in value. Split on first colon.
+            const splitIdx = line.indexOf(':');
+            if (splitIdx === -1) continue;
+
+            let keyPart = line.substring(0, splitIdx);
+            let valuePart = line.substring(splitIdx + 1);
+
+            // Handle params in key (e.g., DTSTART;TZID=...:)
+            const keyParams = keyPart.split(';');
+            const key = keyParams[0];
+
+            if (key === 'SUMMARY') {
+                currentEvent.summary = unescapeICS(valuePart);
+            } else if (key === 'DESCRIPTION') {
+                currentEvent.description = unescapeICS(valuePart);
+            } else if (key === 'LOCATION') {
+                currentEvent.location = unescapeICS(valuePart);
+            } else if (key === 'DTSTART') {
+                 currentEvent.dtstart = parseICSDate(valuePart);
+            } else if (key === 'DTEND') {
+                 currentEvent.dtend = parseICSDate(valuePart);
+            }
+        }
+    }
+
+    // --- 3. Filtering Logic ---
+    const now = new Date();
+    
+    // Keep events that end after NOW
+    const activeEvents = events.filter(e => {
+        if (!e.dtstart || !e.dtend) return false;
+        return e.dtend >= now;
     });
 
-    const nextEvent: any = events[0];
+    if (activeEvents.length === 0) {
+        return NextResponse.json({ found: false, message: 'No upcoming events found.' });
+    }
 
-    // Processing Logic
+    // Sort by start time
+    activeEvents.sort((a, b) => a.dtstart.getTime() - b.dtstart.getTime());
+
+    const nextEvent = activeEvents[0];
+
+    // --- 4. Processing Logic (Same as before) ---
     
-    // 1. Clean Title
+    // Clean Title
     let title = nextEvent.summary || 'Cours';
-    title = title.replace(/^PBNC\.\d{2}-\d{2}\.CDP\.Montpellier —\s*/, '');
-    title = title.replace(/^PBNC\..*? —\s*/, ''); // Generic cleanup just in case
-    
-    // 2. Parse Description
+    title = title.replace(/^PBNC\.\d{2}-\d{2}\.CDP\.[^—]+—\s*/, '');
+    title = title.replace(/^PBNC\..*? —\s*/, ''); 
+    title = title.replace(/—\s*$/, '').trim();
+
+    // Clean Description
     const description = nextEvent.description || '';
-    
-    // Location
+
+    // Location & Meet
     let location = 'Présentiel';
     let meetLink = null;
-    
-    // Check for "Salle : Distanciel" or similar
     if (description.includes('Salle : Distanciel') || description.toLowerCase().includes('distanciel')) {
         location = 'Distanciel';
-        // Extract meet link
         const linkMatch = description.match(/https:\/\/meet\.google\.com\/[a-z0-9-]+/);
-        if (linkMatch) {
-            meetLink = linkMatch[0];
-        }
+        if (linkMatch) meetLink = linkMatch[0];
+    } else if (nextEvent.location) {
+        location = nextEvent.location;
     }
 
     // Instructor
-    // Look for email in description or organizer (Organizer is simpler if set properly but GCal often sets it to the calendar itself)
-    // The user says "S'il y a un invité: Mettre Formateur : ...". 
-    // In ICS, `organizer` or `attendee` might have it. Or text in description.
-    // The prompt implies extracting from description if implicit, or any email.
-    
     let instructor = null;
-    
-    // Try to find email lines in description
-    // Common pattern: "Invités : email@..." or just lines with emails
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
     const emails = description.match(emailRegex);
-    
     if (emails) {
-        // Filter out the calendar owner email itself if possible, but hard to know.
-        // Usually the first human-looking email that isn't the group calendar.
         const filtered = emails.filter((e: string) => !e.includes('group.calendar.google.com'));
-        if (filtered.length > 0) {
-            instructor = filtered[0];
-        }
+        if (filtered.length > 0) instructor = filtered[0];
     }
-
-    // Final clean
-    // Remove " — " trailing if any
-    title = title.replace(/—\s*$/, '').trim();
 
     return NextResponse.json({
         found: true,
@@ -109,12 +175,15 @@ export async function GET() {
         location,
         meetLink,
         instructor,
-        date: nextEvent.start,
+        date: nextEvent.dtstart,
         full_description: description
     });
 
-  } catch (error) {
-    console.error('Calendar fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch calendar' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Manual Calendar fetch error:', error);
+    return NextResponse.json({ 
+        error: 'Failed to fetch calendar', 
+        details: error.message || String(error) 
+    }, { status: 500 });
   }
 }

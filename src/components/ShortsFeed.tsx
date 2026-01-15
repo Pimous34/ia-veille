@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useReadTracking } from '@/hooks/useReadTracking';
 
 // --- Types ---
 interface ShortItem {
@@ -86,10 +87,42 @@ export default function ShortsFeed() {
     const searchParams = useSearchParams();
     const initialId = searchParams.get('id');
     const [supabase] = useState(() => createClient());
+    
+    // Read Tracking
+    const { markAsRead, isRead } = useReadTracking();
+    const [activeIndex, setActiveIndex] = useState(0);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         fetchContent();
     }, []);
+
+    // Start tracking for the first item once items are loaded
+    useEffect(() => {
+        if (items.length > 0 && !loading) {
+            startTracking(0);
+        }
+        return () => stopTracking();
+    }, [items, loading]);
+
+    const startTracking = (index: number) => {
+        stopTracking();
+        console.log(`Starting read tracking for item index ${index} (ID: ${items[index]?.id})`);
+        
+        timerRef.current = setTimeout(() => {
+            if (items[index]) {
+                console.log(`Marking item ${items[index].id} as read`);
+                markAsRead(items[index].id);
+            }
+        }, 7000); // 7 seconds
+    };
+
+    const stopTracking = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+    };
 
     // Helper for safe URL
     const getSafeHostname = (url: string) => {
@@ -194,7 +227,16 @@ export default function ShortsFeed() {
     };
 
     const handleScroll = () => {
-        // Scroll logic placeholder
+        if (!containerRef.current) return;
+        
+        const scrollTop = containerRef.current.scrollTop;
+        const itemHeight = containerRef.current.clientHeight;
+        const newIndex = Math.round(scrollTop / itemHeight);
+
+        if (newIndex !== activeIndex && newIndex >= 0 && newIndex < items.length) {
+            setActiveIndex(newIndex);
+            startTracking(newIndex);
+        }
     };
 
     if (loading) {
@@ -258,16 +300,23 @@ export default function ShortsFeed() {
                                 />
                             )}
                             
-                            {/* Type Badge (Visible mainly on articles now, or overlay on video) */}
-                            <div className="absolute top-4 left-4 flex gap-2 z-10">
-                                {item.type === 'video' ? (
-                                    <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
-                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                         Vidéo
-                                    </span>
-                                ) : (
-                                    <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                                        Article
+                            <div className="absolute top-4 left-4 flex gap-2 z-10 flex-col">
+                                <div className="flex gap-2">
+                                    {item.type === 'video' ? (
+                                        <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                            Vidéo
+                                        </span>
+                                    ) : (
+                                        <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                            Article
+                                        </span>
+                                    )}
+                                </div>
+                                {isRead(item.id) && (
+                                    <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm w-fit animate-in fade-in zoom-in duration-300 flex items-center gap-1">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Lu
                                     </span>
                                 )}
                             </div>

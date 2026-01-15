@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useReadTracking } from '@/hooks/useReadTracking';
 import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
@@ -772,6 +772,12 @@ CONSIGNES POUR METADATA :
                                                         fill
                                                         className="object-cover"
                                                     />
+                                                    {isRead(article.id) && (
+                                                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                            Lu
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex-1">
                                                     <h4 className="font-bold text-white line-clamp-1">{searchAnswer.title}</h4>

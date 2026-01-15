@@ -36,9 +36,7 @@ const Footer = () => {
           
           <div>
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Newsletter</h4>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Abonnez-vous à notre newsletter.
-            </p>
+
             <div className="flex flex-col space-y-2">
               <input 
                 type="email" 

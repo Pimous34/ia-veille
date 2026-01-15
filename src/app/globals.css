@@ -937,6 +937,10 @@ body {
     flex-grow: 1;
 }
 
+.trending-articles .article-content {
+    padding: 0.75rem;
+}
+
 .article-category {
     display: inline-block;
     font-size: 0.75rem;
