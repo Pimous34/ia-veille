@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 // import Navbar from '@/components/Navbar'; // Removed to avoid duplication with Layout
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useReadTracking } from '@/hooks/useReadTracking';
+import { useAuth } from '@/contexts/AuthContext';
 import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
@@ -245,7 +246,7 @@ export default function HomeClient({
     const router = useRouter();
     const searchParams = useSearchParams();
     const { isRead } = useReadTracking();
-    const [supabase] = useState(() => createClient());
+    const { supabase, user } = useAuth(); // Use shared client
     // Auth check moved to Server Component wrapper
 
     // UI State
@@ -386,7 +387,7 @@ export default function HomeClient({
         }
         fetchSubjects();
 
-    }, [jtVideo, supabase]);
+    }, [jtVideo, supabase, user]);
 
 
 
@@ -619,7 +620,7 @@ CONSIGNES POUR METADATA :
                                         // Merge with existing results, avoiding duplicates if possible (simple append for now)
                                         setSearchResultVideos(prev => {
                                             const existingIds = new Set(prev.map(p => p.id));
-                                            const uniqueNew = mappedDbVideos.filter(n => !existingIds.has(n.id));
+                                            const uniqueNew = mappedDbVideos.filter((n: any) => !existingIds.has(n.id));
                                             return [...prev, ...uniqueNew];
                                         });
                                     }
@@ -720,18 +721,27 @@ CONSIGNES POUR METADATA :
             }
             isNavigatingRef.current = false;
         } else {
-            // Play jingle for initial load
-            video.src = jingleUrl;
-            video.playsInline = true;
-            video.muted = true; // Start muted for autoplay
-
-            video.addEventListener('ended', handleEnded);
-
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    // Autoplay failed
-                });
+            // Play jingle for initial load IF valid AND not already playing
+            if (jingleUrl && !jingleUrl.endsWith('#')) {
+                 // Check if already playing Jingle to avoid interruption
+                 if (!video.src.includes('Jingle.mp4')) {
+                    video.src = jingleUrl;
+                    video.playsInline = true;
+                    video.muted = true; // Start muted for autoplay
+    
+                    video.addEventListener('ended', handleEnded);
+    
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch((e) => {
+                            console.warn("Autoplay/Jingle prevented:", e);
+                        });
+                    }
+                 }
+            } else if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
+                // Fallback direct play if jingle invalid but main video exists
+                 video.src = mainVideoUrl;
+                 // video.load(); // sometimes helpful
             }
         }
 

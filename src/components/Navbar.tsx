@@ -14,7 +14,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 const Navbar = ({ onSearch }: NavbarProps) => {
    const [isScrolled, setIsScrolled] = useState(false);
-   const { user } = useAuth();
+   const { user, supabase } = useAuth();
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [isSearchOpen, setIsSearchOpen] = useState(false);
    const [searchValue, setSearchValue] = useState('');
@@ -22,7 +22,8 @@ const Navbar = ({ onSearch }: NavbarProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const supabase = createClient();
+
+
   const router = useRouter();
   const pathname = usePathname();
 
