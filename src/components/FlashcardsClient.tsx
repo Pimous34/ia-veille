@@ -606,7 +606,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                         {/* 1. Inutile (Bottom Right on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
-                          className="pointer-events-auto group h-14 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center order-4 col-span-3 md:order-1 md:col-span-1" 
+                          className="pointer-events-auto group h-14 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center order-4 col-span-2 col-start-2 md:col-start-auto md:order-1 md:col-span-1" 
                           title="Supprimer cette carte"
                         >
                           <span className="text-xl md:text-3xl mb-1 grayscale group-hover:grayscale-0 transition-all">👎</span>
@@ -661,7 +661,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                               e.stopPropagation();
                               handleExplain(flashcards[currentCardIndex].front_content);
                           }}
-                          className="pointer-events-auto group h-20 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-indigo-50 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 hover:-translate-y-1 shadow-xl shadow-indigo-100/50 transition-all flex flex-col items-center justify-center order-5 col-span-3 md:order-5 md:col-span-1"
+                          className="pointer-events-auto group h-14 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-indigo-50 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 hover:-translate-y-1 shadow-xl shadow-indigo-100/50 transition-all flex flex-col items-center justify-center order-5 col-span-2 md:order-5 md:col-span-1"
                         >
                           <Info size={24} className="mb-1 md:mb-2 group-hover:scale-110 transition-transform" />
                           <span className="font-bold text-[9px] md:text-xs uppercase tracking-wider text-center">En savoir +</span>
