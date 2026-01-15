@@ -452,27 +452,30 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
   // Same JSX (with minor tweaks if needed) as before
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans overflow-hidden">
-      <header className="fixed top-6 inset-x-0 z-50 px-4 pointer-events-none flex items-center justify-center h-20">
-        <Link href="/" className="pointer-events-auto absolute left-4 md:left-10 z-50 hover:scale-105 transition-transform bg-white/40 backdrop-blur-xl rounded-2xl px-3 py-2 border border-white/60 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:bg-white/80 group">
+      <header className="fixed top-4 inset-x-0 z-50 px-2 flex items-center justify-center gap-2 md:gap-4 h-auto pointer-events-none">
+        {/* Logo - Mobile: Small and static in flow | Desktop: Absolute left */}
+        <Link href="/" className="pointer-events-auto relative shrink-0 md:absolute md:left-10 z-50 hover:scale-105 transition-transform bg-white/40 backdrop-blur-xl rounded-2xl px-2 py-1 md:px-3 md:py-2 border border-white/60 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:bg-white/80 group">
             <Image 
                 src="/logo.png" 
                 alt="Retour à l'accueil" 
-                width={300} 
-                height={100} 
-                className="w-auto h-24 md:h-32 object-contain"
+                width={150} 
+                height={50} 
+                className="w-10 h-10 md:w-auto md:h-24 object-contain"
                 style={{ width: 'auto' }}
                 priority
             />
         </Link>
-        <div className="pointer-events-auto w-max mx-auto flex items-center justify-center px-10 py-3 md:px-16 md:py-4 rounded-full bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 transition-all duration-300 transform hover:scale-[1.02]">
-            <h1 className="text-2xl md:text-4xl font-black text-gray-800 tracking-tight">
+        
+        {/* Title Container - Flexible width on mobile */}
+        <div className="pointer-events-auto flex-1 md:flex-none md:w-max mx-auto flex items-center justify-center px-4 py-2 md:px-16 md:py-4 rounded-full bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 transition-all duration-300 transform hover:scale-[1.02]">
+            <h1 className="text-lg md:text-3xl font-black text-gray-800 tracking-tight text-center leading-tight">
                 Zone des <span className="text-indigo-600">connaissances</span>
             </h1>
         </div>
       </header>
 
       <main className="flex-1 w-full flex flex-col items-center justify-start overflow-y-auto pt-4 pb-12">
-        <div className="w-full h-32 md:h-40 shrink-0" />
+        <div className="w-full h-24 md:h-40 shrink-0" />
         
         <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-4">
         
@@ -521,7 +524,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
           </div>
         ) : (
             <div className="flex flex-col w-full items-center gap-24 mt-8">
-            <div className={`w-full transition-all duration-700 ease-in-out relative group mb-8 ${isExplaining ? 'min-h-[40vh] h-auto' : 'h-[50vh] max-h-[600px] perspective-1000'}`}>
+            <div className={`w-full transition-all duration-700 ease-in-out relative group mb-8 ${isExplaining ? 'min-h-[40vh] h-auto' : 'h-[55vh] max-h-[600px] perspective-1000'}`}>
             
             <AnimatePresence mode="wait">
             {!isExplaining ? (
@@ -555,8 +558,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                   )}
 
                   <div 
-                      className={`relative w-full h-full duration-500 transform-style-3d transition-all cursor-pointer ${isFlipped ? 'rotate-y-180' : ''}`}
-                      onClick={!isFlipped ? handleFlip : undefined}
+                      className={`relative w-full h-full duration-500 transform-style-3d transition-all ${isFlipped ? 'rotate-y-180' : ''}`}
                   >
                     <div className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar z-0">
                       
@@ -578,104 +580,107 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                           </div>
                       </div>
                       
-                      <div className="mt-auto pt-6 text-sm font-semibold text-gray-400 animate-pulse flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-                        Appuyez pour retourner
+                      <div className="mt-auto pt-6">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleFlip(); }}
+                            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                        >
+                            <span>Retourner la carte</span>
+                        </button>
                       </div>
                     </div>
 
                     <div className="absolute w-full h-full bg-slate-50 border border-slate-200 rounded-3xl p-6 md:p-12 flex flex-col backface-hidden rotate-y-180 shadow-xl overflow-y-auto custom-scrollbar z-0">
                       
-                      <div className="absolute top-8 left-0 w-full flex flex-col justify-center items-center z-10 pointer-events-none">
-                          <span className="text-xl font-black uppercase tracking-widest text-indigo-600 bg-white/90 px-10 py-2 rounded-full shadow-sm border border-indigo-100 backdrop-blur-sm">
+                      {/* En-tête de la réponse (in-flow pour éviter le chevauchement) */}
+                      <div className="w-full flex flex-col items-center justify-center z-10 pointer-events-none mb-6 shrink-0">
+                          <span className="text-lg md:text-xl font-black uppercase tracking-widest text-indigo-600 bg-white/90 px-8 py-2 rounded-full shadow-sm border border-indigo-100 backdrop-blur-sm">
                               Réponse
                           </span>
-                          <div className="mt-4 max-w-[80%] text-center">
-                              <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider block mb-1">Rappel de la question</span>
-                              <span className="text-sm font-medium text-gray-500 line-clamp-2 italic">
+                          <div className="mt-4 max-w-[90%] text-center">
+                              <span className="text-[10px] md:text-xs font-semibold text-indigo-300 uppercase tracking-wider block mb-1">Rappel de la question</span>
+                              <span className="text-xs md:text-sm font-medium text-gray-500 line-clamp-2 italic">
                                 &quot;{flashcards[currentCardIndex].front_content}&quot;
                               </span>
                           </div>
                       </div>
 
-                      <div className="absolute top-6 left-6 hidden md:block">
+                      <div className="hidden md:block absolute top-6 left-6">
                           <span className="text-xs font-semibold text-gray-400 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
                               {flashcards[currentCardIndex].category}
                           </span>
                       </div>
 
-                      {/* Button moved to bottom bar */}
-
-                      <div className="flex-1 flex flex-col items-center justify-center mt-16 pb-32">
+                      <div className="flex-1 flex flex-col items-center justify-center pb-32">
                           <RichContent content={flashcards[currentCardIndex].back_content} />
                       </div>
                     </div>
                   </div>
 
                   {isFlipped && (
-                    <div className="absolute -bottom-16 left-0 w-full px-2 md:px-12 grid grid-cols-5 gap-2 md:gap-4 animate-slide-up z-20 pointer-events-none">
-                        {/* 1. Inutile */}
+                    <div className="absolute -bottom-24 md:-bottom-16 left-0 w-full px-2 md:px-12 grid grid-cols-6 md:grid-cols-5 gap-2 md:gap-4 animate-slide-up z-20 pointer-events-none pb-4">
+                        {/* 1. Inutile (Bottom Right on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
-                          className="pointer-events-auto group h-32 rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center"
+                          className="pointer-events-auto group h-20 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center order-4 col-span-3 md:order-1 md:col-span-1" 
                           title="Supprimer cette carte"
                         >
-                          <span className="text-2xl md:text-3xl mb-2 grayscale group-hover:grayscale-0 transition-all">👎</span>
-                          <span className="font-bold text-[10px] md:text-xs uppercase tracking-wider">Inutile</span>
+                          <span className="text-xl md:text-3xl mb-1 grayscale group-hover:grayscale-0 transition-all">👎</span>
+                          <span className="font-bold text-[9px] md:text-[10px] lg:text-xs uppercase tracking-wider">Inutile</span>
                         </button>
 
-                        {/* 2. À revoir */}
+                        {/* 2. À revoir (Top Left on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Again); }}
-                          className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl 
+                          className={`pointer-events-auto group h-24 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-1 col-span-2 md:order-2 md:col-span-1
                               ${hoveredZone === Rating.Again 
                                   ? 'bg-red-500 border-red-600 text-white scale-110 -translate-y-4 shadow-red-500/40' 
                                   : 'bg-white border-red-50 text-red-600 shadow-red-100/50 hover:bg-red-50 hover:border-red-200 hover:-translate-y-1'}`}
                         >
-                          <span className="font-black text-sm md:text-xl transition-transform text-center">À revoir</span>
-                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
+                          <span className="font-black text-xs md:text-xl transition-transform text-center mb-1">À revoir</span>
+                          <span className={`text-[9px] md:text-[10px] uppercase font-bold tracking-wider ${hoveredZone === Rating.Again ? 'text-white/90' : 'text-red-400 opacity-80'}`}>
                               {nextIntervals[Rating.Again]}
                           </span>
                         </button>
 
-                        {/* 3. Presque bon */}
+                        {/* 3. Moyen (Top Center on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Hard); }} 
-                          className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
+                          className={`pointer-events-auto group h-24 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-2 col-span-2 md:order-3 md:col-span-1
                               ${hoveredZone === Rating.Hard 
                                   ? 'bg-amber-500 border-amber-600 text-white scale-110 -translate-y-4 shadow-amber-500/40' 
                                   : 'bg-white border-amber-50 text-amber-600 shadow-amber-100/50 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-1'}`}
                         >
-                          <span className="font-black text-sm md:text-xl transition-transform text-center">Moyen</span>
-                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
+                          <span className="font-black text-xs md:text-xl transition-transform text-center mb-1">Moyen</span>
+                          <span className={`text-[9px] md:text-[10px] uppercase font-bold tracking-wider ${hoveredZone === Rating.Hard ? 'text-white/90' : 'text-amber-500 opacity-80'}`}>
                               {nextIntervals[Rating.Hard]}
                           </span>
                         </button>
 
-                        {/* 4. Je connais */}
+                        {/* 4. Facile (Top Right on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Easy); }} 
-                          className={`pointer-events-auto group h-32 rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl
+                          className={`pointer-events-auto group h-24 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-3 col-span-2 md:order-4 md:col-span-1
                               ${hoveredZone === Rating.Easy 
                                   ? 'bg-green-500 border-green-600 text-white scale-110 -translate-y-4 shadow-green-500/40' 
                                   : 'bg-white border-green-50 text-green-600 shadow-green-100/50 hover:bg-green-50 hover:border-green-200 hover:-translate-y-1'}`}
                         >
-                          <span className="font-black text-sm md:text-xl transition-transform text-center">Facile</span>
-                          <span className={`text-[10px] uppercase font-bold tracking-wider mt-1 ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
+                          <span className="font-black text-xs md:text-xl transition-transform text-center mb-1">Facile</span>
+                          <span className={`text-[9px] md:text-[10px] uppercase font-bold tracking-wider ${hoveredZone === Rating.Easy ? 'text-white/90' : 'text-green-400 opacity-80'}`}>
                               {nextIntervals[Rating.Easy]}
                           </span>
                         </button>
 
-                         {/* 5. En savoir plus */}
+                         {/* 5. En savoir + (Bottom Left on Mobile) */}
                          <button 
                           onClick={(e) => {
                               e.stopPropagation();
                               handleExplain(flashcards[currentCardIndex].front_content);
                           }}
-                          className="pointer-events-auto group h-32 rounded-3xl border-2 bg-white border-indigo-50 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 hover:-translate-y-1 shadow-xl shadow-indigo-100/50 transition-all flex flex-col items-center justify-center"
+                          className="pointer-events-auto group h-20 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-indigo-50 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 hover:-translate-y-1 shadow-xl shadow-indigo-100/50 transition-all flex flex-col items-center justify-center order-5 col-span-3 md:order-5 md:col-span-1"
                         >
-                          <Info size={28} className="mb-2 group-hover:scale-110 transition-transform" />
-                          <span className="font-bold text-[10px] md:text-xs uppercase tracking-wider text-center">En savoir +</span>
+                          <Info size={24} className="mb-1 md:mb-2 group-hover:scale-110 transition-transform" />
+                          <span className="font-bold text-[9px] md:text-xs uppercase tracking-wider text-center">En savoir +</span>
                         </button>
                     </div>
                   )}
@@ -683,6 +688,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
 
               </motion.div>
             ) : (
+
               <motion.div 
                 key="ai-response"
                 initial={{ opacity: 0, y: 20 }}
@@ -767,7 +773,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
         )}
 
         {!isExplaining && (
-          <div className="fixed bottom-4 right-4 md:static md:mt-12 text-center text-xs font-medium text-gray-400">
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:left-auto md:right-4 md:translate-x-0 md:static md:mt-12 text-center text-xs font-medium text-gray-400 bg-white/50 backdrop-blur-sm px-4 py-1 rounded-full border border-white/50 shadow-sm z-40">
               Carte {flashcards.length > 0 ? currentCardIndex + 1 : 0} sur {flashcards.length}
           </div>
         )}
