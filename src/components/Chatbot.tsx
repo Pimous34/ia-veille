@@ -220,7 +220,7 @@ export default function Chatbot({ embedded = false }: ChatbotProps) {
             {/* Bouton flottant - Hide if embedded */}
             {!embedded && (
                 <button 
-                    className="chatbot-button" 
+                    className={`chatbot-button ${pathname?.startsWith('/flashcards') ? 'hidden md:flex' : ''}`} 
                     onClick={() => setIsOpen(!isOpen)}
                     aria-label={isOpen ? "Fermer le chat" : "Ouvrir le chat"}
                 >
