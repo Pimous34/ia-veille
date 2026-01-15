@@ -4,9 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useReadTracking } from '@/hooks/useReadTracking';
 import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
@@ -240,6 +239,7 @@ export default function HomeClient({
   initialVideosColumn
 }: HomeClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isRead } = useReadTracking();
   const [supabase] = useState(() => createClient());
   // Auth check moved to Server Component wrapper
@@ -301,6 +301,16 @@ export default function HomeClient({
   const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
 
   /* ---------------------- EFFECTS ---------------------- */
+
+  // Sync Search from URL
+  useEffect(() => {
+      const q = searchParams.get('q');
+      if (q !== null) {
+          setSearchQuery(q);
+      } else {
+          setSearchQuery('');
+      }
+  }, [searchParams]);
 
   // Fetch Next Course
   useEffect(() => {
@@ -744,8 +754,7 @@ CONSIGNES POUR METADATA :
   return (
     <>
 <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-        <Navbar onSearch={handleSearch} />
-
+        {/* Navbar removed as it's now in Layout */}
         <main className="main-content grow pt-20 !ml-0">
             {/* Hero Section */}
             <section className="hero-section" id="jtnews">

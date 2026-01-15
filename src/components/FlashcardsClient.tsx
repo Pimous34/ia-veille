@@ -452,31 +452,15 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
   // Same JSX (with minor tweaks if needed) as before
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans overflow-hidden">
-      <header className="fixed top-4 inset-x-0 z-50 px-2 flex items-center justify-center gap-2 md:gap-4 h-auto pointer-events-none">
-        {/* Logo - Mobile: Small and static in flow | Desktop: Absolute left */}
-        <Link href="/" className="pointer-events-auto relative shrink-0 md:absolute md:left-10 z-50 hover:scale-105 transition-transform bg-white/40 backdrop-blur-xl rounded-2xl px-2 py-1 md:px-3 md:py-2 border border-white/60 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:bg-white/80 group">
-            <Image 
-                src="/logo.png" 
-                alt="Retour à l'accueil" 
-                width={150} 
-                height={50} 
-                className="w-10 h-10 md:w-auto md:h-24 object-contain"
-                style={{ width: 'auto' }}
-                priority
-            />
-        </Link>
-        
-        {/* Title Container - Flexible width on mobile */}
-        <div className="pointer-events-auto flex-1 md:flex-none md:w-max mx-auto flex items-center justify-center px-4 py-2 md:px-16 md:py-4 rounded-full bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 transition-all duration-300 transform hover:scale-[1.02]">
-            <h1 className="text-lg md:text-3xl font-black text-gray-800 tracking-tight text-center leading-tight">
-                Zone des <span className="text-indigo-600">connaissances</span>
-            </h1>
-        </div>
-      </header>
+      {/* Custom Header removed in favor of Global Navbar */}
 
-      <main className="flex-1 w-full flex flex-col items-center justify-start overflow-y-auto pt-4 pb-12">
-        <div className="w-full h-24 md:h-40 shrink-0" />
-        
+      <main className="flex-1 w-full flex flex-col items-center justify-start overflow-y-auto pt-24 pb-12">
+        {/* Page Title - Restored and Centered below Global Navbar */}
+        {/* Page Title - Minimalist Black */}
+        <h1 className="text-2xl md:text-3xl font-black text-black tracking-tight text-center mb-6 md:mb-8">
+            Zone des connaissances
+        </h1>
+
         <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-4">
         
          {loading ? (
@@ -622,7 +606,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                         {/* 1. Inutile (Bottom Right on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleMarkAsUseless(); }}
-                          className="pointer-events-auto group h-20 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center order-4 col-span-3 md:order-1 md:col-span-1" 
+                          className="pointer-events-auto group h-14 md:h-32 rounded-2xl md:rounded-3xl border-2 bg-white border-gray-100 text-gray-400 hover:bg-red-50 hover:border-red-200 hover:text-red-500 shadow-xl shadow-gray-100/50 transition-all flex flex-col items-center justify-center order-4 col-span-3 md:order-1 md:col-span-1" 
                           title="Supprimer cette carte"
                         >
                           <span className="text-xl md:text-3xl mb-1 grayscale group-hover:grayscale-0 transition-all">👎</span>
@@ -632,7 +616,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                         {/* 2. À revoir (Top Left on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Again); }}
-                          className={`pointer-events-auto group h-24 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-1 col-span-2 md:order-2 md:col-span-1
+                          className={`pointer-events-auto group h-16 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-1 col-span-2 md:order-2 md:col-span-1
                               ${hoveredZone === Rating.Again 
                                   ? 'bg-red-500 border-red-600 text-white scale-110 -translate-y-4 shadow-red-500/40' 
                                   : 'bg-white border-red-50 text-red-600 shadow-red-100/50 hover:bg-red-50 hover:border-red-200 hover:-translate-y-1'}`}
@@ -646,7 +630,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                         {/* 3. Moyen (Top Center on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Hard); }} 
-                          className={`pointer-events-auto group h-24 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-2 col-span-2 md:order-3 md:col-span-1
+                          className={`pointer-events-auto group h-16 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-2 col-span-2 md:order-3 md:col-span-1
                               ${hoveredZone === Rating.Hard 
                                   ? 'bg-amber-500 border-amber-600 text-white scale-110 -translate-y-4 shadow-amber-500/40' 
                                   : 'bg-white border-amber-50 text-amber-600 shadow-amber-100/50 hover:bg-amber-50 hover:border-amber-200 hover:-translate-y-1'}`}
@@ -660,7 +644,7 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                         {/* 4. Facile (Top Right on Mobile) */}
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleRate(Rating.Easy); }} 
-                          className={`pointer-events-auto group h-24 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-3 col-span-2 md:order-4 md:col-span-1
+                          className={`pointer-events-auto group h-16 md:h-32 rounded-2xl md:rounded-3xl border-2 transition-all flex flex-col items-center justify-center shadow-xl order-3 col-span-2 md:order-4 md:col-span-1
                               ${hoveredZone === Rating.Easy 
                                   ? 'bg-green-500 border-green-600 text-white scale-110 -translate-y-4 shadow-green-500/40' 
                                   : 'bg-white border-green-50 text-green-600 shadow-green-100/50 hover:bg-green-50 hover:border-green-200 hover:-translate-y-1'}`}

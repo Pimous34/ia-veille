@@ -130,6 +130,10 @@ const Navbar = ({ onSearch }: NavbarProps) => {
            user.email?.split('@')[0];
   };
 
+
+
+  if (pathname === '/auth') return null;
+
   return (
     <>
       <nav
@@ -179,7 +183,13 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                       <div 
                           className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700"
                           onClick={() => {
-                              if (onSearch && searchValue) onSearch(searchValue);
+                              if (searchValue) {
+                                  if (onSearch) {
+                                      onSearch(searchValue);
+                                  } else {
+                                      router.push(`/?q=${encodeURIComponent(searchValue)}`);
+                                  }
+                              }
                               setIsSearchOpen(true);
                               if (searchInputRef.current) searchInputRef.current.focus();
                           }}
@@ -197,7 +207,11 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                         onChange={(e) => setSearchValue(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                                if (onSearch) onSearch(searchValue);
+                                if (onSearch) {
+                                    onSearch(searchValue);
+                                } else {
+                                    router.push(`/?q=${encodeURIComponent(searchValue)}`);
+                                }
                             }
                         }}
                         onFocus={() => setIsSearchOpen(true)}

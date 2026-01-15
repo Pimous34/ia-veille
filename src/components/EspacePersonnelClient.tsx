@@ -117,9 +117,9 @@ export default function EspacePersonnelClient() {
     const loadSavedArticles = async (userId: string) => {
         const { data, error } = await supabase
             .from('saved_articles')
-            .select('*')
+            .select('*, articles(*)')
             .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+            .order('saved_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching saved:', error);
@@ -127,8 +127,22 @@ export default function EspacePersonnelClient() {
         }
 
         if (data) {
-            setSavedArticles(data.filter((a: Article) => a.status === 'saved'));
-            setWatchLaterArticles(data.filter((a: Article) => a.status === 'watch_later'));
+            const mappedArticles: Article[] = data.map((item: any) => ({
+                id: item.id,
+                title: item.articles?.title || 'Article indisponible',
+                description: item.articles?.excerpt || '',
+                excerpt: item.articles?.excerpt || '',
+                image_url: item.articles?.image_url || '',
+                article_url: item.articles?.url || '#',
+                category: 'IA', // Placeholder: logic to fetch category name would require deeper join
+                published_at: item.articles?.published_at,
+                created_at: item.saved_at,
+                status: item.status || 'saved',
+                user_id: item.user_id
+            }));
+
+            setSavedArticles(mappedArticles.filter(a => a.status === 'saved'));
+            setWatchLaterArticles(mappedArticles.filter(a => a.status === 'watch_later'));
         }
     };
 
