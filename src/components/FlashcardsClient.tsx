@@ -457,8 +457,8 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
       <main className="flex-1 w-full flex flex-col items-center justify-start overflow-y-auto pt-24 pb-12">
         {/* Page Title - Restored and Centered below Global Navbar */}
         {/* Page Title - Minimalist Black */}
-        <h1 className="text-2xl md:text-3xl font-black text-black tracking-tight text-center mb-6 md:mb-8">
-            Zone des connaissances
+        <h1 className="text-3xl md:text-5xl font-black text-black tracking-tight text-center mb-8 mt-12">
+            Test tes connaissances
         </h1>
 
         <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-center relative gap-4">
@@ -518,33 +518,15 @@ INPUT DE L'APPRENANT (Réflexion ou Question):
                 exit={{ y: 500, opacity: 0, scale: 0.9, transition: { duration: 0.6, ease: "easeInOut" } }}
                 className="w-full h-full"
               >
-                  {isFlipped && (
-                      <div className="absolute -inset-x-8 top-24 -bottom-16 z-50 grid grid-cols-3 pointer-events-auto">
-                          <div 
-                              className="transition-colors duration-200 cursor-pointer"
-                              onMouseEnter={() => setHoveredZone(Rating.Again)}
-                              onMouseLeave={() => setHoveredZone(null)}
-                              onClick={() => handleRate(Rating.Again)}
-                          />
-                          <div 
-                              className="transition-colors duration-200 cursor-pointer"
-                              onMouseEnter={() => setHoveredZone(Rating.Hard)}
-                              onMouseLeave={() => setHoveredZone(null)}
-                              onClick={() => handleRate(Rating.Hard)}
-                          />
-                          <div 
-                              className="transition-colors duration-200 cursor-pointer"
-                              onMouseEnter={() => setHoveredZone(Rating.Easy)}
-                              onMouseLeave={() => setHoveredZone(null)}
-                              onClick={() => handleRate(Rating.Easy)}
-                          />
-                      </div>
-                  )}
+                  {/* Overlay supprimé pour permettre le clic sur les boutons du bas */}
 
                   <div 
                       className={`relative w-full h-full duration-500 transform-style-3d transition-all ${isFlipped ? 'rotate-y-180' : ''}`}
                   >
-                    <div className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar z-0">
+                    <div 
+                      onClick={handleFlip}
+                      className="absolute w-full h-full bg-white border border-gray-200 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center backface-hidden shadow-xl overflow-y-auto hide-scrollbar z-0 cursor-pointer hover:shadow-2xl transition-shadow"
+                    >
                       
                       <div className="absolute top-8 left-0 w-full flex justify-center items-center z-10">
                           <span className="text-xl font-black uppercase tracking-widest text-blue-600 bg-blue-50/80 px-10 py-2 rounded-full border border-blue-100 backdrop-blur-sm">

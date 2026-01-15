@@ -158,7 +158,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                        width={450} 
                        height={120} 
                        className="w-auto drop-shadow-sm transition-all duration-300"
-                       style={{ height: isScrolled ? '80px' : '120px', width: 'auto' }}
+                       style={{ height: isScrolled ? '60px' : '90px', width: 'auto' }}
                        priority
                        unoptimized
                      />
