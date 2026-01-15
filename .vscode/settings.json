@@ -4,5 +4,9 @@
     "supabase/functions"
   ],
   "deno.unstable": true,
-  "deno.lint": true
+  "deno.lint": true,
+  "git.autofetch": true,
+  "git.postCommitCommand": "push",
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false
 }
