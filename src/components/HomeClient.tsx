@@ -1102,7 +1102,7 @@ CONSIGNES POUR METADATA :
                                                         e.stopPropagation();
                                                         alert('Article sauvegardé !');
                                                     }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-indigo-600 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
+                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
                                                     aria-label="Sauvegarder"
                                                     title="Sauvegarder"
                                                 >

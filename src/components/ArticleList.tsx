@@ -74,7 +74,7 @@ const ArticleCard = ({ article }: { article: Article }) => {
         <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
             onClick={handleSave}
-            className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${isSaved ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'}`}
+            className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${isSaved ? 'bg-pink-500 text-white shadow-lg' : 'bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white hover:scale-110'}`}
             aria-label="Sauvegarder"
             title="Sauvegarder"
           >

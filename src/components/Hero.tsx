@@ -401,7 +401,7 @@ const Hero = () => {
                 <div className="pointer-events-none absolute inset-x-2 bottom-16 flex flex-wrap items-end justify-center gap-2">
                   <button
                     onClick={() => handleInteraction('save')}
-                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-white"
+                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-pink-500 hover:text-white"
                   >
                     <svg
                       viewBox="0 0 24 24"
