@@ -3,8 +3,9 @@
   "deno.enablePaths": [
     "supabase/functions"
   ],
-  "deno.unstable": true,
+  "deno.unstable": [],
   "deno.lint": true,
+  "css.lint.unknownAtRules": "ignore",
   "git.autofetch": true,
   "git.postCommitCommand": "push",
   "git.enableSmartCommit": true,

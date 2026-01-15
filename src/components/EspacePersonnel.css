@@ -1,8 +1,8 @@
 /* Espace Personnel Styles */
 .personal-space-container {
     max-width: 1400px;
-    margin: 40px auto;
-    padding: 0 20px;
+    margin: 0 auto 40px;
+    padding: 120px 20px 0;
 }
 
 .page-header {

@@ -6,6 +6,7 @@ import ToastProvider from "@/components/ToastProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 import Chatbot from "@/components/Chatbot";
+import Navbar from "@/components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,6 +58,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${patrickHand.variable} antialiased`}
       >
         <AuthProvider>
+          <Navbar />
           {children}
           <CookieBanner />
           <ToastProvider />
