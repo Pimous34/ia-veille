@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
 import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useReadTracking } from '@/hooks/useReadTracking';
 import { widgetsDb } from '@/lib/widgets-firebase';
@@ -239,6 +240,7 @@ export default function HomeClient({
     initialVideosColumn
 }: HomeClientProps) {
     const router = useRouter();
+    const { isRead } = useReadTracking();
     const [supabase] = useState(() => createClient());
     // Auth check moved to Server Component wrapper
 
@@ -772,7 +774,7 @@ CONSIGNES POUR METADATA :
                                                         fill
                                                         className="object-cover"
                                                     />
-                                                    {isRead(article.id) && (
+                                                    {isRead(searchAnswer.id) && (
                                                         <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
                                                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                             Lu
