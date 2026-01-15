@@ -5,6 +5,8 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 interface Article {
   id: string;
@@ -19,12 +21,44 @@ interface Article {
 }
 
 const ArticleCard = ({ article }: { article: Article }) => {
+  const { user } = useAuth();
+  const [isSaved, setIsSaved] = useState(false);
+  const [isWatchLater, setIsWatchLater] = useState(false);
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toast.error('Veuillez vous connecter pour sauvegarder des articles');
+      return;
+    }
+
+    setIsSaved(!isSaved);
+    toast.success(isSaved ? 'Article retiré des sauvegardes' : 'Article sauvegardé !');
+    // TODO: Implémenter la logique de sauvegarde dans Supabase
+  };
+
+  const handleWatchLater = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toast.error('Veuillez vous connecter pour ajouter à "À regarder plus tard"');
+      return;
+    }
+
+    setIsWatchLater(!isWatchLater);
+    toast.success(isWatchLater ? 'Retiré de "À regarder plus tard"' : 'Ajouté à "À regarder plus tard" !');
+    // TODO: Implémenter la logique de watch later dans Supabase
+  };
+
   return (
     <article className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-      <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
+      <div className="h-48 bg-gray-200 dark:bg-gray-700 relative group">
         {article.image_url ? (
-          <img 
-            src={article.image_url} 
+          <img
+            src={article.image_url}
             alt={article.title}
             className="w-full h-full object-cover"
           />
@@ -35,6 +69,44 @@ const ArticleCard = ({ article }: { article: Article }) => {
             </svg>
           </div>
         )}
+
+        {/* Action Buttons */}
+        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={handleSave}
+            className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${isSaved ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'}`}
+            aria-label="Sauvegarder"
+            title="Sauvegarder"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill={isSaved ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              className="w-5 h-5"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+
+          <button
+            onClick={handleWatchLater}
+            className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${isWatchLater ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'}`}
+            aria-label="À regarder plus tard"
+            title="À regarder plus tard"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill={isWatchLater ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="2"
+              className="w-5 h-5"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </button>
+        </div>
       </div>
       <div className="p-6">
         <div className="flex justify-between items-center mb-2">
@@ -48,9 +120,9 @@ const ArticleCard = ({ article }: { article: Article }) => {
           )}
         </div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
-          <a 
-            href={article.url} 
-            target="_blank" 
+          <a
+            href={article.url}
+            target="_blank"
             rel="noopener noreferrer"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
@@ -64,7 +136,7 @@ const ArticleCard = ({ article }: { article: Article }) => {
           <time dateTime={article.published_at} className="text-sm text-gray-500 dark:text-gray-400">
             {format(new Date(article.published_at), 'd MMMM yyyy', { locale: fr })}
           </time>
-          <a 
+          <a
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -97,7 +169,7 @@ const ArticleList = () => {
           .limit(12);
 
         if (error) throw error;
-        
+
         setArticles(data || []);
       } catch (err) {
         console.error('Error fetching articles:', err);
@@ -141,8 +213,8 @@ const ArticleList = () => {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
             Derniers articles
           </h2>
-          <Link 
-            href="/articles" 
+          <Link
+            href="/articles"
             className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium flex items-center"
           >
             Voir tout
@@ -151,7 +223,7 @@ const ArticleList = () => {
             </svg>
           </Link>
         </div>
-        
+
         {articles.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-gray-600 dark:text-gray-400">Aucun article disponible pour le moment.</p>
