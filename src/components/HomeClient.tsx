@@ -5,7 +5,9 @@ import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
 import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
+
+
+// import Navbar from '@/components/Navbar'; // Removed to avoid duplication with Layout
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useReadTracking } from '@/hooks/useReadTracking';
 import { widgetsDb } from '@/lib/widgets-firebase';
@@ -43,6 +45,7 @@ interface JtVideo {
     title?: string;
     date: string;
     article_ids?: number[];
+    script?: string;
 }
 
 interface NextCourse {
@@ -240,6 +243,7 @@ export default function HomeClient({
     initialVideosColumn
 }: HomeClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { isRead } = useReadTracking();
     const [supabase] = useState(() => createClient());
     // Auth check moved to Server Component wrapper
@@ -384,6 +388,20 @@ export default function HomeClient({
 
     }, [jtVideo, supabase]);
 
+
+
+
+    // Added Logic: Sync URL 'q' with search state
+    useEffect(() => {
+        const query = searchParams.get('q');
+        if (query && query !== searchQuery) {
+             handleSearch(query);
+        } else if (!query && searchQuery) {
+             // Optional: clear search if URL param removed, or keep it. 
+             // Letting it clear is safer for deep linking back to home.
+             handleSearch('');
+        }
+    }, [searchParams]);
 
     // --- Search Logic ---
     const handleSearch = (query: string) => {
@@ -744,7 +762,7 @@ CONSIGNES POUR METADATA :
     return (
         <>
             <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-                <Navbar onSearch={handleSearch} />
+                {/* <Navbar onSearch={handleSearch} /> */ }
 
                 <main className="main-content grow pt-20 !ml-0">
                     {/* Hero Section */}
@@ -890,11 +908,19 @@ CONSIGNES POUR METADATA :
                                                 </div>
                                             </div>
                                             <div id="format-text" className={`format-content ${activeFormat === 'text' ? 'active' : ''}`} style={activeFormat !== 'text' ? { display: 'none' } : {}}>
-                                                <div className="placeholder-content text-mode">
-                                                    <h3>Transcription du JT</h3>
-                                                    <p><strong>00:00</strong> - Introduction et sommaire...</p>
-                                                    <p><strong>01:15</strong> - L&apos;IA générative bouleverse le marché...</p>
-                                                    <button className="read-more-btn">Lire la transcription complète</button>
+                                                <div className="text-format-content" style={{ height: '100%', overflowY: 'auto', padding: '2rem', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '1.1rem', lineHeight: '1.8', whiteSpace: 'pre-wrap', textAlign: 'justify', hyphens: 'auto' }}>
+                                                    {jtVideo?.script ? (
+                                                        <>
+                                                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Transcription du JT</h3>
+                                                            <div className="script-content">
+                                                                {jtVideo.script.replace(/<break[^>]*>/g, '\n\n')}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="placeholder-content">
+                                                            <p>Le script de ce JT n&apos;est pas encore disponible.</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
