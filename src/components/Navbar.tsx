@@ -51,19 +51,31 @@ const Navbar = ({ onSearch }: NavbarProps) => {
     setIsMenuOpen(false);
   }, [pathname]);
 
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      // Shadow logic
+      // Shadow & Resize logic (Desktop)
       if (currentScrollY > 10) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
+
+      // Visibility logic (Mobile: Hide on down, Show on up)
+      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setIsVisible(false); // Scrolling down & passed top
+      } else {
+        setIsVisible(true); // Scrolling up
+      }
+
+      lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -223,7 +235,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-md border border-white/50 hover:shadow-lg transition-all"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full shadow-md border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 hover:shadow-lg transition-all bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl"
                   >
                     <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
                       {getUserDisplayName().charAt(0).toUpperCase()}
@@ -271,47 +283,92 @@ const Navbar = ({ onSearch }: NavbarProps) => {
       </nav>
 
       {/* Mobile Navigation (Simplified Fallback) */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 bg-white/95 backdrop-blur-md md:hidden ${isScrolled ? 'shadow-md' : 'shadow-sm'}`}>
-        <div className="container mx-auto px-5">
-            <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-16' : 'h-24'}`}>
-              <Link href="/" className="flex items-center">
-                <Image 
-                  src="/logo.png" 
-                  alt="OREEGAM'IA" 
-                  width={240} 
-                  height={80} 
-                  className={`${isScrolled ? 'h-[60px]' : 'h-[80px]'} w-auto drop-shadow-sm transition-all duration-300`}
-                  priority
-                  unoptimized
-                />
-              </Link>
-            <div className="flex items-center gap-4 relative">
-               <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                  </svg>
-               </button>
-               {user ? (
-                 <div className="relative" ref={menuRef}>
-                    <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
-                        {getUserDisplayName().charAt(0).toUpperCase()}
-                    </button>
-                    {isMenuOpen && (
-                        <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-xl py-1 border border-gray-100 overflow-hidden z-50 animate-scale-in">
-                            <Link href="/parametres" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50">Espace personnel</Link>
-                            <Link href="/admin" onClick={() => setIsMenuOpen(false)} className="block px-4 py-3 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-b border-gray-50">Espace Admin</Link>
-                            <button onClick={handleLogout} className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50">Se déconnecter</button>
-                        </div>
-                    )}
-                 </div>
-               ) : (
-                 <Link href="/auth" className="bg-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-md">
-                    Connexion
-                 </Link>
-               )}
+      {/* Mobile Navigation */}
+      <nav className={`fixed top-0 w-full z-50 transition-transform duration-300 md:hidden bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl ${isScrolled ? 'shadow-md border-b-2 border-b-[#1565C0]/50' : 'shadow-sm border-b border-white/50'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="container mx-auto px-4">
+            <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-14' : 'h-16'}`}>
+              
+              {/* Left: Burger Menu */}
+              <div className="flex items-center justify-start flex-1">
+                  <button 
+                    onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                    className="p-2 -ml-2 text-gray-800 hover:bg-white/40 rounded-lg transition-colors"
+                    aria-label="Menu"
+                  >
+                     {isMenuOpen ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                     ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                     )}
+                  </button>
+              </div>
+
+              {/* Center: Logo */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                  <Link href="/">
+                    <Image 
+                      src="/logo.png" 
+                      alt="OREEGAM'IA" 
+                      width={180} 
+                      height={60} 
+                      className={`w-auto transition-all duration-300 ${isScrolled ? 'h-[40px]' : 'h-[50px]'}`}
+                      priority
+                      unoptimized
+                    />
+                  </Link>
+              </div>
+
+              {/* Right: Actions (Search + Profile) */}
+              <div className="flex items-center justify-end flex-1 gap-2">
+                 <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                 </button>
+                 
+                 {user && (
+                      <Link href="/parametres" className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
+                          {getUserDisplayName().charAt(0).toUpperCase()}
+                      </Link>
+                 )}
+              </div>
             </div>
-          </div>
-          {/* Mobile Menu Content would go here if we were building a full mobile menu, keeping it minimal for now to focus on Desktop request. */}
+
+            {/* Mobile Menu Content (Dropdown) */}
+            {isMenuOpen && (
+                <div className="absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 z-40 flex flex-col animate-slide-in-top">
+                    <div className="p-4 space-y-2">
+                        {user ? (
+                           <div className="mb-4 pb-4 border-b border-gray-100">
+                               <p className="text-sm text-gray-500 mb-1">Bonjour, <span className="font-bold text-indigo-600">{getUserDisplayName()}</span></p>
+                               <Link href="/parametres" className="block py-2 text-gray-800 font-medium">Mon Espace Personnel</Link>
+                               <Link href="/admin" className="block py-2 text-indigo-600 font-medium">Espace Admin</Link>
+                           </div>
+                        ) : (
+                            <div className="mb-4 pb-4 border-b border-gray-100">
+                                <Link href="/auth" className="flex items-center justify-center w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md">Se connecter</Link>
+                            </div>
+                        )}
+                        
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Navigation</p>
+                        <Link href="/jt" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">JTNews</Link>
+                        <Link href="/#actualite" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Catégories</Link>
+                        <Link href="/#tutos" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Tutos</Link>
+                        <Link href="/flashcards" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Se former</Link>
+                         <Link href="/shorts" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">ShortNews</Link>
+                        
+                        {user && (
+                            <button onClick={handleLogout} className="block w-full text-left py-2.5 px-3 mt-4 text-red-600 font-medium border-t border-gray-100">
+                                Se déconnecter
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
       </nav>
     </>
