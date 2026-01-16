@@ -766,10 +766,6 @@ CONSIGNES POUR METADATA :
     };
 
 
-
-
-
-
     return (
         <>
             <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -803,12 +799,6 @@ CONSIGNES POUR METADATA :
                                                         fill
                                                         className="object-cover"
                                                     />
-                                                    {isRead(searchAnswer.id) && (
-                                                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
-                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                            Lu
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 <div className="flex-1">
                                                     <h4 className="font-bold text-white line-clamp-1">{searchAnswer.title}</h4>
@@ -893,9 +883,6 @@ CONSIGNES POUR METADATA :
                                                     ref={videoRef}
                                                     className="video-player"
                                                     controls
-                                                    autoPlay
-                                                    muted
-                                                    playsInline
                                                     poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover', background: 'black' }}
                                                 >
@@ -974,11 +961,13 @@ CONSIGNES POUR METADATA :
                                         )}
                                     </div>
                                 )}
+                                {/* End Search Rendering */}
+
                                 <div className="articles-column">
                                     <div className="vignettes-container" style={{ gap: '2.5rem' }}> {/* Increased internal gap */}
                                         {/* Sujets du JT Column */}
                                         <div className="vignette-column" style={{ gap: '1rem' }}>
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
                                                 {isSearching ? "Actualités liées" : "Sujets du JT"}
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
@@ -1014,7 +1003,7 @@ CONSIGNES POUR METADATA :
 
                                         {/* Vidéos Column (formerly Tutos) */}
                                         <div className="vignette-column">
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
                                                 {isSearching ? "Vidéos liées" : "Vidéos"}
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
@@ -1067,7 +1056,9 @@ CONSIGNES POUR METADATA :
 
                                         {/* Infos Column */}
                                         <div className="vignette-column" style={{ gap: '1rem' }}>
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Infos</h3>
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
+                                                Infos
+                                            </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
                                                 {nextCourse ? (
                                                     <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
@@ -1195,7 +1186,7 @@ CONSIGNES POUR METADATA :
                                                     ))}
                                                 </div>
                                             )}
-                                            <h3 className="article-title">{article.title}</h3>
+                                            <h3 className="article-title line-clamp-3" title={article.title}>{article.title}</h3>
                                             <div className="article-meta">
                                                 <span className="article-date">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1280,7 +1271,7 @@ CONSIGNES POUR METADATA :
 
                 {/* Footer */}
                 <Footer />
-            </div >
+            </div>
         </>
     );
 }
