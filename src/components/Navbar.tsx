@@ -134,40 +134,41 @@ const Navbar = ({ onSearch }: NavbarProps) => {
       user.email?.split('@')[0];
   };
 
+  const currentBadge = (() => {
+    const count = readIds?.length || 0;
+    let badge = { src: '/gamification/egg.png', label: 'Apprenti (Œuf)', next: 6 };
+    if (count >= 26) badge = { src: '/gamification/lion.png', label: 'Maître IA (Lion)', next: 100 };
+    else if (count >= 13) badge = { src: '/gamification/owl.png', label: 'Sage (Hibou)', next: 26 };
+    else if (count >= 6) badge = { src: '/gamification/fox.png', label: 'Futé (Renard)', next: 13 };
+    return { ...badge, count };
+  })();
+
 
 
   if (pathname === '/auth') return null;
 
   return (
     <>
-      <nav
-        className={`fixed inset-x-0 top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'h-16' : 'h-24'
-          } hidden md:block`}
-      >
-        <div className="container mx-auto h-full px-5 relative flex items-center justify-center">
+      {/* Desktop Navigation */}
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 hidden md:block ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+        <div className="container mx-auto px-4 h-full flex items-center justify-center relative">
 
-          {/* Center Group: Logo + Navigation Pill */}
-          {/* We treat them as a unit centered on the screen. 
-              The user wants the LOGO next to the BAR. 
-              If the bar is strictly centered, the logo sits to its left.
-          */}
-          <div className="flex items-center gap-6">
-            {/* Logo */}
-            <div className="shrink-0 transition-opacity hover:opacity-80">
-              <Link href="/" aria-label="OREEGAM'IA">
-                <Image
-                  src="/logo.png"
-                  alt="OREEGAM'IA"
-                  width={450}
-                  height={120}
-                  className="w-auto drop-shadow-sm transition-all duration-300"
-                  style={{ height: isScrolled ? '60px' : '90px', width: 'auto' }}
-                  priority
-                  unoptimized
-                />
-              </Link>
-            </div>
+          {/* 1. Logo (Absolute Left) */}
+          <div className="absolute left-5 top-1/2 -translate-y-1/2">
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo.png"
+                alt="OREEGAM'IA"
+                width={200}
+                height={70}
+                className={`w-auto transition-all duration-300 ${isScrolled ? 'h-[50px]' : 'h-[65px]'}`}
+                priority
+                unoptimized
+              />
+            </Link>
+          </div>
 
+          <div className="flex flex-col items-center">
             {/* Main Pill */}
             <div className={`flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 pointer-events-auto min-w-[650px] justify-between transition-all duration-300 ${isScrolled ? 'h-[50px] scale-95' : 'h-[60px]'}`}>
               {/* Navigation Links */}
@@ -180,23 +181,17 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 <Link href="/events" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Evènements</Link>
               </div>
 
-              {/* Search Icon (Legacy - Kept for layout balance or future use) */}
-              {/* Search Input */}
-              {/* Theme Toggle */}
               <ThemeToggle />
 
-              {/* Search Input */}
+              {/* Search Interaction */}
               <div className="relative group ml-4">
                 <div className="flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden w-[250px]">
                   <div
                     className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700"
                     onClick={() => {
                       if (searchValue) {
-                        if (onSearch) {
-                          onSearch(searchValue);
-                        } else {
-                          router.push(`/?q=${encodeURIComponent(searchValue)}`);
-                        }
+                        if (onSearch) onSearch(searchValue);
+                        else router.push(`/?q=${encodeURIComponent(searchValue)}`);
                       }
                       setIsSearchOpen(true);
                       if (searchInputRef.current) searchInputRef.current.focus();
@@ -215,17 +210,12 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                     onChange={(e) => setSearchValue(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        if (onSearch) {
-                          onSearch(searchValue);
-                        } else {
-                          router.push(`/?q=${encodeURIComponent(searchValue)}`);
-                        }
+                        if (onSearch) onSearch(searchValue);
+                        else router.push(`/?q=${encodeURIComponent(searchValue)}`);
                       }
                     }}
                     onFocus={() => setIsSearchOpen(true)}
-                    onBlur={(e) => {
-                      if (!searchValue) setIsSearchOpen(false);
-                    }}
+                    onBlur={() => { if (!searchValue) setIsSearchOpen(false); }}
                   />
                   {searchValue && (
                     <button
@@ -245,94 +235,56 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 </div>
               </div>
             </div>
-
-            {/* NEW: Je veux comprendre Input */}
-
           </div>
 
-          {/* 3. Auth Button & Gamification (Positions Absolutely to the Right) */}
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-50 whitespace-nowrap pointer-events-auto flex items-center gap-6">
-
-            {/* Gamification Badge Strip */}
-            <div className="group/badge relative flex items-center">
-              <div className="transition-all duration-500 transform hover:scale-110 cursor-help">
-                {(() => {
-                  const count = readIds?.length || 0;
-                  let badge = { src: '/gamification/egg.png', label: 'Apprenti (Œuf)', next: 6 };
-
-                  if (count >= 26) badge = { src: '/gamification/lion.png', label: 'Maître IA (Lion)', next: 100 };
-                  else if (count >= 13) badge = { src: '/gamification/owl.png', label: 'Sage (Hibou)', next: 26 };
-                  else if (count >= 6) badge = { src: '/gamification/fox.png', label: 'Futé (Renard)', next: 13 };
-
-                  return (
-                    <>
-                      <Image
-                        src={badge.src}
-                        alt={badge.label}
-                        width={isScrolled ? 35 : 45}
-                        height={isScrolled ? 35 : 45}
-                        className="drop-shadow-md"
-                        unoptimized
-                      />
-                      {/* Tooltip on Hover */}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-2 bg-gray-900/95 backdrop-blur-sm text-white text-[11px] rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-95 group-hover/badge:scale-100">
-                        <p className="font-bold text-indigo-300 mb-1">{badge.label}</p>
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000"
-                              style={{ width: `${Math.min((count / (badge.next || 1)) * 100, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-gray-400 font-medium">{count}/{badge.next < 100 ? badge.next : '∞'}</span>
-                        </div>
-                        {badge.next < 100 && (
-                          <p className="text-[9px] text-gray-400 italic">Encore {badge.next - count} articles avant le prochain niveau</p>
-                        )}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-
+          {/* 3. Auth Button (Positions Absolutely to the Right) */}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-50 whitespace-nowrap pointer-events-auto">
             {mounted && (
               user ? (
-                <div className="relative" ref={menuRef}>
+                <div className="relative group/badge" ref={menuRef}>
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
                     className="flex items-center gap-2 px-4 py-2 rounded-full shadow-md border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 hover:shadow-lg transition-all bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl"
                   >
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                      {getUserDisplayName().charAt(0).toUpperCase()}
+                    <div className="w-9 h-9 rounded-full bg-white/50 backdrop-blur-sm flex items-center justify-center overflow-hidden border border-white/50 shadow-inner">
+                      <Image
+                        src={currentBadge.src}
+                        alt={currentBadge.label}
+                        width={32}
+                        height={32}
+                        className="object-contain drop-shadow-sm transform hover:scale-110 transition-transform duration-300"
+                        unoptimized
+                      />
                     </div>
                     <span className="text-sm font-semibold text-gray-700">{getUserDisplayName()}</span>
                   </button>
 
+                  {/* Tooltip on Hover */}
+                  <div className="absolute top-full right-0 mt-3 px-4 py-3 bg-gray-900/95 backdrop-blur-md text-white text-[11px] rounded-2xl opacity-0 group-hover/badge:opacity-100 transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-90 origin-top-right group-hover/badge:scale-100">
+                    <p className="font-bold text-indigo-300 mb-1.5 text-xs">{currentBadge.label}</p>
+                    <div className="flex items-center gap-3 mb-1.5 min-w-[150px]">
+                      <div className="h-2 flex-1 bg-gray-700/50 rounded-full overflow-hidden border border-white/5">
+                        <div
+                          className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-1000"
+                          style={{ width: `${Math.min((currentBadge.count / (currentBadge.next || 1)) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-gray-300 font-bold">{currentBadge.count}/{currentBadge.next < 100 ? currentBadge.next : '∞'}</span>
+                    </div>
+                    {currentBadge.next < 100 && (
+                      <p className="text-[10px] text-gray-400 italic">Encore {currentBadge.next - currentBadge.count} articles avant le prochain niveau</p>
+                    )}
+                  </div>
+
                   {isMenuOpen && (
-                    <div
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-[100]"
-                    >
-                      <Link
-                        href="/parametres"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 bg-white"
-                      >
-                        Espace personnel
-                      </Link>
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 border border-gray-100 z-[100]">
+                      <Link href="/parametres" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 bg-white">Espace personnel</Link>
                       {isAdmin && (
-                        <Link
-                          href="/admin"
-                          className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white"
-                        >
-                          Espace Admin
-                        </Link>
+                        <Link href="/admin" className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white">Espace Admin</Link>
                       )}
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleLogout();
-                        }}
+                        onClick={(e) => { e.preventDefault(); handleLogout(); }}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-gray-50 bg-white"
                       >
                         Se déconnecter
@@ -350,27 +302,17 @@ const Navbar = ({ onSearch }: NavbarProps) => {
         </div>
       </nav>
 
-      {/* Mobile Navigation (Simplified Fallback) */}
       {/* Mobile Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-transform duration-300 md:hidden bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl ${isScrolled ? 'shadow-md border-b-2 border-b-[#1565C0]/50' : 'shadow-sm border-b border-white/50'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4">
           <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-14' : 'h-16'}`}>
-
             {/* Left: Burger Menu */}
             <div className="flex items-center justify-start flex-1">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 -ml-2 text-gray-800 hover:bg-white/40 rounded-lg transition-colors"
-                aria-label="Menu"
-              >
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 -ml-2 text-gray-800 hover:bg-white/40 rounded-lg transition-colors" aria-label="Menu">
                 {isMenuOpen ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                  </svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
                 )}
               </button>
             </div>
@@ -378,66 +320,40 @@ const Navbar = ({ onSearch }: NavbarProps) => {
             {/* Center: Logo */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <Link href="/">
-                <Image
-                  src="/logo.png"
-                  alt="OREEGAM'IA"
-                  width={180}
-                  height={60}
-                  className={`w-auto transition-all duration-300 ${isScrolled ? 'h-[40px]' : 'h-[50px]'}`}
-                  priority
-                  unoptimized
-                />
+                <Image src="/logo.png" alt="OREEGAM'IA" width={180} height={60} className={`w-auto transition-all duration-300 ${isScrolled ? 'h-[40px]' : 'h-[50px]'}`} priority unoptimized />
               </Link>
             </div>
 
-            {/* Right: Actions (Search + Profile) */}
+            {/* Right: Actions */}
             <div className="flex items-center justify-end flex-1 gap-2">
               <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
               </button>
 
-              {/* Mobile Gamification Badge */}
-              <div className="flex items-center px-1">
-                {(() => {
-                  const count = readIds?.length || 0;
-                  let badgeSrc = '/gamification/egg.png';
-                  if (count >= 26) badgeSrc = '/gamification/lion.png';
-                  else if (count >= 13) badgeSrc = '/gamification/owl.png';
-                  else if (count >= 6) badgeSrc = '/gamification/fox.png';
-
-                  return (
-                    <Image
-                      src={badgeSrc}
-                      alt="Progression"
-                      width={28}
-                      height={28}
-                      className="drop-shadow-sm active:scale-110 transition-transform"
-                      unoptimized
-                    />
-                  );
-                })()}
-              </div>
-
               {user && (
-                <Link href="/parametres" className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
-                  {getUserDisplayName().charAt(0).toUpperCase()}
+                <Link href="/parametres" className="w-9 h-9 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center overflow-hidden border border-white/50 shadow-sm transition-transform active:scale-90">
+                  <Image
+                    src={currentBadge.src}
+                    alt={currentBadge.label}
+                    width={28}
+                    height={28}
+                    className="object-contain"
+                    unoptimized
+                  />
                 </Link>
               )}
             </div>
           </div>
 
-          {/* Mobile Menu Content (Dropdown) */}
+          {/* Mobile Menu Content */}
           {isMenuOpen && (
             <div className="absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 z-40 flex flex-col animate-slide-in-top">
               <div className="p-4 space-y-2">
-                {user ? null : (
+                {!user && (
                   <div className="mb-4 pb-4 border-b border-gray-100">
-                    <Link href="/auth" className="flex items-center justify-center w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md">Se connecter</Link>
+                    <Link href="/auth" onClick={() => setIsMenuOpen(false)} className="flex items-center justify-center w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md">Se connecter</Link>
                   </div>
                 )}
-
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Navigation</p>
                 <Link href="/jt" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">JTNews</Link>
                 <Link href="/#actualite" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Catégories</Link>
@@ -447,9 +363,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 <Link href="/events" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Evènements</Link>
 
                 {user && (
-                  <button onClick={handleLogout} className="block w-full text-left py-2.5 px-3 mt-4 text-red-600 font-medium border-t border-gray-100">
-                    Se déconnecter
-                  </button>
+                  <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="block w-full text-left py-2.5 px-3 mt-4 text-red-600 font-medium border-t border-gray-100">Se déconnecter</button>
                 )}
               </div>
             </div>
