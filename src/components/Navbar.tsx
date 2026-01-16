@@ -398,6 +398,28 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 </svg>
               </button>
 
+              {/* Mobile Gamification Badge */}
+              <div className="flex items-center px-1">
+                {(() => {
+                  const count = readIds?.length || 0;
+                  let badgeSrc = '/gamification/egg.png';
+                  if (count >= 26) badgeSrc = '/gamification/lion.png';
+                  else if (count >= 13) badgeSrc = '/gamification/owl.png';
+                  else if (count >= 6) badgeSrc = '/gamification/fox.png';
+
+                  return (
+                    <Image
+                      src={badgeSrc}
+                      alt="Progression"
+                      width={28}
+                      height={28}
+                      className="drop-shadow-sm active:scale-110 transition-transform"
+                      unoptimized
+                    />
+                  );
+                })()}
+              </div>
+
               {user && (
                 <Link href="/parametres" className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border border-indigo-200">
                   {getUserDisplayName().charAt(0).toUpperCase()}
