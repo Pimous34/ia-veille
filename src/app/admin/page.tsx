@@ -64,7 +64,7 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="main-content">
-        <div className="top-bar mt-56">
+        <div className="top-bar mt-12">
           <h1 className="page-title text-pink-500">Tableau de Bord</h1>
         </div>
 
