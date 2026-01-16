@@ -91,7 +91,7 @@ const ArticleCard = ({ article }: { article: Article }) => {
 
           <button
             onClick={handleWatchLater}
-            className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${isWatchLater ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/90 text-gray-700 hover:bg-white hover:scale-110'}`}
+            className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${isWatchLater ? 'bg-pink-500 text-white shadow-lg' : 'bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white hover:scale-110'}`}
             aria-label="À regarder plus tard"
             title="À regarder plus tard"
           >
