@@ -15,7 +15,7 @@ interface NavbarProps {
 
 const Navbar = ({ onSearch }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user, supabase } = useAuth();
+  const { user, supabase, isAdmin } = useAuth();
   const { readIds } = useReadTracking();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -318,12 +318,14 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                       >
                         Espace personnel
                       </Link>
-                      <Link
-                        href="/admin"
-                        className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white"
-                      >
-                        Espace Admin
-                      </Link>
+                      {isAdmin && (
+                        <Link
+                          href="/admin"
+                          className="block px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50 border-t border-gray-50 bg-white"
+                        >
+                          Espace Admin
+                        </Link>
+                      )}
                       <button
                         type="button"
                         onClick={(e) => {
