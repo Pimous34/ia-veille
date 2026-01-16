@@ -187,7 +187,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
               {/* Search Input */}
               <div className="relative group ml-4">
-                <div className={`flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden ${isSearchOpen ? 'w-[250px]' : 'w-[40px] hover:w-[250px] focus-within:w-[250px]'}`}>
+                <div className="flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden w-[250px]">
                   <div
                     className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700"
                     onClick={() => {
