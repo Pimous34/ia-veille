@@ -16,11 +16,18 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="sidebar">
-        <Link href="/" className="sidebar-header group">
-          <div className="logo-placeholder group-hover:scale-110 transition-transform">
-            <Image src="/logo.png" alt="OreegamIA" width={40} height={40} className="logo-img" />
+        <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
+          <div className="relative w-full h-16 flex justify-center">
+             <Image 
+               src="/logo.png" 
+               alt="OREEGAM'IA" 
+               fill
+               className="object-contain drop-shadow-sm"
+               priority
+               unoptimized
+             />
           </div>
-          <div className="logo-text">ADMIN</div>
+          <div className="text-xs font-bold tracking-widest text-indigo-300 uppercase">Administration</div>
         </Link>
 
         <nav className="sidebar-nav">
