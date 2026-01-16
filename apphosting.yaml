@@ -1,0 +1,21 @@
+kind: "AppStack"
+apiVersion: "v1"
+runConfig:
+  minInstances: 1
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "oreegamia"
+    availability: ["BUILD", "RUNTIME"]
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: "https://pjiobifgcvdapikurlbn.supabase.co"
+    availability: ["BUILD", "RUNTIME"]
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxMDI0ODEsImV4cCI6MjA4MDY3ODQ4MX0.-y5bw3WwHKGpR9FxNcZhyEWY-iLoAXnI4ZGlhH8DXYo"
+    availability: ["BUILD", "RUNTIME"]
+  - variable: GOOGLE_CALENDAR_ID
+    value: "primary"
+    availability: ["BUILD", "RUNTIME"]

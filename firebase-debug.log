@@ -1,0 +1,102 @@
+[debug] [2026-01-12T11:51:49.932Z] ----------------------------------------------------------------------
+[debug] [2026-01-12T11:51:49.935Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Pimous\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2026-01-12T11:51:49.936Z] CLI Version:   15.2.1
+[debug] [2026-01-12T11:51:49.936Z] Platform:      win32
+[debug] [2026-01-12T11:51:49.936Z] Node Version:  v22.18.0
+[debug] [2026-01-12T11:51:49.937Z] Time:          Mon Jan 12 2026 12:51:49 GMT+0100 (heure normale d’Europe centrale)
+[debug] [2026-01-12T11:51:49.937Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-01-12T11:51:54.227Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-01-12T11:51:54.228Z] > authorizing via signed-in user (benjamin.rigouste@gmail.com)
+[debug] [2026-01-12T11:51:54.228Z] [iam] checking project oreegamia for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-01-12T11:51:54.230Z] Checked if tokens are valid: false, expires at: 1768216991739
+[debug] [2026-01-12T11:51:54.230Z] Checked if tokens are valid: false, expires at: 1768216991739
+[debug] [2026-01-12T11:51:54.230Z] > refreshing access token with scopes: []
+[debug] [2026-01-12T11:51:54.236Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-01-12T11:51:54.236Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-01-12T11:51:54.605Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-01-12T11:51:54.605Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-01-12T11:51:54.618Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/oreegamia:testIamPermissions [none]
+[debug] [2026-01-12T11:51:54.618Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/oreegamia:testIamPermissions x-goog-quota-user=projects/oreegamia
+[debug] [2026-01-12T11:51:54.619Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/oreegamia:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-01-12T11:51:55.520Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/oreegamia:testIamPermissions 200
+[debug] [2026-01-12T11:51:55.520Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/oreegamia:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-01-12T11:51:55.521Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:51:55.521Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:51:55.522Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/oreegamia [none]
+[debug] [2026-01-12T11:51:55.910Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/oreegamia 200
+[debug] [2026-01-12T11:51:55.910Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/oreegamia {"projectId":"oreegamia","projectNumber":"915212420888","displayName":"Oreegamia","name":"projects/oreegamia","resources":{"hostingSite":"oreegamia"},"state":"ACTIVE","etag":"1_5cea1ae2-cfc4-44ab-b73e-28bc11e200df"}
+[debug] [2026-01-12T11:52:01.575Z] defaultcredentials: writing to file C:\Users\Pimous\AppData\Roaming\firebase\benjamin_rigouste_gmail.com_application_default_credentials.json
+[debug] [2026-01-12T11:52:01.583Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:52:01.583Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:52:01.583Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/oreegamia/sites pageToken=&pageSize=10
+[debug] [2026-01-12T11:52:02.511Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/oreegamia/sites 200
+[debug] [2026-01-12T11:52:02.511Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/oreegamia/sites {"sites":[{"name":"projects/oreegamia/sites/oreegamia","defaultUrl":"https://oreegamia.web.app","appId":"1:915212420888:web:e01568a651b28e69be806d","type":"DEFAULT_SITE"}]}
+[debug] [2026-01-12T11:52:02.511Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:52:02.511Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:52:02.511Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:915212420888:web:e01568a651b28e69be806d/config [none]
+[debug] [2026-01-12T11:52:03.195Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:915212420888:web:e01568a651b28e69be806d/config 200
+[debug] [2026-01-12T11:52:03.195Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:915212420888:web:e01568a651b28e69be806d/config {"projectId":"oreegamia","appId":"1:915212420888:web:e01568a651b28e69be806d","storageBucket":"oreegamia.firebasestorage.app","apiKey":"AIzaSyDj-3NCCJ9wXQNdTfwZ_kWAlYCp84mplok","authDomain":"oreegamia.firebaseapp.com","messagingSenderId":"915212420888","projectNumber":"915212420888","version":"2"}
+[info] 
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+[debug] [2026-01-12T11:52:13.973Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:52:13.974Z] Checked if tokens are valid: true, expires at: 1768222313606
+[debug] [2026-01-12T11:52:13.974Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/oreegamia/sites/oreegamia [none]
+[debug] [2026-01-12T11:52:14.801Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/oreegamia/sites/oreegamia 200
+[debug] [2026-01-12T11:52:14.801Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/oreegamia/sites/oreegamia {"name":"projects/oreegamia/sites/oreegamia","defaultUrl":"https://oreegamia.web.app","appId":"1:915212420888:web:e01568a651b28e69be806d","type":"DEFAULT_SITE"}
+[info]    ▲ Next.js 15.1.9
+
+[info]    - Environments: .env.local
+
+
+[info]    Creating an optimized production build ...
+
+[info] Failed to compile.
+
+
+[info] HookWebpackError: Cannot find module 'D:\Ai Quick Feed\ia-veille\node_modules\caniuse-lite\dist\unpacker\index.js'. Please verify that the package.json has a valid "main" entry
+    at makeWebpackError (D:\Ai Quick Feed\ia-veille\node_modules\next\dist\compiled\webpack\bundle5.js:28:314608)
+    at D:\Ai Quick Feed\ia-veille\node_modules\next\dist\compiled\webpack\bundle5.js:28:106402
+    at eval (eval at create (D:\Ai Quick Feed\ia-veille\node_modules\next\dist\compiled\webpack\bundle5.js:13:9218), <anonymous>:44:1)
+-- inner error --
+Error: Cannot find module 'D:\Ai Quick Feed\ia-veille\node_modules\caniuse-lite\dist\unpacker\index.js'. Please verify that the package.json has a valid "main" entry
+    at tryPackage (node:internal/modules/cjs/loader:500:19)
+    at Function._findPath (node:internal/modules/cjs/loader:760:18)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1351:27)
+    at D:\Ai Quick Feed\ia-veille\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+caused by plugins in Compilation.hooks.processAssets
+Error: Cannot find module 'D:\Ai Quick Feed\ia-veille\node_modules\caniuse-lite\dist\unpacker\index.js'. Please verify that the package.json has a valid "main" entry
+    at tryPackage (node:internal/modules/cjs/loader:500:19)
+    at Function._findPath (node:internal/modules/cjs/loader:760:18)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1351:27)
+    at D:\Ai Quick Feed\ia-veille\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+
+
+[info] 
+
+[info] > Build failed because of webpack errors
+
+[debug] [2026-01-12T11:52:27.049Z] Error: ENOENT: no such file or directory, open 'D:\Ai Quick Feed\ia-veille\.next\export-marker.json'
+[error] 
+[error] Error: An unexpected error has occurred.
