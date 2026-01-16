@@ -978,7 +978,7 @@ CONSIGNES POUR METADATA :
                                     <div className="vignettes-container" style={{ gap: '2.5rem' }}> {/* Increased internal gap */}
                                         {/* Sujets du JT Column */}
                                         <div className="vignette-column" style={{ gap: '1rem' }}>
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
                                                 {isSearching ? "Actualités liées" : "Sujets du JT"}
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
@@ -1014,7 +1014,7 @@ CONSIGNES POUR METADATA :
 
                                         {/* Vidéos Column (formerly Tutos) */}
                                         <div className="vignette-column">
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
                                                 {isSearching ? "Vidéos liées" : "Vidéos"}
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
@@ -1067,7 +1067,9 @@ CONSIGNES POUR METADATA :
 
                                         {/* Infos Column */}
                                         <div className="vignette-column" style={{ gap: '1rem' }}>
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Infos</h3>
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
+                                                Infos
+                                            </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
                                                 {nextCourse ? (
                                                     <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
