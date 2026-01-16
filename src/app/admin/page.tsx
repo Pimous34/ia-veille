@@ -64,11 +64,8 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="main-content">
-        <div className="top-bar">
+        <div className="top-bar mt-8">
           <h1 className="page-title">Tableau de Bord</h1>
-          <button onClick={handleLogout} className="logout-btn">
-            Déconnexion
-          </button>
         </div>
 
         <div className="welcome-banner">
