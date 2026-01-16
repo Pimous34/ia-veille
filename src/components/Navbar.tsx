@@ -304,12 +304,11 @@ const Navbar = ({ onSearch }: NavbarProps) => {
               <div className="transition-all duration-500 transform hover:scale-110">
                 {(() => {
                   const count = readIds?.length || 0;
-                  let badge = { src: '/gamification/egg.png', label: 'Apprenti (Œuf)', next: 2 };
+                  let badge = { src: '/gamification/egg.png', label: 'Apprenti (Œuf)', next: 6 };
 
                   if (count >= 26) badge = { src: '/gamification/lion.png', label: 'Maître IA (Lion)', next: 100 };
                   else if (count >= 13) badge = { src: '/gamification/owl.png', label: 'Sage (Hibou)', next: 26 };
                   else if (count >= 6) badge = { src: '/gamification/fox.png', label: 'Futé (Renard)', next: 13 };
-                  else if (count >= 2) badge = { src: '/gamification/penguin.png', label: 'Explorateur (Pingouin)', next: 6 };
 
                   return (
                     <>
