@@ -741,13 +741,14 @@ CONSIGNES POUR METADATA :
             } else if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
                 // Fallback direct play if jingle invalid but main video exists
                  video.src = mainVideoUrl;
-                 // video.load(); // sometimes helpful
             }
         }
 
         return () => {
-            video.removeEventListener('ended', handleEnded);
-            video.removeEventListener('click', handleUnmute);
+            if (video) {
+                video.removeEventListener('ended', handleEnded);
+                video.removeEventListener('click', handleUnmute);
+            }
         };
     }, [jtVideo]);
 
@@ -892,6 +893,9 @@ CONSIGNES POUR METADATA :
                                                     ref={videoRef}
                                                     className="video-player"
                                                     controls
+                                                    autoPlay
+                                                    muted
+                                                    playsInline
                                                     poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover', background: 'black' }}
                                                 >

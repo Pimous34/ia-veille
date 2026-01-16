@@ -19,8 +19,8 @@ export default async function ShortsPage() {
   }
 
   return (
-    <div className="h-screen w-full bg-black overflow-hidden relative">
-      <Suspense fallback={<div className="h-screen w-full flex items-center justify-center text-white">Chargement...</div>}>
+    <div className="h-screen w-full bg-background overflow-hidden relative">
+      <Suspense fallback={<div className="h-screen w-full flex items-center justify-center text-foreground">Chargement...</div>}>
         <ShortsFeed />
       </Suspense>
     </div>
