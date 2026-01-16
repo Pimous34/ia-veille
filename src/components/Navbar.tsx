@@ -260,7 +260,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                   </button>
 
                   {/* Tooltip on Hover */}
-                  <div className="absolute top-full right-0 mt-3 px-4 py-3 bg-gray-900/95 backdrop-blur-md text-white text-[11px] rounded-2xl opacity-0 group-hover/badge:opacity-100 transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-90 origin-top-right group-hover/badge:scale-100">
+                  <div className={`absolute top-full right-0 mt-3 px-4 py-3 bg-gray-900/95 backdrop-blur-md text-white text-[11px] rounded-2xl transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-90 origin-top-right ${isMenuOpen ? 'opacity-0 scale-90' : 'opacity-0 group-hover/badge:opacity-100 group-hover/badge:scale-100'}`}>
                     <p className="font-bold text-indigo-300 mb-1.5 text-xs">{currentBadge.label}</p>
                     <div className="flex items-center gap-3 mb-1.5 min-w-[150px]">
                       <div className="h-2 flex-1 bg-gray-700/50 rounded-full overflow-hidden border border-white/5">
