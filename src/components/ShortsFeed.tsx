@@ -246,14 +246,14 @@ export default function ShortsFeed() {
     return (
         <div 
             ref={containerRef}
-            className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar"
+            className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar bg-background text-foreground"
             onScroll={handleScroll}
             style={{ scrollSnapType: 'y mandatory' }}
         >
             {/* Close Button */}
             <button 
                 onClick={() => router.push('/')}
-                className="fixed top-6 left-6 z-50 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
+                className="fixed top-6 left-6 z-50 p-2 bg-background/40 backdrop-blur-md rounded-full text-foreground hover:bg-background/60 transition-colors border border-border"
                 aria-label="Retour"
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -264,33 +264,42 @@ export default function ShortsFeed() {
             {items.map((item, index) => (
                 <div 
                     key={`${item.type}-${item.id}-${index}`} 
-                    className="w-full h-screen snap-start relative flex items-center justify-center bg-gray-900 overflow-hidden"
+                    className="w-full h-screen snap-start relative flex items-start justify-center bg-background overflow-hidden pt-28"
                 >
-                    {/* Background Image (Blurred) */}
-                    <div className="absolute inset-0 z-0">
-                        <div className="absolute inset-0 bg-black/60 z-10" />
-                        <SafeShortImage
-                            src={item.imageUrl}
-                            title={item.title}
-                            alt="Background"
-                            className="w-full h-full object-cover opacity-50 blur-xl scale-110"
-                            isBackground={true}
-                        />
-                    </div>
+
 
                     {/* Main Content Card */}
-                    <div className="relative z-20 w-full max-w-2xl h-[85vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 my-auto animate-in fade-in duration-500">
+                    <div className="relative z-20 w-full max-w-2xl h-[80vh] bg-card rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 animate-in fade-in duration-500 border border-border">
                         
                         {/* Image or Video Section (Top 45%) */}
                         <div className="relative h-[45%] w-full bg-black">
                             {item.type === 'video' && extractYouTubeVideoId(item.link) ? (
-                                <iframe
-                                    src={`https://www.youtube.com/embed/${extractYouTubeVideoId(item.link)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${extractYouTubeVideoId(item.link)}&modestbranding=1&rel=0&iv_load_policy=3&fs=0`}
-                                    title={item.title}
-                                    className="w-full h-full pointer-events-none" // pointer-events-none to prevent stealing scroll interaction, remove if user wants to click video
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
+                                index === activeIndex ? (
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${extractYouTubeVideoId(item.link)}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1`}
+                                        title={item.title}
+                                        className="w-full h-full"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <div className="relative w-full h-full">
+                                        <SafeShortImage 
+                                            src={item.imageUrl} 
+                                            title={item.title}
+                                            alt={item.title} 
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {/* Play Icon Overlay for inactive slides */}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-white/30">
+                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="white" className="ml-2 drop-shadow-md">
+                                                    <path d="M5 3l14 9-14 9V3z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
                             ) : (
                                 <SafeShortImage 
                                     src={item.imageUrl} 
@@ -323,29 +332,29 @@ export default function ShortsFeed() {
                         </div>
 
                         {/* Text Content Logic (Bottom) */}
-                        <div className="flex-1 p-8 flex flex-col relative bg-white">
+                        <div className="flex-1 p-8 flex flex-col relative bg-card text-card-foreground">
                             {/* Tags */}
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {(item.tags || []).slice(0, 3).map(tag => (
-                                    <span key={tag} className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md uppercase">
+                                    <span key={tag} className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md uppercase">
                                         #{tag}
                                     </span>
                                 ))}
                             </div>
 
                             {/* Title */}
-                            <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-4 line-clamp-3">
+                            <h2 className="text-2xl font-bold text-card-foreground leading-tight mb-4 line-clamp-3">
                                 {item.title}
                             </h2>
 
                             {/* Description / Excerpt */}
-                            <div className="text-lg text-gray-700 mb-6 overflow-y-auto max-h-[200px] leading-relaxed pr-2">
+                            <div className="text-lg text-muted-foreground mb-6 overflow-y-auto max-h-[200px] leading-relaxed pr-2">
                                 {item.description}
                             </div>
 
                             {/* Footer Actions */}
-                            <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                                <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                            <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                                     {item.source} • {new Date(item.date).toLocaleDateString()}
                                 </span>
 
@@ -353,7 +362,7 @@ export default function ShortsFeed() {
                                     href={item.link} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="bg-black text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-gray-800 transition-transform active:scale-95 flex items-center gap-2"
+                                    className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-transform active:scale-95 flex items-center gap-2"
                                 >
                                     {item.type === 'video' ? 'Regarder' : 'Lire'}
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

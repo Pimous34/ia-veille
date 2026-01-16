@@ -5,9 +5,12 @@ import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
 import Footer from '@/components/Footer';
-import Navbar from '@/components/Navbar';
+
+
+// import Navbar from '@/components/Navbar'; // Removed to avoid duplication with Layout
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useReadTracking } from '@/hooks/useReadTracking';
+import { useAuth } from '@/contexts/AuthContext';
 import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
@@ -43,6 +46,7 @@ interface JtVideo {
     title?: string;
     date: string;
     article_ids?: number[];
+    script?: string;
 }
 
 interface NextCourse {
@@ -240,8 +244,9 @@ export default function HomeClient({
     initialVideosColumn
 }: HomeClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { isRead } = useReadTracking();
-    const [supabase] = useState(() => createClient());
+    const { supabase, user } = useAuth(); // Use shared client
     // Auth check moved to Server Component wrapper
 
     // UI State
@@ -382,8 +387,22 @@ export default function HomeClient({
         }
         fetchSubjects();
 
-    }, [jtVideo, supabase]);
+    }, [jtVideo, supabase, user]);
 
+
+
+
+    // Added Logic: Sync URL 'q' with search state
+    useEffect(() => {
+        const query = searchParams.get('q');
+        if (query && query !== searchQuery) {
+             handleSearch(query);
+        } else if (!query && searchQuery) {
+             // Optional: clear search if URL param removed, or keep it. 
+             // Letting it clear is safer for deep linking back to home.
+             handleSearch('');
+        }
+    }, [searchParams]);
 
     // --- Search Logic ---
     const handleSearch = (query: string) => {
@@ -601,7 +620,7 @@ CONSIGNES POUR METADATA :
                                         // Merge with existing results, avoiding duplicates if possible (simple append for now)
                                         setSearchResultVideos(prev => {
                                             const existingIds = new Set(prev.map(p => p.id));
-                                            const uniqueNew = mappedDbVideos.filter(n => !existingIds.has(n.id));
+                                            const uniqueNew = mappedDbVideos.filter((n: any) => !existingIds.has(n.id));
                                             return [...prev, ...uniqueNew];
                                         });
                                     }
@@ -702,24 +721,34 @@ CONSIGNES POUR METADATA :
             }
             isNavigatingRef.current = false;
         } else {
-            // Play jingle for initial load
-            video.src = jingleUrl;
-            video.playsInline = true;
-            video.muted = true; // Start muted for autoplay
-
-            video.addEventListener('ended', handleEnded);
-
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    // Autoplay failed
-                });
+            // Play jingle for initial load IF valid AND not already playing
+            if (jingleUrl && !jingleUrl.endsWith('#')) {
+                 // Check if already playing Jingle to avoid interruption
+                 if (!video.src.includes('Jingle.mp4')) {
+                    video.src = jingleUrl;
+                    video.playsInline = true;
+                    video.muted = true; // Start muted for autoplay
+    
+                    video.addEventListener('ended', handleEnded);
+    
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch((e) => {
+                            console.warn("Autoplay/Jingle prevented:", e);
+                        });
+                    }
+                 }
+            } else if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
+                // Fallback direct play if jingle invalid but main video exists
+                 video.src = mainVideoUrl;
             }
         }
 
         return () => {
-            video.removeEventListener('ended', handleEnded);
-            video.removeEventListener('click', handleUnmute);
+            if (video) {
+                video.removeEventListener('ended', handleEnded);
+                video.removeEventListener('click', handleUnmute);
+            }
         };
     }, [jtVideo]);
 
@@ -744,7 +773,7 @@ CONSIGNES POUR METADATA :
     return (
         <>
             <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-                <Navbar onSearch={handleSearch} />
+                {/* <Navbar onSearch={handleSearch} /> */ }
 
                 <main className="main-content grow pt-20 !ml-0">
                     {/* Hero Section */}
@@ -864,6 +893,9 @@ CONSIGNES POUR METADATA :
                                                     ref={videoRef}
                                                     className="video-player"
                                                     controls
+                                                    autoPlay
+                                                    muted
+                                                    playsInline
                                                     poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover', background: 'black' }}
                                                 >
@@ -890,11 +922,19 @@ CONSIGNES POUR METADATA :
                                                 </div>
                                             </div>
                                             <div id="format-text" className={`format-content ${activeFormat === 'text' ? 'active' : ''}`} style={activeFormat !== 'text' ? { display: 'none' } : {}}>
-                                                <div className="placeholder-content text-mode">
-                                                    <h3>Transcription du JT</h3>
-                                                    <p><strong>00:00</strong> - Introduction et sommaire...</p>
-                                                    <p><strong>01:15</strong> - L&apos;IA générative bouleverse le marché...</p>
-                                                    <button className="read-more-btn">Lire la transcription complète</button>
+                                                <div className="text-format-content" style={{ height: '100%', overflowY: 'auto', padding: '2rem', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '1.1rem', lineHeight: '1.8', whiteSpace: 'pre-wrap', textAlign: 'justify', hyphens: 'auto' }}>
+                                                    {jtVideo?.script ? (
+                                                        <>
+                                                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Transcription du JT</h3>
+                                                            <div className="script-content">
+                                                                {jtVideo.script.replace(/<break[^>]*>/g, '\n\n')}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="placeholder-content">
+                                                            <p>Le script de ce JT n&apos;est pas encore disponible.</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

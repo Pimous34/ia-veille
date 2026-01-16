@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import ThemeToggle from '@/components/ThemeToggle';
 
  interface NavbarProps {
     onSearch?: (query: string) => void;
@@ -13,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = ({ onSearch }: NavbarProps) => {
    const [isScrolled, setIsScrolled] = useState(false);
-   const { user } = useAuth();
+   const { user, supabase } = useAuth();
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [isSearchOpen, setIsSearchOpen] = useState(false);
    const [searchValue, setSearchValue] = useState('');
@@ -21,7 +22,8 @@ const Navbar = ({ onSearch }: NavbarProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const supabase = createClient();
+
+
   const router = useRouter();
   const pathname = usePathname();
 
@@ -178,6 +180,10 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
               {/* Search Icon (Legacy - Kept for layout balance or future use) */}
 {/* Search Input */}
+               {/* Theme Toggle */}
+               <ThemeToggle />
+
+               {/* Search Input */}
                <div className="relative group ml-4">
                   <div className={`flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden ${isSearchOpen ? 'w-[250px]' : 'w-[40px] hover:w-[250px] focus-within:w-[250px]'}`}>
                       <div 
