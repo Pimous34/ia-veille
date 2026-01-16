@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useReadTracking } from '@/hooks/useReadTracking';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
@@ -15,6 +16,7 @@ interface NavbarProps {
 const Navbar = ({ onSearch }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, supabase } = useAuth();
+  const { readIds } = useReadTracking();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -247,8 +249,52 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
           </div>
 
-          {/* 3. Auth Button (Positions Absolutely to the Right) */}
-          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-50 whitespace-nowrap pointer-events-auto">
+          {/* 3. Auth Button & Gamification (Positions Absolutely to the Right) */}
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 shrink-0 z-50 whitespace-nowrap pointer-events-auto flex items-center gap-6">
+
+            {/* Gamification Badge Strip */}
+            <div className="group/badge relative flex items-center">
+              <div className="transition-all duration-500 transform hover:scale-110 cursor-help">
+                {(() => {
+                  const count = readIds?.length || 0;
+                  let badge = { src: '/gamification/egg.png', label: 'Apprenti (Œuf)', next: 6 };
+
+                  if (count >= 26) badge = { src: '/gamification/lion.png', label: 'Maître IA (Lion)', next: 100 };
+                  else if (count >= 13) badge = { src: '/gamification/owl.png', label: 'Sage (Hibou)', next: 26 };
+                  else if (count >= 6) badge = { src: '/gamification/fox.png', label: 'Futé (Renard)', next: 13 };
+
+                  return (
+                    <>
+                      <Image
+                        src={badge.src}
+                        alt={badge.label}
+                        width={isScrolled ? 35 : 45}
+                        height={isScrolled ? 35 : 45}
+                        className="drop-shadow-md"
+                        unoptimized
+                      />
+                      {/* Tooltip on Hover */}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-2 bg-gray-900/95 backdrop-blur-sm text-white text-[11px] rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-95 group-hover/badge:scale-100">
+                        <p className="font-bold text-indigo-300 mb-1">{badge.label}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="h-1.5 flex-1 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000"
+                              style={{ width: `${Math.min((count / (badge.next || 1)) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-400 font-medium">{count}/{badge.next < 100 ? badge.next : '∞'}</span>
+                        </div>
+                        {badge.next < 100 && (
+                          <p className="text-[9px] text-gray-400 italic">Encore {badge.next - count} articles avant le prochain niveau</p>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
             {mounted && (
               user ? (
                 <div className="relative" ref={menuRef}>
@@ -297,9 +343,6 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 </Link>
               )
             )}
-            <div className="flex justify-center mt-1">
-              <Image src="/penguin_test.png" alt="Test Penguin" width={40} height={40} unoptimized />
-            </div>
           </div>
         </div>
       </nav>
