@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useReadTracking } from '@/hooks/useReadTracking';
 
 // --- Types ---
 interface ShortItem {
@@ -86,10 +87,42 @@ export default function ShortsFeed() {
     const searchParams = useSearchParams();
     const initialId = searchParams.get('id');
     const [supabase] = useState(() => createClient());
+    
+    // Read Tracking
+    const { markAsRead, isRead } = useReadTracking();
+    const [activeIndex, setActiveIndex] = useState(0);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         fetchContent();
     }, []);
+
+    // Start tracking for the first item once items are loaded
+    useEffect(() => {
+        if (items.length > 0 && !loading) {
+            startTracking(0);
+        }
+        return () => stopTracking();
+    }, [items, loading]);
+
+    const startTracking = (index: number) => {
+        stopTracking();
+        console.log(`Starting read tracking for item index ${index} (ID: ${items[index]?.id})`);
+        
+        timerRef.current = setTimeout(() => {
+            if (items[index]) {
+                console.log(`Marking item ${items[index].id} as read`);
+                markAsRead(items[index].id);
+            }
+        }, 7000); // 7 seconds
+    };
+
+    const stopTracking = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
+    };
 
     // Helper for safe URL
     const getSafeHostname = (url: string) => {
@@ -194,7 +227,16 @@ export default function ShortsFeed() {
     };
 
     const handleScroll = () => {
-        // Scroll logic placeholder
+        if (!containerRef.current) return;
+        
+        const scrollTop = containerRef.current.scrollTop;
+        const itemHeight = containerRef.current.clientHeight;
+        const newIndex = Math.round(scrollTop / itemHeight);
+
+        if (newIndex !== activeIndex && newIndex >= 0 && newIndex < items.length) {
+            setActiveIndex(newIndex);
+            startTracking(newIndex);
+        }
     };
 
     if (loading) {
@@ -204,14 +246,14 @@ export default function ShortsFeed() {
     return (
         <div 
             ref={containerRef}
-            className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar"
+            className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar bg-background text-foreground"
             onScroll={handleScroll}
             style={{ scrollSnapType: 'y mandatory' }}
         >
             {/* Close Button */}
             <button 
                 onClick={() => router.push('/')}
-                className="fixed top-6 left-6 z-50 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-colors"
+                className="fixed top-6 left-6 z-50 p-2 bg-background/40 backdrop-blur-md rounded-full text-foreground hover:bg-background/60 transition-colors border border-border"
                 aria-label="Retour"
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -222,33 +264,42 @@ export default function ShortsFeed() {
             {items.map((item, index) => (
                 <div 
                     key={`${item.type}-${item.id}-${index}`} 
-                    className="w-full h-screen snap-start relative flex items-center justify-center bg-gray-900 overflow-hidden"
+                    className="w-full h-screen snap-start relative flex items-start justify-center bg-background overflow-hidden pt-28"
                 >
-                    {/* Background Image (Blurred) */}
-                    <div className="absolute inset-0 z-0">
-                        <div className="absolute inset-0 bg-black/60 z-10" />
-                        <SafeShortImage
-                            src={item.imageUrl}
-                            title={item.title}
-                            alt="Background"
-                            className="w-full h-full object-cover opacity-50 blur-xl scale-110"
-                            isBackground={true}
-                        />
-                    </div>
+
 
                     {/* Main Content Card */}
-                    <div className="relative z-20 w-full max-w-2xl h-[85vh] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 my-auto animate-in fade-in duration-500">
+                    <div className="relative z-20 w-full max-w-2xl h-[80vh] bg-card rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 animate-in fade-in duration-500 border border-border">
                         
                         {/* Image or Video Section (Top 45%) */}
                         <div className="relative h-[45%] w-full bg-black">
                             {item.type === 'video' && extractYouTubeVideoId(item.link) ? (
-                                <iframe
-                                    src={`https://www.youtube.com/embed/${extractYouTubeVideoId(item.link)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${extractYouTubeVideoId(item.link)}&modestbranding=1&rel=0&iv_load_policy=3&fs=0`}
-                                    title={item.title}
-                                    className="w-full h-full pointer-events-none" // pointer-events-none to prevent stealing scroll interaction, remove if user wants to click video
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                />
+                                index === activeIndex ? (
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${extractYouTubeVideoId(item.link)}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1`}
+                                        title={item.title}
+                                        className="w-full h-full"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <div className="relative w-full h-full">
+                                        <SafeShortImage 
+                                            src={item.imageUrl} 
+                                            title={item.title}
+                                            alt={item.title} 
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {/* Play Icon Overlay for inactive slides */}
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-white/30">
+                                                <svg width="40" height="40" viewBox="0 0 24 24" fill="white" className="ml-2 drop-shadow-md">
+                                                    <path d="M5 3l14 9-14 9V3z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
                             ) : (
                                 <SafeShortImage 
                                     src={item.imageUrl} 
@@ -258,45 +309,52 @@ export default function ShortsFeed() {
                                 />
                             )}
                             
-                            {/* Type Badge (Visible mainly on articles now, or overlay on video) */}
-                            <div className="absolute top-4 left-4 flex gap-2 z-10">
-                                {item.type === 'video' ? (
-                                    <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
-                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                                         Vidéo
-                                    </span>
-                                ) : (
-                                    <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                                        Article
+                            <div className="absolute top-4 left-4 flex gap-2 z-10 flex-col">
+                                <div className="flex gap-2">
+                                    {item.type === 'video' ? (
+                                        <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                            Vidéo
+                                        </span>
+                                    ) : (
+                                        <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                                            Article
+                                        </span>
+                                    )}
+                                </div>
+                                {isRead(item.id) && (
+                                    <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm w-fit animate-in fade-in zoom-in duration-300 flex items-center gap-1">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Lu
                                     </span>
                                 )}
                             </div>
                         </div>
 
                         {/* Text Content Logic (Bottom) */}
-                        <div className="flex-1 p-8 flex flex-col relative bg-white">
+                        <div className="flex-1 p-8 flex flex-col relative bg-card text-card-foreground">
                             {/* Tags */}
                             <div className="flex flex-wrap gap-2 mb-4">
                                 {(item.tags || []).slice(0, 3).map(tag => (
-                                    <span key={tag} className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md uppercase">
+                                    <span key={tag} className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-1 rounded-md uppercase">
                                         #{tag}
                                     </span>
                                 ))}
                             </div>
 
                             {/* Title */}
-                            <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-4 line-clamp-3">
+                            <h2 className="text-2xl font-bold text-card-foreground leading-tight mb-4 line-clamp-3">
                                 {item.title}
                             </h2>
 
                             {/* Description / Excerpt */}
-                            <div className="text-lg text-gray-700 mb-6 overflow-y-auto max-h-[200px] leading-relaxed pr-2">
+                            <div className="text-lg text-muted-foreground mb-6 overflow-y-auto max-h-[200px] leading-relaxed pr-2">
                                 {item.description}
                             </div>
 
                             {/* Footer Actions */}
-                            <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                                <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                            <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                                     {item.source} • {new Date(item.date).toLocaleDateString()}
                                 </span>
 
@@ -304,7 +362,7 @@ export default function ShortsFeed() {
                                     href={item.link} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="bg-black text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-gray-800 transition-transform active:scale-95 flex items-center gap-2"
+                                    className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-transform active:scale-95 flex items-center gap-2"
                                 >
                                     {item.type === 'video' ? 'Regarder' : 'Lire'}
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

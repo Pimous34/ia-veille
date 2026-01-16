@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { X, Search, UserPlus, Trash2 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
+import { X, Search, UserPlus, Trash2, Users } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
 import { toast } from 'react-hot-toast';
 
 interface Promo {
@@ -26,20 +27,33 @@ interface Student {
 
 export default function AdminUsersPage() {
   const router = useRouter();
-  const [supabase] = useState(() => createClient());
+  const { supabase, user } = useAuth(); // Use shared client
+  // const [supabase] = useState(() => createClient()); // Removed local client creation
   const [students, setStudents] = useState<Student[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [importText, setImportText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
   const [selectedPromoId, setSelectedPromoId] = useState<string>('');
+  
+  // Modals State
+  const [isSingleModalOpen, setIsSingleModalOpen] = useState(false);
+  const [singleUserForm, setSingleUserForm] = useState({ firstName: '', lastName: '', email: '' });
+  
+  // Success Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch promos first
-      const { data: promoData } = await supabase.from('promos').select('id, name');
+      const { data: promoData, error: promoError } = await supabase.from('promos').select('id, name');
+      
+      if (promoError) throw promoError;
+
       setPromos(promoData || []);
       if (promoData && promoData.length > 0) setSelectedPromoId(promoData[0].id);
 
@@ -60,8 +74,11 @@ export default function AdminUsersPage() {
   }, [supabase]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (user?.id) {
+        // console.log("User authenticated, fetching admin data...", user.id);
+        fetchData();
+    }
+  }, [fetchData, user?.id]);
 
   const handleDeleteUser = async (id: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet apprenant ?')) {
@@ -141,7 +158,8 @@ export default function AdminUsersPage() {
             ? `${addedCount} ajouté(s), ${skippedCount} ignoré(s) (format incorrect).`
             : `${addedCount} utilisateur(s) ajouté(s) avec succès !`;
         
-        toast.success(successMsg);
+        setSuccessMessage(successMsg);
+        setShowSuccessModal(true);
         setImportText('');
         setIsModalOpen(false);
         
@@ -152,6 +170,38 @@ export default function AdminUsersPage() {
       }
     } else {
       toast.error('Aucun utilisateur valide trouvé. Format: Prénom Nom Email (séparé par espace, virgule ou point-virgule).');
+    }
+  };
+
+  const handleAddSingleUser = async () => {
+    if (!singleUserForm.firstName || !singleUserForm.lastName || !singleUserForm.email) {
+        toast.error("Veuillez remplir tous les champs.");
+        return;
+    }
+
+    if (!singleUserForm.email.includes('@')) {
+        toast.error("Adresse email invalide.");
+        return;
+    }
+
+    const { error } = await supabase
+        .from('students')
+        .insert({
+            first_name: singleUserForm.firstName,
+            last_name: singleUserForm.lastName,
+            email: singleUserForm.email,
+            promo_id: selectedPromoId || null,
+            status: 'active'
+        });
+
+    if (error) {
+        toast.error(`Erreur : ${error.message}`);
+    } else {
+        setSuccessMessage('1 utilisateur ajouté avec succès !\n\nUn mail d\'accès à Oreegam\'IA a été envoyé à son adresse.');
+        setShowSuccessModal(true);
+        setIsSingleModalOpen(false);
+        setSingleUserForm({ firstName: '', lastName: '', email: '' });
+        fetchData();
     }
   };
 
@@ -231,13 +281,22 @@ export default function AdminUsersPage() {
                     />
                 </div>
             </div>
-            <button 
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
-            >
-              <UserPlus size={18} />
-              <span>Ajouter</span>
-            </button>
+            <div className="flex gap-3">
+                <button 
+                    onClick={() => setIsSingleModalOpen(true)}
+                    className="flex items-center gap-2 bg-white text-indigo-600 border-2 border-indigo-100 px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-50 hover:border-indigo-200 transition-all"
+                >
+                    <UserPlus size={18} />
+                    <span>Ajouter un utilisateur</span>
+                </button>
+                <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+                >
+                    <Users size={18} />
+                    <span>Ajouter en masse</span>
+                </button>
+            </div>
           </div>
 
           <div className="table-container">
@@ -259,6 +318,12 @@ export default function AdminUsersPage() {
                             <div className="flex flex-col items-center gap-3">
                                 <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
                                 <span className="text-gray-500 font-medium">Chargement des apprenants...</span>
+                                <button 
+                                    onClick={() => window.location.reload()} 
+                                    className="mt-4 text-xs text-indigo-500 underline hover:text-indigo-700"
+                                >
+                                    Cela prend du temps ? Recharger la page
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -312,7 +377,7 @@ export default function AdminUsersPage() {
 
       {/* Import Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
             <div className="relative bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-scale-in">
                 <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
@@ -365,6 +430,114 @@ export default function AdminUsersPage() {
                         Démarrer l&apos;import
                     </button>
                 </div>
+            </div>
+        </div>
+      )}
+
+      {/* Add Single User Modal */}
+      {isSingleModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsSingleModalOpen(false)} />
+            <div className="relative bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-scale-in">
+                <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <div>
+                        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Nouvel Utilisateur</h3>
+                        <p className="text-sm text-gray-500 mt-1">Ajouter un seul membre à la fois.</p>
+                    </div>
+                    <button onClick={() => setIsSingleModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors shadow-sm">
+                        <X size={20} />
+                    </button>
+                </div>
+                
+                <div className="p-8 space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Prénom</label>
+                        <input 
+                            type="text" 
+                            className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 transition-colors"
+                            value={singleUserForm.firstName}
+                            onChange={(e) => setSingleUserForm({...singleUserForm, firstName: e.target.value})}
+                            placeholder="Ex: Thomas"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Nom</label>
+                        <input 
+                            type="text" 
+                            className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 transition-colors"
+                            value={singleUserForm.lastName}
+                            onChange={(e) => setSingleUserForm({...singleUserForm, lastName: e.target.value})}
+                            placeholder="Ex: Dubois"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Email</label>
+                        <input 
+                            type="email" 
+                            className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 transition-colors"
+                            value={singleUserForm.email}
+                            onChange={(e) => setSingleUserForm({...singleUserForm, email: e.target.value})}
+                            placeholder="Ex: thomas.dubois@edu-oreegami.com"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Promotion</label>
+                        <select 
+                            value={selectedPromoId}
+                            onChange={(e) => setSelectedPromoId(e.target.value)}
+                            className="w-full p-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 bg-white"
+                        >
+                            <option value="">-- Sans promotion --</option>
+                            {promos.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                    <button 
+                        onClick={() => setIsSingleModalOpen(false)}
+                        className="px-6 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-white transition-all capitalize"
+                    >
+                        Annuler
+                    </button>
+                    <button 
+                        onClick={handleAddSingleUser}
+                        className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 uppercase tracking-widest text-sm"
+                    >
+                        Ajouter ce membre
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowSuccessModal(false)} />
+            <div className="relative bg-white w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden animate-bounce-in text-center p-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                
+                <h3 className="text-xl font-black text-gray-900 mb-2">Import réussi !</h3>
+                <p className="text-gray-600 mb-6 font-medium">
+                    {successMessage}
+                </p>
+                <p className="text-indigo-600 text-sm bg-indigo-50 p-3 rounded-xl border border-indigo-100 mb-8">
+                    📧 Un mail d&apos;accès à Oreegam&apos;IA a été envoyé à leur adresse.
+                </p>
+
+                <button 
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 uppercase tracking-wide"
+                >
+                    OK, c&apos;est noté
+                </button>
             </div>
         </div>
       )}

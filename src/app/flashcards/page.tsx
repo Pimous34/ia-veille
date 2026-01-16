@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import FlashcardsClient from '@/components/FlashcardsClient';
+import FlashcardsWrapper from '@/components/FlashcardsWrapper';
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
@@ -63,7 +63,7 @@ async function FlashcardsDataFetcher({ searchParams }: { searchParams: { q?: str
   if (result.error) {
     console.error("Server Fetch Error:", result.error);
     // On error, passing empty array allows client to handle or show empty state safely
-    return <FlashcardsClient initialFlashcards={[]} initialQuery={initialQuery} />;
+    return <FlashcardsWrapper initialFlashcards={[]} initialQuery={initialQuery} />;
   }
 
   // 3. Transform Data
@@ -85,7 +85,7 @@ async function FlashcardsDataFetcher({ searchParams }: { searchParams: { q?: str
 
   const initialBatch = sortedCards.slice(0, 10);
 
-  return <FlashcardsClient initialFlashcards={initialBatch} initialQuery={initialQuery} />;
+  return <FlashcardsWrapper initialFlashcards={initialBatch} initialQuery={initialQuery} />;
 }
 
 

@@ -16,11 +16,18 @@ export default function AdminDashboard() {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside className="sidebar">
-        <Link href="/" className="sidebar-header group">
-          <div className="logo-placeholder group-hover:scale-110 transition-transform">
-            <Image src="/logo.png" alt="OreegamIA" width={40} height={40} className="logo-img" />
+        <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
+          <div className="relative w-full h-16 flex justify-center">
+            <Image
+              src="/logo.png"
+              alt="OREEGAM'IA"
+              fill
+              className="object-contain drop-shadow-sm"
+              priority
+              unoptimized
+            />
           </div>
-          <div className="logo-text">ADMIN</div>
+          <div className="text-xs font-bold tracking-widest text-indigo-300 uppercase">Administration</div>
         </Link>
 
         <nav className="sidebar-nav">
@@ -57,11 +64,8 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <main className="main-content">
-        <div className="top-bar">
-          <h1 className="page-title">Tableau de Bord</h1>
-          <button onClick={handleLogout} className="logout-btn">
-            Déconnexion
-          </button>
+        <div className="top-bar mt-56">
+          <h1 className="page-title text-pink-500">Tableau de Bord</h1>
         </div>
 
         <div className="welcome-banner">
@@ -83,27 +87,27 @@ export default function AdminDashboard() {
             <h2 className="section-title">Retours Utilisateurs</h2>
           </div>
           <div className="feedback-grid">
-            <FeedbackCard 
-              type="Bug" 
-              date="Il y a 2h" 
-              content="Impossible de changer mon mot de passe, ça charge à l'infini..." 
-              author="Thomas Dubois" 
+            <FeedbackCard
+              type="Bug"
+              date="Il y a 2h"
+              content="Impossible de changer mon mot de passe, ça charge à l'infini..."
+              author="Thomas Dubois"
               initials="TD"
               statusClass="bug"
             />
-            <FeedbackCard 
-              type="Suggestion" 
-              date="Hier" 
-              content="Ce serait super d'avoir un mode sombre pour lire les articles le soir !" 
-              author="Marie Lefebvre" 
+            <FeedbackCard
+              type="Suggestion"
+              date="Hier"
+              content="Ce serait super d'avoir un mode sombre pour lire les articles le soir !"
+              author="Marie Lefebvre"
               initials="ML"
               statusClass="suggestion"
             />
-            <FeedbackCard 
-              type="Contenu" 
-              date="05 Jan" 
-              content="L'article sur Make.com est top, merci pour les détails !" 
-              author="Julien Simon" 
+            <FeedbackCard
+              type="Contenu"
+              date="05 Jan"
+              content="L'article sur Make.com est top, merci pour les détails !"
+              author="Julien Simon"
               initials="JS"
               statusClass="content"
             />
@@ -145,54 +149,54 @@ export default function AdminDashboard() {
 }
 
 function StatCard({ icon, title, value, trend }: { icon: string, title: string, value: string, trend: string }) {
-    return (
-        <div className="stat-card">
-            <div className="stat-icon">{icon}</div>
-            <div className="stat-info">
-                <p className="stat-label">{title}</p>
-                <p className="stat-value">{value}</p>
-            </div>
-            <div className={`stat-trend ${trend.startsWith('+') ? 'up' : 'down'}`}>
-                {trend}
-            </div>
-        </div>
-    );
+  return (
+    <div className="stat-card">
+      <div className="stat-icon">{icon}</div>
+      <div className="stat-info">
+        <p className="stat-label">{title}</p>
+        <p className="stat-value">{value}</p>
+      </div>
+      <div className={`stat-trend ${trend.startsWith('+') ? 'up' : 'down'}`}>
+        {trend}
+      </div>
+    </div>
+  );
 }
 
 function FeedbackCard({ type, date, content, author, initials, statusClass }: { type: string, date: string, content: string, author: string, initials: string, statusClass: string }) {
-    return (
-        <div className="feedback-card">
-            <div className="feedback-header">
-                <span className={`status-badge ${statusClass}`}>{type}</span>
-                <span className="feedback-date">{date}</span>
-            </div>
-            <p className="feedback-content">&quot;{content}&quot;</p>
-            <div className="feedback-author">
-                <div className="author-avatar">{initials}</div>
-                <span className="author-name">{author}</span>
-            </div>
-        </div>
-    );
+  return (
+    <div className="feedback-card">
+      <div className="feedback-header">
+        <span className={`status-badge ${statusClass}`}>{type}</span>
+        <span className="feedback-date">{date}</span>
+      </div>
+      <p className="feedback-content">&quot;{content}&quot;</p>
+      <div className="feedback-author">
+        <div className="author-avatar">{initials}</div>
+        <span className="author-name">{author}</span>
+      </div>
+    </div>
+  );
 }
 
 function ArticleRow({ title, category, date, author, status, statusClass }: { title: string, category: string, date: string, author: string, status: string, statusClass: string }) {
-    return (
-        <tr>
-            <td>{title}</td>
-            <td>{category}</td>
-            <td>{date}</td>
-            <td>{author}</td>
-            <td>
-                <span className={`status-badge ${statusClass}`}>
-                    {status}
-                </span>
-            </td>
-            <td>
-                <div className="flex gap-2">
-                    <button className="text-gray-400 hover:text-indigo-600" title="Modifier">✏️</button>
-                    <button className="text-gray-400 hover:text-red-600" title="Supprimer">🗑️</button>
-                </div>
-            </td>
-        </tr>
-    );
+  return (
+    <tr>
+      <td>{title}</td>
+      <td>{category}</td>
+      <td>{date}</td>
+      <td>{author}</td>
+      <td>
+        <span className={`status-badge ${statusClass}`}>
+          {status}
+        </span>
+      </td>
+      <td>
+        <div className="flex gap-2">
+          <button className="text-gray-400 hover:text-indigo-600" title="Modifier">✏️</button>
+          <button className="text-gray-400 hover:text-red-600" title="Supprimer">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  );
 }

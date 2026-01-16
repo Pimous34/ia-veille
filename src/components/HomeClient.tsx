@@ -4,9 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useRouter } from 'next/navigation';
+
+
+// import Navbar from '@/components/Navbar'; // Removed to avoid duplication with Layout
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useReadTracking } from '@/hooks/useReadTracking';
+import { useAuth } from '@/contexts/AuthContext';
 import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
@@ -42,6 +46,7 @@ interface JtVideo {
     title?: string;
     date: string;
     article_ids?: number[];
+    script?: string;
 }
 
 interface NextCourse {
@@ -239,7 +244,9 @@ export default function HomeClient({
     initialVideosColumn
 }: HomeClientProps) {
     const router = useRouter();
-    const [supabase] = useState(() => createClient());
+    const searchParams = useSearchParams();
+    const { isRead } = useReadTracking();
+    const { supabase, user } = useAuth(); // Use shared client
     // Auth check moved to Server Component wrapper
 
     // UI State
@@ -380,8 +387,22 @@ export default function HomeClient({
         }
         fetchSubjects();
 
-    }, [jtVideo, supabase]);
+    }, [jtVideo, supabase, user]);
 
+
+
+
+    // Added Logic: Sync URL 'q' with search state
+    useEffect(() => {
+        const query = searchParams.get('q');
+        if (query && query !== searchQuery) {
+            handleSearch(query);
+        } else if (!query && searchQuery) {
+            // Optional: clear search if URL param removed, or keep it. 
+            // Letting it clear is safer for deep linking back to home.
+            handleSearch('');
+        }
+    }, [searchParams]);
 
     // --- Search Logic ---
     const handleSearch = (query: string) => {
@@ -599,7 +620,7 @@ CONSIGNES POUR METADATA :
                                         // Merge with existing results, avoiding duplicates if possible (simple append for now)
                                         setSearchResultVideos(prev => {
                                             const existingIds = new Set(prev.map(p => p.id));
-                                            const uniqueNew = mappedDbVideos.filter(n => !existingIds.has(n.id));
+                                            const uniqueNew = mappedDbVideos.filter((n: any) => !existingIds.has(n.id));
                                             return [...prev, ...uniqueNew];
                                         });
                                     }
@@ -700,24 +721,34 @@ CONSIGNES POUR METADATA :
             }
             isNavigatingRef.current = false;
         } else {
-            // Play jingle for initial load
-            video.src = jingleUrl;
-            video.playsInline = true;
-            video.muted = true; // Start muted for autoplay
+            // Play jingle for initial load IF valid AND not already playing
+            if (jingleUrl && !jingleUrl.endsWith('#')) {
+                // Check if already playing Jingle to avoid interruption
+                if (!video.src.includes('Jingle.mp4')) {
+                    video.src = jingleUrl;
+                    video.playsInline = true;
+                    video.muted = true; // Start muted for autoplay
 
-            video.addEventListener('ended', handleEnded);
+                    video.addEventListener('ended', handleEnded);
 
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    // Autoplay failed
-                });
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch((e) => {
+                            console.warn("Autoplay/Jingle prevented:", e);
+                        });
+                    }
+                }
+            } else if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
+                // Fallback direct play if jingle invalid but main video exists
+                video.src = mainVideoUrl;
             }
         }
 
         return () => {
-            video.removeEventListener('ended', handleEnded);
-            video.removeEventListener('click', handleUnmute);
+            if (video) {
+                video.removeEventListener('ended', handleEnded);
+                video.removeEventListener('click', handleUnmute);
+            }
         };
     }, [jtVideo]);
 
@@ -735,14 +766,10 @@ CONSIGNES POUR METADATA :
     };
 
 
-
-
-
-
     return (
         <>
             <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-                <Navbar onSearch={handleSearch} />
+                {/* <Navbar onSearch={handleSearch} /> */}
 
                 <main className="main-content grow pt-20 !ml-0">
                     {/* Hero Section */}
@@ -882,11 +909,19 @@ CONSIGNES POUR METADATA :
                                                 </div>
                                             </div>
                                             <div id="format-text" className={`format-content ${activeFormat === 'text' ? 'active' : ''}`} style={activeFormat !== 'text' ? { display: 'none' } : {}}>
-                                                <div className="placeholder-content text-mode">
-                                                    <h3>Transcription du JT</h3>
-                                                    <p><strong>00:00</strong> - Introduction et sommaire...</p>
-                                                    <p><strong>01:15</strong> - L&apos;IA générative bouleverse le marché...</p>
-                                                    <button className="read-more-btn">Lire la transcription complète</button>
+                                                <div className="text-format-content" style={{ height: '100%', overflowY: 'auto', padding: '2rem', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '1.1rem', lineHeight: '1.8', whiteSpace: 'pre-wrap', textAlign: 'justify', hyphens: 'auto' }}>
+                                                    {jtVideo?.script ? (
+                                                        <>
+                                                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Transcription du JT</h3>
+                                                            <div className="script-content">
+                                                                {jtVideo.script.replace(/<break[^>]*>/g, '\n\n')}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="placeholder-content">
+                                                            <p>Le script de ce JT n&apos;est pas encore disponible.</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -925,15 +960,14 @@ CONSIGNES POUR METADATA :
                                             </div>
                                         )}
                                     </div>
-                                )
-                                }
+                                )}
                                 {/* End Search Rendering */}
 
                                 <div className="articles-column">
                                     <div className="vignettes-container" style={{ gap: '2.5rem' }}> {/* Increased internal gap */}
                                         {/* Sujets du JT Column */}
                                         <div className="vignette-column" style={{ gap: '1rem' }}>
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
                                                 {isSearching ? "Actualités liées" : "Sujets du JT"}
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
@@ -969,7 +1003,7 @@ CONSIGNES POUR METADATA :
 
                                         {/* Vidéos Column (formerly Tutos) */}
                                         <div className="vignette-column">
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
                                                 {isSearching ? "Vidéos liées" : "Vidéos"}
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
@@ -1022,7 +1056,9 @@ CONSIGNES POUR METADATA :
 
                                         {/* Infos Column */}
                                         <div className="vignette-column" style={{ gap: '1rem' }}>
-                                            <h3 className="text-lg font-bold text-[#1e1b4b] mb-2 pb-2 border-b-2 border-indigo-900/10">Infos</h3>
+                                            <h3 className="text-lg font-bold mb-2 pb-2 border-b-2 border-border text-transparent bg-clip-text bg-gradient-to-br from-[#FF6B9D] via-[#9C27B0] to-[#2196F3]">
+                                                Infos
+                                            </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
                                                 {nextCourse ? (
                                                     <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
@@ -1089,7 +1125,7 @@ CONSIGNES POUR METADATA :
                             <div className="articles-grid">
                                 {trendingArticles.map(article => (
                                     <article key={article.id} className="article-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
-                                        <div className="article-image-container relative h-48 w-full">
+                                        <div className="article-image-container relative h-48 w-full group">
                                             <Image
                                                 src={article.image}
                                                 alt={article.title}
@@ -1097,6 +1133,50 @@ CONSIGNES POUR METADATA :
                                                 className="article-image object-cover"
                                                 unoptimized
                                             />
+
+                                            {/* Action Buttons */}
+                                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        alert('Article sauvegardé !');
+                                                    }}
+                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
+                                                    aria-label="Sauvegarder"
+                                                    title="Sauvegarder"
+                                                >
+                                                    <svg
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        className="w-5 h-5"
+                                                    >
+                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                                    </svg>
+                                                </button>
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        alert('Ajouté à "À regarder plus tard" !');
+                                                    }}
+                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
+                                                    aria-label="À regarder plus tard"
+                                                    title="À regarder plus tard"
+                                                >
+                                                    <svg
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        className="w-5 h-5"
+                                                    >
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="article-content">
                                             {article.tags && (
@@ -1106,7 +1186,7 @@ CONSIGNES POUR METADATA :
                                                     ))}
                                                 </div>
                                             )}
-                                            <h3 className="article-title">{article.title}</h3>
+                                            <h3 className="article-title line-clamp-3" title={article.title}>{article.title}</h3>
                                             <div className="article-meta">
                                                 <span className="article-date">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

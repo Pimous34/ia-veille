@@ -267,7 +267,7 @@ async function createDIDVideo(_script: string, presenterImageUrl: string): Promi
       input: _script,
       provider: {
         type: 'microsoft',
-        voice_id: 'fr-FR-DeniseNeural', // Voix française féminine professionnelle
+        voice_id: 'fr-FR-VivienneMultilingualNeural', // Voix Vivienne Dragon HD Lat (Multilingual Neural)
       },
     },
     config: {

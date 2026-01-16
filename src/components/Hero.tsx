@@ -39,9 +39,9 @@ const Hero = () => {
   const { user } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
-  const [newsItems, setNewsItems] = useState<Array<{title: string; url: string}>>([]);
+  const [newsItems, setNewsItems] = useState<Array<{ title: string; url: string }>>([]);
   const [isLoadingJT, setIsLoadingJT] = useState(true);
-  
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<Player | null>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
@@ -66,7 +66,7 @@ const Hero = () => {
     const loadDailyJT = async () => {
       try {
         setIsLoadingJT(true);
-        
+
         // Récupérer les JT complétés, triés par date décroissante
         const { data: jts, error } = await supabase
           .from('daily_news_videos')
@@ -90,7 +90,7 @@ const Hero = () => {
               title: jt.title,
             }
           }));
-          
+
           setPlaylist(jtPlaylist);
 
           // Créer les news items pour la liste
@@ -147,16 +147,16 @@ const Hero = () => {
         const currentPlayer = playerRef.current;
         if (currentPlayer) {
           const currentSrc = currentPlayer.currentSrc();
-          
+
           // Check if we just finished the jingle
           // Use includes to be safer against slight URL variations
           if (currentSrc === jingleUrl || currentSrc.includes('jingle.mp4')) {
             const nextVideo = currentVideoRef.current;
             if (nextVideo && nextVideo.src) {
-                currentPlayer.src({ type: 'video/mp4', src: nextVideo.src });
-                currentPlayer.loop(true); // Loop the main video
-                currentPlayer.load(); // Ensure the new source is loaded
-                currentPlayer.play()?.catch(e => console.error('Error playing main video:', e));
+              currentPlayer.src({ type: 'video/mp4', src: nextVideo.src });
+              currentPlayer.loop(true); // Loop the main video
+              currentPlayer.load(); // Ensure the new source is loaded
+              currentPlayer.play()?.catch(e => console.error('Error playing main video:', e));
             }
           }
         }
@@ -168,7 +168,7 @@ const Hero = () => {
     if (player) {
       // Reset loop state for jingle
       player.loop(false);
-      
+
       // Play Jingle first
       player.src({ type: 'video/mp4', src: jingleUrl });
       player.play()?.catch(e => console.log('Autoplay prevented:', e));
@@ -204,7 +204,7 @@ const Hero = () => {
       if (nextIndex >= 0 && nextIndex < playlist.length) {
         setIsTransitioning(true);
         setCurrentVideoIndex(nextIndex);
-        
+
         // Simple timeout to debounce rapid scrolls
         setTimeout(() => {
           setIsTransitioning(false);
@@ -236,7 +236,7 @@ const Hero = () => {
         // Mobile Landscape: Fit video within viewport height
         const height = viewportHeight - 20; // Small buffer
         setHeroHeight(height);
-        
+
         // Calculate width to maintain aspect ratio
         const width = height * ASPECT_RATIO;
         setHeroWidth(width);
@@ -254,7 +254,7 @@ const Hero = () => {
           // On desktop, the video is in a 4/12 (1/3) column of a max-w-7xl container
           const containerWidth = Math.min(window.innerWidth, 1280); // 7xl is approx 1280px
           const columnWidth = (containerWidth * 0.33) - 32; // 33% width minus padding
-          
+
           const maxWidth = Math.max(columnWidth, 300);
           setHeroWidth(Math.min(widthFromHeight, maxWidth));
         }
@@ -281,7 +281,7 @@ const Hero = () => {
     };
   }, []);
 
-  const handleInteraction = async (type: 'share' | 'like' | 'watch_later') => {
+  const handleInteraction = async (type: 'share' | 'like' | 'watch_later' | 'save') => {
     if (!user) {
       setIsLoginModalOpen(true);
       return;
@@ -292,6 +292,11 @@ const Hero = () => {
     } else {
       // Placeholder for other actions
       console.log(`${type} clicked by user ${user.email}`);
+      showShareFeedback(
+        type === 'save' ? 'Article sauvegardé !' :
+          type === 'watch_later' ? 'Ajouté à "À regarder plus tard" !' :
+            type === 'like' ? 'Merci pour votre retour !' : ''
+      );
     }
   };
 
@@ -346,9 +351,9 @@ const Hero = () => {
 
   return (
     <section className="pt-20 md:pt-24 pb-0 mt-0">
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
       />
       <div className="w-full px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 max-w-7xl mx-auto items-center">
@@ -395,8 +400,24 @@ const Hero = () => {
                 </video>
                 <div className="pointer-events-none absolute inset-x-2 bottom-16 flex flex-wrap items-end justify-center gap-2">
                   <button
+                    onClick={() => handleInteraction('save')}
+                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-pink-500 hover:text-white"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="w-4 h-4"
+                      aria-hidden="true"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span className="whitespace-nowrap">Sauvegarder</span>
+                  </button>
+                  <button
                     onClick={() => handleInteraction('watch_later')}
-                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-white"
+                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-pink-500 hover:text-white"
                   >
                     <span aria-hidden="true">⏱️</span>
                     <span className="whitespace-nowrap">Regarder plus tard</span>
