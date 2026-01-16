@@ -1197,12 +1197,7 @@ CONSIGNES POUR METADATA :
                                                     ))}
                                                 </div>
                                             )}
-                                            <h3 className="article-title line-clamp-2" title={article.title}>{article.title}</h3>
-                                            {article.excerpt && (
-                                                <p className="article-excerpt line-clamp-3 mb-4 text-sm text-muted-foreground">
-                                                    {article.excerpt}
-                                                </p>
-                                            )}
+                                            <h3 className="article-title line-clamp-3" title={article.title}>{article.title}</h3>
                                             <div className="article-meta">
                                                 <span className="article-date">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
