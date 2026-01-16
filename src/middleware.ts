@@ -74,6 +74,48 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // AUTHORIZATION CHECK
+  // check if user is allowed (must be in 'students' or 'admins' table)
+  // Skip this check on /auth pages to avoid infinite redirects if the user is logged in but unauthorized
+  if (user && user.email && !request.nextUrl.pathname.startsWith('/auth')) {
+    // Check 'students' table
+    const { count: studentCount } = await supabase
+      .from('students')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', user.email);
+
+    // Check 'admins' table
+    const { count: adminCount } = await supabase
+      .from('admins')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', user.email);
+
+    const isAllowed = (studentCount && studentCount > 0) || (adminCount && adminCount > 0);
+
+    if (!isAllowed) {
+      console.warn(`Unauthorized access attempt by ${user.email}`);
+      // Force signout (optional but safer to clear session)
+      await supabase.auth.signOut();
+      
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth'
+      url.searchParams.set('error', 'unauthorized')
+      return NextResponse.redirect(url)
+    }
+
+    // ADMIN ROUTE PROTECTION
+    // Only allow users in 'admins' table to access /admin routes
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+      const isAdmin = adminCount && adminCount > 0;
+      if (!isAdmin) {
+        console.warn(`Non-admin user ${user.email} attempted to access admin area`);
+        const url = request.nextUrl.clone();
+        url.pathname = '/'; // Redirect to home page
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return response
 }
 

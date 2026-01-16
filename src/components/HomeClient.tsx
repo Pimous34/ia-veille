@@ -142,38 +142,7 @@ const fallbackJtArticles: Article[] = [
     }
 ];
 
-const fallbackCoursePrepArticles: Article[] = [
-    {
-        id: 8,
-        title: "Les fondamentaux de l'IA pour débutants",
-        excerpt: "Comprendre les bases de l'intelligence artificielle avant de plonger dans les outils avancés.",
-        category: "IA",
-        tags: ["ChatGPT", "Gemini"],
-        date: "2024-01-17",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
-    },
-    {
-        id: 9,
-        title: "Premiers pas avec les prompts efficaces",
-        excerpt: "Apprenez à formuler des prompts qui donnent des résultats précis et pertinents.",
-        category: "IA",
-        tags: ["ChatGPT", "Claude"],
-        date: "2024-01-17",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1676299080923-6c98c0cf4e48?w=800"
-    },
-    {
-        id: 10,
-        title: "Introduction aux outils No-Code",
-        excerpt: "Découvrez les plateformes No-Code les plus populaires et leurs cas d'usage.",
-        category: "No-Code",
-        tags: ["Bubble", "Webflow"],
-        date: "2024-01-16",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"
-    }
-];
+
 
 // --- Helper Components ---
 
@@ -267,7 +236,7 @@ export default function HomeClient({
     /* ---------------------- STATE ---------------------- */
     const [activeTab, setActiveTab] = useState('tous');
     const [trendingArticles, setTrendingArticles] = useState<Article[]>(initialArticles || []);
-    const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]); // Assuming this needs separate logic or filter from articles
+
     const [tutorials, setTutorials] = useState<Tutorial[]>(initialTutorials || []);
 
     // JT & AI States
@@ -1236,36 +1205,7 @@ CONSIGNES POUR METADATA :
                     </section>
 
                     {/* Course Prep */}
-                    <section className="course-prep-section" id="courseprep">
-                        <div className="container">
-                            <h2 className="section-title">Préparez le prochain cours</h2>
-                            <p className="section-subtitle">Articles recommandés pour bien démarrer votre prochaine session de formation</p>
-                            <div className="articles-grid">
-                                {coursePrepArticles.map(article => (
-                                    <article key={article.id} className="article-card" onClick={() => article.link && window.open(article.link, '_blank')}>
-                                        <div className="article-image-container relative h-48 w-full">
-                                            <Image
-                                                src={article.image}
-                                                alt={article.title}
-                                                fill
-                                                className="article-image object-cover"
-                                                unoptimized
-                                            />
-                                        </div>
-                                        <div className="article-content">
-                                            <div className="article-tags">
-                                                {article.category && <span className="article-tag">{article.category}</span>}
-                                            </div>
-                                            <h3 className="article-title">{article.title}</h3>
-                                            <div className="article-meta">
-                                                <span className="article-link">Lire →</span>
-                                            </div>
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
+
 
                 </main>
 
