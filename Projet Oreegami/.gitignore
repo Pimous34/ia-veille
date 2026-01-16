@@ -16,6 +16,7 @@ node_modules/
 
 # Editor directories
 .vscode/
+!.vscode/settings.json
 .idea/
 
 # Build output
