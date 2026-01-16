@@ -177,6 +177,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 <Link href="/#tutos" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Tutos</Link>
                 <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Se former</Link>
                 <Link href="/shorts" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
+                <Link href="/events" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Evènements</Link>
               </div>
 
               {/* Search Icon (Legacy - Kept for layout balance or future use) */}
@@ -421,6 +422,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 <Link href="/#tutos" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Tutos</Link>
                 <Link href="/flashcards" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Se former</Link>
                 <Link href="/shorts" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">ShortNews</Link>
+                <Link href="/events" onClick={() => setIsMenuOpen(false)} className="block py-2.5 px-3 rounded-lg hover:bg-gray-50 text-gray-800 font-medium">Evènements</Link>
 
                 {user && (
                   <button onClick={handleLogout} className="block w-full text-left py-2.5 px-3 mt-4 text-red-600 font-medium border-t border-gray-100">
