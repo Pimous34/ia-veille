@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useReadTracking } from '@/hooks/useReadTracking';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
@@ -15,6 +16,7 @@ interface NavbarProps {
 const Navbar = ({ onSearch }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, supabase } = useAuth();
+  const { readIds } = useReadTracking();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -297,8 +299,40 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                 </Link>
               )
             )}
-            <div className="flex justify-center mt-1">
-              <Image src="/penguin_test.png" alt="Test Penguin" width={40} height={40} unoptimized />
+            {/* Gamification Badge Strip */}
+            <div className="flex flex-col items-center mt-2 group/badge relative">
+              <div className="transition-all duration-500 transform hover:scale-110">
+                {(() => {
+                  const count = readIds?.length || 0;
+                  let badge = { src: '/gamification/egg.png', label: 'Apprenti (Œuf)', next: 2 };
+
+                  if (count >= 26) badge = { src: '/gamification/lion.png', label: 'Maître IA (Lion)', next: 100 };
+                  else if (count >= 13) badge = { src: '/gamification/owl.png', label: 'Sage (Hibou)', next: 26 };
+                  else if (count >= 6) badge = { src: '/gamification/fox.png', label: 'Futé (Renard)', next: 13 };
+                  else if (count >= 2) badge = { src: '/gamification/penguin.png', label: 'Explorateur (Pingouin)', next: 6 };
+
+                  return (
+                    <>
+                      <Image
+                        src={badge.src}
+                        alt={badge.label}
+                        width={isScrolled ? 35 : 45}
+                        height={isScrolled ? 35 : 45}
+                        className="drop-shadow-md"
+                        unoptimized
+                      />
+                      {/* Tooltip on Hover */}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-gray-800 text-white text-[10px] rounded-lg opacity-0 group-hover/badge:opacity-100 transition-opacity whitespace-nowrap shadow-xl z-[110] pointer-events-none">
+                        <p className="font-bold">{badge.label}</p>
+                        <p className="text-gray-300">{count} article{count > 1 ? 's' : ''} lu{count > 1 ? 's' : ''}</p>
+                        {badge.next < 100 && (
+                          <p className="text-indigo-300 mt-1 border-t border-gray-600 pt-1">Prochain : {badge.next} articles</p>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
