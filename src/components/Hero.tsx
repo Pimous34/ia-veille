@@ -417,7 +417,7 @@ const Hero = () => {
                   </button>
                   <button
                     onClick={() => handleInteraction('watch_later')}
-                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-white"
+                    className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-900 shadow-lg backdrop-blur transition hover:bg-pink-500 hover:text-white"
                   >
                     <span aria-hidden="true">⏱️</span>
                     <span className="whitespace-nowrap">Regarder plus tard</span>

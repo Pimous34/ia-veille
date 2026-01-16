@@ -396,11 +396,11 @@ export default function HomeClient({
     useEffect(() => {
         const query = searchParams.get('q');
         if (query && query !== searchQuery) {
-             handleSearch(query);
+            handleSearch(query);
         } else if (!query && searchQuery) {
-             // Optional: clear search if URL param removed, or keep it. 
-             // Letting it clear is safer for deep linking back to home.
-             handleSearch('');
+            // Optional: clear search if URL param removed, or keep it. 
+            // Letting it clear is safer for deep linking back to home.
+            handleSearch('');
         }
     }, [searchParams]);
 
@@ -723,24 +723,24 @@ CONSIGNES POUR METADATA :
         } else {
             // Play jingle for initial load IF valid AND not already playing
             if (jingleUrl && !jingleUrl.endsWith('#')) {
-                 // Check if already playing Jingle to avoid interruption
-                 if (!video.src.includes('Jingle.mp4')) {
+                // Check if already playing Jingle to avoid interruption
+                if (!video.src.includes('Jingle.mp4')) {
                     video.src = jingleUrl;
                     video.playsInline = true;
                     video.muted = true; // Start muted for autoplay
-    
+
                     video.addEventListener('ended', handleEnded);
-    
+
                     const playPromise = video.play();
                     if (playPromise !== undefined) {
                         playPromise.catch((e) => {
                             console.warn("Autoplay/Jingle prevented:", e);
                         });
                     }
-                 }
+                }
             } else if (mainVideoUrl && mainVideoUrl !== '#' && mainVideoUrl.startsWith('http')) {
                 // Fallback direct play if jingle invalid but main video exists
-                 video.src = mainVideoUrl;
+                video.src = mainVideoUrl;
             }
         }
 
@@ -773,7 +773,7 @@ CONSIGNES POUR METADATA :
     return (
         <>
             <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
-                {/* <Navbar onSearch={handleSearch} /> */ }
+                {/* <Navbar onSearch={handleSearch} /> */}
 
                 <main className="main-content grow pt-20 !ml-0">
                     {/* Hero Section */}
@@ -1170,7 +1170,7 @@ CONSIGNES POUR METADATA :
                                                         e.stopPropagation();
                                                         alert('Ajouté à "À regarder plus tard" !');
                                                     }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-indigo-600 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
+                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
                                                     aria-label="À regarder plus tard"
                                                     title="À regarder plus tard"
                                                 >
