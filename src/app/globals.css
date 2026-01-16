@@ -13,65 +13,88 @@ html {
     box-sizing: border-box;
 }
 
-:root {
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+ 
+    --radius: 0.5rem;
+    
+    /* Legacy variables for backward compatibility */
     --primary-color: #2563eb;
-    --secondary-color: #1e40af;
     --text-color: #1f2937;
-    --text-light: #6b7280;
-    --bg-color: #ffffff;
     --bg-light: #f9fafb;
     --border-color: #e5e7eb;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
-    /* Logo Colors */
-    --logo-blue-dark: #1A237E;
-    --logo-blue-light: #81D4FA;
-    --logo-pink: #FF6B9D;
-    --logo-purple: #9C27B0;
-    --logo-blue: #2196F3;
-    --logo-orange: #FF9800;
-    --logo-yellow: #FFEB3B;
-
-    /* Admin Styles */
-    --sidebar-width: 260px;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --brand-pink: #FF6B9D;
-    --brand-purple: #9C27B0;
-    --brand-blue: #2196F3;
-    --brand-orange: #FF9800;
-}
-
-/* Force light background by default if not set */
-@layer utilities {
-  .pulse-indigo {
-    animation: pulse-indigo 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-
-  @keyframes pulse-indigo {
-    0%, 100% {
-      opacity: 1;
-      box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
-    }
-    50% {
-      opacity: .8;
-      box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
-    }
-  }
-
-  @keyframes scale-in {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-
-  .animate-scale-in {
-    animation: scale-in 0.2s ease-out forwards;
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    
+    /* Legacy override for dark mode */
+    --text-color: #f9fafb;
+    --bg-light: #000000;
   }
 }
+ 
 
-body {
-    background-color: var(--bg-light);
-    color: var(--text-color);
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 html {
@@ -81,35 +104,24 @@ html {
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
-    color: var(--text-color);
-    background-color: var(--bg-light);
-    background-image:
-        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(30, 64, 175, 0.05) 0%, transparent 40%);
-    background-attachment: fixed;
-}
 
 .container {
     width: 100%;
-    margin-inline: auto; /* Modern standard for centering */
-    max-width: 1440px; /* Wider canvas for modern dashboards */
-    padding-inline: 2rem; /* 32px padding for better breathing room */
+    margin-inline: auto;
+    max-width: 1440px;
+    padding-inline: 2rem;
 }
 
 /* Header */
 .header {
-    /* Gradient matching 'Articles tendances' but subtle for glass effect */
-    /* Vibrant Glassmorphism Effect (Rainbow) */
     background: linear-gradient(135deg, rgba(255, 235, 59, 0.15) 0%, rgba(255, 152, 0, 0.15) 25%, rgba(255, 107, 157, 0.15) 50%, rgba(156, 39, 176, 0.15) 75%, rgba(33, 150, 243, 0.15) 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    /* 3D Effect Borders - High Contrast for Bevel */
     border-top: 2px solid rgba(255, 255, 255, 0.8);
     border-left: 2px solid rgba(255, 255, 255, 0.8);
     border-bottom: 2px solid rgba(21, 101, 192, 0.5);
     border-right: 2px solid rgba(21, 101, 192, 0.5);
-
     position: fixed;
     top: 20px;
     left: 0;
@@ -119,12 +131,8 @@ body {
     z-index: 100;
     padding: 0.5rem 20px;
     width: 100%;
-    /* Strict alignment with main content */
-    /* max-width: 1200px; Disabled for wider screens */
     border-radius: 50px;
 }
-
-.header-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
