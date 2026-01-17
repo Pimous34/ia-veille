@@ -1103,6 +1103,18 @@ CONSIGNES POUR METADATA :
                                                 unoptimized
                                             />
 
+                                            {/* Read Badge */}
+                                            {isRead(article.id) && (
+                                                <div className="absolute top-2 left-2 z-10">
+                                                    <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg flex items-center gap-1 animate-in fade-in zoom-in duration-300">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                        </svg>
+                                                        Lu
+                                                    </span>
+                                                </div>
+                                            )}
+
                                             {/* Action Buttons */}
                                             <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                 <button
