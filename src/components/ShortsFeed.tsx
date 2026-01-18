@@ -8,16 +8,16 @@ import { useReadTracking } from '@/hooks/useReadTracking';
 
 // --- Types ---
 interface ShortItem {
-  id: string | number;
-  type: 'article' | 'video';
-  title: string;
-  description?: string; // resume_ia, excerpt, etc.
-  imageUrl: string;
-  date: string;
-  source?: string;
-  link: string;
-  tags: string[];
-  originalData?: any; // Keep original data for actions like save
+    id: string | number;
+    type: 'article' | 'video';
+    title: string;
+    description?: string; // resume_ia, excerpt, etc.
+    imageUrl: string;
+    date: string;
+    source?: string;
+    link: string;
+    tags: string[];
+    originalData?: any; // Keep original data for actions like save
 }
 
 // --- Helper: Deterministic Image ---
@@ -69,10 +69,10 @@ const SafeShortImage = ({ src, alt, title, className, isBackground = false }: { 
     if (isBackground && hasError) return null; // Logic from original: hide bg if fail
 
     return (
-        <img 
-            src={imgSrc || getDeterministicImage(title)} 
-            alt={alt} 
-            className={className} 
+        <img
+            src={imgSrc || getDeterministicImage(title)}
+            alt={alt}
+            className={className}
             onError={handleError}
         />
     );
@@ -87,7 +87,7 @@ export default function ShortsFeed() {
     const searchParams = useSearchParams();
     const initialId = searchParams.get('id');
     const [supabase] = useState(() => createClient());
-    
+
     // Read Tracking
     const { markAsRead, isRead } = useReadTracking();
     const [activeIndex, setActiveIndex] = useState(0);
@@ -108,11 +108,16 @@ export default function ShortsFeed() {
     const startTracking = (index: number) => {
         stopTracking();
         console.log(`Starting read tracking for item index ${index} (ID: ${items[index]?.id})`);
-        
+
         timerRef.current = setTimeout(() => {
             if (items[index]) {
                 console.log(`Marking item ${items[index].id} as read`);
-                markAsRead(items[index].id);
+                const item = items[index];
+                markAsRead(item.id, {
+                    title: item.title,
+                    category: item.type === 'video' ? 'Vidéo' : 'Article',
+                    tags: item.tags
+                }, 7);
             }
         }, 7000); // 7 seconds
     };
@@ -145,7 +150,7 @@ export default function ShortsFeed() {
                 .from('sources')
                 .select('id')
                 .in('name', videoSourceNames);
-            
+
             const videoSourceIds = videoSources?.map(s => s.id) || [];
 
             // 2. Fetch Content
@@ -165,25 +170,25 @@ export default function ShortsFeed() {
 
             // Handle Initial ID (Specific Article)
             if (initialId) {
-                 const exists = mixedContent.find(item => item.id.toString() === initialId);
-                 if (!exists) {
-                     // Fetch specific item if not in the random batch
-                     const { data: specificItem } = await supabase
+                const exists = mixedContent.find(item => item.id.toString() === initialId);
+                if (!exists) {
+                    // Fetch specific item if not in the random batch
+                    const { data: specificItem } = await supabase
                         .from('articles')
                         .select('*')
                         .eq('id', initialId)
                         .single();
-                     
-                     if (specificItem) {
-                         mixedContent = [specificItem, ...mixedContent];
-                     }
-                 }
+
+                    if (specificItem) {
+                        mixedContent = [specificItem, ...mixedContent];
+                    }
+                }
             }
 
             // 3. Separate & Verify Items
             const formattedItems: ShortItem[] = mixedContent.map(item => {
                 const isVideo = videoSourceIds.includes(item.source_id);
-                
+
                 // For videos, try to get a better high-res thumb
                 let imageUrl = item.image_url;
                 if (isVideo && item.url) {
@@ -216,7 +221,7 @@ export default function ShortsFeed() {
 
             // Construct final list
             const finalItems = firstItem ? [firstItem, ...otherItems] : otherItems;
-            
+
             setItems(finalItems);
 
         } catch (error) {
@@ -228,7 +233,7 @@ export default function ShortsFeed() {
 
     const handleScroll = () => {
         if (!containerRef.current) return;
-        
+
         const scrollTop = containerRef.current.scrollTop;
         const itemHeight = containerRef.current.clientHeight;
         const newIndex = Math.round(scrollTop / itemHeight);
@@ -244,14 +249,14 @@ export default function ShortsFeed() {
     }
 
     return (
-        <div 
+        <div
             ref={containerRef}
             className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar bg-background text-foreground"
             onScroll={handleScroll}
             style={{ scrollSnapType: 'y mandatory' }}
         >
             {/* Close Button */}
-            <button 
+            <button
                 onClick={() => router.push('/')}
                 className="fixed top-6 left-6 z-50 p-2 bg-background/40 backdrop-blur-md rounded-full text-foreground hover:bg-background/60 transition-colors border border-border"
                 aria-label="Retour"
@@ -262,15 +267,15 @@ export default function ShortsFeed() {
             </button>
 
             {items.map((item, index) => (
-                <div 
-                    key={`${item.type}-${item.id}-${index}`} 
+                <div
+                    key={`${item.type}-${item.id}-${index}`}
                     className="w-full h-screen snap-start relative flex items-start justify-center bg-background overflow-hidden pt-28"
                 >
 
 
                     {/* Main Content Card */}
                     <div className="relative z-20 w-full max-w-2xl h-[80vh] bg-card rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 animate-in fade-in duration-500 border border-border">
-                        
+
                         {/* Image or Video Section (Top 45%) */}
                         <div className="relative h-[45%] w-full bg-black">
                             {item.type === 'video' && extractYouTubeVideoId(item.link) ? (
@@ -284,10 +289,10 @@ export default function ShortsFeed() {
                                     />
                                 ) : (
                                     <div className="relative w-full h-full">
-                                        <SafeShortImage 
-                                            src={item.imageUrl} 
+                                        <SafeShortImage
+                                            src={item.imageUrl}
                                             title={item.title}
-                                            alt={item.title} 
+                                            alt={item.title}
                                             className="w-full h-full object-cover"
                                         />
                                         {/* Play Icon Overlay for inactive slides */}
@@ -301,19 +306,19 @@ export default function ShortsFeed() {
                                     </div>
                                 )
                             ) : (
-                                <SafeShortImage 
-                                    src={item.imageUrl} 
+                                <SafeShortImage
+                                    src={item.imageUrl}
                                     title={item.title}
-                                    alt={item.title} 
+                                    alt={item.title}
                                     className="w-full h-full object-cover"
                                 />
                             )}
-                            
+
                             <div className="absolute top-4 left-4 flex gap-2 z-10 flex-col">
                                 <div className="flex gap-2">
                                     {item.type === 'video' ? (
                                         <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                                             Vidéo
                                         </span>
                                     ) : (
@@ -358,9 +363,9 @@ export default function ShortsFeed() {
                                     {item.source} • {new Date(item.date).toLocaleDateString()}
                                 </span>
 
-                                <a 
-                                    href={item.link} 
-                                    target="_blank" 
+                                <a
+                                    href={item.link}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-transform active:scale-95 flex items-center gap-2"
                                 >
