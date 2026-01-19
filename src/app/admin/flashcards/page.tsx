@@ -6,7 +6,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, CheckCircle, XCircle, Clock, Trash2, Brain, MessageSquare, AlertTriangle, Layers } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, Trash2, Brain, MessageSquare, AlertTriangle, Layers, Sparkles, Loader2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { toast } from 'react-hot-toast';
 
@@ -57,6 +57,16 @@ export default function AdminMemoCardsPage() {
   const [newCardBack, setNewCardBack] = useState('');
   const [newCardCategory, setNewCardCategory] = useState('Général');
   const [isCreating, setIsCreating] = useState(false);
+
+  // Review/Edit Modal State
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewData, setReviewData] = useState<{
+    suggestionId: string;
+    front: string;
+    back: string;
+    category: string;
+  } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // --- Fetch Logic ---
 
@@ -151,15 +161,15 @@ export default function AdminMemoCardsPage() {
             return;
         }
     } else {
-        if (!confirm('Approuver cette carte mémo ? Elle sera optimisée par l\'IA avant d\'être ajoutée.')) return;
-
+        // New interactive flow
         setLoadingSuggestions(true);
-        const loadingToast = toast.loading("Optimisation pédagogique par l'IA...");
-        
-        let frontToInsert = suggestion.front;
-        let backToInsert = suggestion.back;
+        const loadingToast = toast.loading("Optimisation pédagogique par l'IA en cours...");
 
         try {
+            // 1. Get AI Optimization first
+            let aiFront = suggestion.front;
+            let aiBack = suggestion.back;
+
             const { data: aiData, error: aiError } = await supabase.functions.invoke('process-flashcard', {
                 body: { 
                     front: suggestion.front, 
@@ -168,31 +178,30 @@ export default function AdminMemoCardsPage() {
                 }
             });
 
-            if (aiError) throw aiError;
-            if (aiData) {
-                frontToInsert = aiData.front;
-                backToInsert = aiData.back;
+            if (!aiError && aiData) {
+                aiFront = aiData.front;
+                aiBack = aiData.back;
+            } else {
+                toast.error("IA indisponible, chargement du contenu original");
             }
+
+            // 2. Open Modal for Review
+            setReviewData({
+                suggestionId: suggestion.id,
+                front: aiFront,
+                back: aiBack,
+                category: suggestion.category
+            });
+            setIsReviewModalOpen(true);
+
         } catch (err) {
-            console.error("AI Transformation failed:", err);
-            toast.error("Échec de l'optimisation IA, utilisation du texte brut.");
+            console.error("Error preparing review:", err);
+            toast.error("Erreur lors de la préparation");
         } finally {
+            setLoadingSuggestions(false);
             toast.dismiss(loadingToast);
         }
-
-        const { error: insertError } = await supabase
-          .from('flashcard_templates')
-          .insert({
-            front: frontToInsert,
-            back: backToInsert,
-            category: suggestion.category
-          });
-
-        if (insertError) {
-            toast.error("Erreur lors de l'ajout au template");
-            setLoadingSuggestions(false);
-            return;
-        }
+        return; // Stop here, wait for modal confirmation
     }
 
     const { error: updateError } = await supabase
@@ -203,9 +212,46 @@ export default function AdminMemoCardsPage() {
     if (updateError) {
       toast.error("Erreur statut");
     } else {
-      toast.success(suggestion.type === 'deletion' ? "Flashcard supprimée" : "Flashcard ajoutée");
+      toast.success("Flashcard supprimée");
       fetchSuggestions();
     }
+  };
+
+  const handleFinalApprove = async () => {
+      if (!reviewData) return;
+      
+      setIsProcessing(true);
+      try {
+        // 1. Insert into templates
+        const { error: insertError } = await supabase
+            .from('flashcard_templates')
+            .insert({
+                front: reviewData.front,
+                back: reviewData.back,
+                category: reviewData.category
+            });
+
+        if (insertError) throw insertError;
+
+        // 2. Update suggestion status
+        const { error: updateError } = await supabase
+            .from('suggested_flashcards')
+            .update({ status: 'approved' })
+            .eq('id', reviewData.suggestionId);
+            
+        if (updateError) throw updateError;
+
+        toast.success("Carte validée et ajoutée !");
+        setIsReviewModalOpen(false);
+        setReviewData(null);
+        fetchSuggestions();
+
+      } catch (error) {
+          console.error("Final approval error:", error);
+          toast.error("Erreur lors de la sauvegarde finale");
+      } finally {
+          setIsProcessing(false);
+      }
   };
 
   const handleRejectPost = async (id: string) => {
@@ -332,8 +378,8 @@ export default function AdminMemoCardsPage() {
 
       {/* Main Content */}
       <main className="main-content">
-        <div className="top-bar">
-          <h1 className="page-title">Gestion des Cartes Mémo</h1>
+        <div className="top-bar mt-12">
+          <h1 className="page-title text-pink-500">Gestion des Cartes Mémo</h1>
           <div className="flex items-center gap-4">
               <button 
                 onClick={() => setIsCreateModalOpen(true)}
@@ -586,6 +632,122 @@ export default function AdminMemoCardsPage() {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    )}
+
+    {/* Review Modal */}
+    {isReviewModalOpen && reviewData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsReviewModalOpen(false)} />
+            <div className="relative bg-white w-full max-w-4xl rounded-[32px] shadow-2xl overflow-hidden animate-scale-in flex flex-col max-h-[90vh]">
+                <div className="px-8 py-6 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-black text-indigo-900 flex items-center gap-2">
+                            <Sparkles className="text-indigo-600" size={24} />
+                            Validation & Édition IA
+                        </h2>
+                        <p className="text-indigo-600 text-sm font-medium">L&apos;IA a optimisé le contenu. Vérifiez et modifiez si besoin.</p>
+                    </div>
+                    <button 
+                        onClick={() => setIsReviewModalOpen(false)}
+                        className="p-2 hover:bg-white/50 rounded-full transition-colors text-indigo-400 hover:text-indigo-900"
+                    >
+                        <XCircle size={24} />
+                    </button>
+                </div>
+                
+                <div className="p-8 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Editor Side */}
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 ml-1">
+                                    <Brain size={14} /> Question (Recto)
+                                </label>
+                                <textarea 
+                                    value={reviewData.front}
+                                    onChange={(e) => setReviewData({...reviewData, front: e.target.value})}
+                                    className="w-full px-5 py-4 bg-white border-2 border-gray-100 focus:border-indigo-500 rounded-2xl outline-none transition-all min-h-[120px] font-bold text-lg text-gray-800 shadow-sm"
+                                />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 ml-1">
+                                    <MessageSquare size={14} /> Réponse (Verso)
+                                </label>
+                                <textarea 
+                                    value={reviewData.back}
+                                    onChange={(e) => setReviewData({...reviewData, back: e.target.value})}
+                                    className="w-full px-5 py-4 bg-white border-2 border-gray-100 focus:border-indigo-500 rounded-2xl outline-none transition-all min-h-[200px] text-gray-600 leading-relaxed shadow-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-gray-500 ml-1">Catégorie</label>
+                                <select 
+                                    value={reviewData.category}
+                                    onChange={(e) => setReviewData({...reviewData, category: e.target.value})}
+                                    className="w-full px-5 py-3 bg-white border-2 border-gray-100 focus:border-indigo-500 rounded-xl outline-none transition-all font-bold text-sm"
+                                >
+                                    <option value="Général">Général</option>
+                                    <option value="IA">IA</option>
+                                    <option value="No-Code">No-Code</option>
+                                    <option value="Automatisation">Automatisation</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Preview Side */}
+                        <div className="bg-gray-50 rounded-3xl p-6 border border-gray-100 flex flex-col">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-6 text-center">Aperçu Carte</h3>
+                            
+                            <div className="flex-1 flex flex-col gap-6">
+                                {/* Front Card */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative group">
+                                    <span className="absolute top-4 left-4 text-[10px] font-bold text-indigo-200 uppercase tracking-wider">Recto</span>
+                                    <div className="text-center font-bold text-xl text-gray-900 py-8 px-4">
+                                        {reviewData.front}
+                                    </div>
+                                </div>
+
+                                {/* Back Card */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative group flex-1">
+                                    <span className="absolute top-4 left-4 text-[10px] font-bold text-indigo-200 uppercase tracking-wider">Verso</span>
+                                    <div className="text-sm text-gray-600 leading-7 py-4 px-2 whitespace-pre-wrap">
+                                        {reviewData.back}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 bg-white border-t border-gray-100 flex justify-end gap-3 z-10 shadow-lg-up">
+                    <button 
+                        onClick={() => setIsReviewModalOpen(false)}
+                        className="px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-all"
+                    >
+                        Annuler
+                    </button>
+                    <button 
+                        onClick={handleFinalApprove}
+                        disabled={isProcessing}
+                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-black hover:from-indigo-700 hover:to-violet-700 transition-all shadow-xl shadow-indigo-200 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 disabled:opacity-70 disabled:scale-100"
+                    >
+                        {isProcessing ? (
+                            <>
+                                <Loader2 className="animate-spin" size={20} />
+                                Sauvegarde...
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle size={20} />
+                                Valider et Ajouter
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     )}

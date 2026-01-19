@@ -261,8 +261,8 @@ export default function AdminUsersPage() {
 
       {/* Main Content */}
       <main className="main-content">
-        <div className="top-bar">
-          <h1 className="page-title">Gestion des Accès</h1>
+        <div className="top-bar mt-12">
+          <h1 className="page-title text-pink-500">Gestion des Accès</h1>
 
         </div>
 

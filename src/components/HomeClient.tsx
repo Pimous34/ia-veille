@@ -16,6 +16,7 @@ import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firest
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 // --- Types ---
 
@@ -250,6 +251,7 @@ export default function HomeClient({
     const [searchAnswer, setSearchAnswer] = useState<Article | null>(null);
     const [aiResponse, setAiResponse] = useState<string | null>(null);
     const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
+    const [showContributionPopup, setShowContributionPopup] = useState(false);
 
     // New States for Videos and Next Course
 
@@ -735,6 +737,46 @@ CONSIGNES POUR METADATA :
     };
 
 
+    const handleSuggestCard = async () => {
+        if (!aiResponse) return;
+        const frontMatch = aiResponse.match(/## (.*)/);
+        const front = frontMatch ? frontMatch[1].trim() : `Concept: ${searchQuery}`;
+
+        if (!user) {
+            toast.error("Vous devez être connecté pour suggérer une carte !");
+            return;
+        }
+
+        // Check for duplicates first
+        const { data: existingSuggestions } = await supabase
+            .from('suggested_flashcards')
+            .select('id')
+            .eq('front', front)
+            .in('status', ['pending', 'approved'])
+            .maybeSingle();
+
+        if (existingSuggestions) {
+            toast.error("Cette carte est déjà en cours de validation ou existe déjà !");
+            return;
+        }
+
+        const { error } = await supabase.from('suggested_flashcards').insert({
+            user_id: user.id,
+            front: front,
+            back: aiResponse,
+            category: 'Généré par IA',
+            type: 'new_card',
+            status: 'pending'
+        });
+
+        if (error) {
+            console.error("Suggestion Error:", error);
+            toast.error("Erreur lors de la suggestion");
+        } else {
+            setShowContributionPopup(true);
+        }
+    };
+
     return (
         <>
             <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
@@ -756,45 +798,47 @@ CONSIGNES POUR METADATA :
                             )}
                             <div className="hero-container">
                                 {/* Search Results Mode for Hero */}
-                                {isSearching && aiResponse ? (
-                                    <div className="video-column border-2 border-dashed border-gray-800 rounded-2xl p-6 bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden">
-                                        {searchAnswer && (
-                                            <div className="flex gap-4 items-center bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-800 mb-2">
-                                                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                                                    <SafeImage
-                                                        src={searchAnswer.image}
-                                                        alt={searchAnswer.title}
-                                                        fallbackTitle={searchAnswer.title}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-bold text-white line-clamp-1">{searchAnswer.title}</h4>
-                                                    <button
-                                                        onClick={() => router.push(`/shorts?id=${searchAnswer.id}`)}
-                                                        className="text-xs text-indigo-400 font-semibold hover:underline"
-                                                    >
-                                                        Lire l'article complet →
-                                                    </button>
-                                                </div>
-                                            </div>
+                                {isSearching ? (
+                                    <div className={`video-column border-2 border-dashed border-gray-800 rounded-2xl bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden transition-all duration-300 ${aiResponse ? 'p-2' : 'p-6'}`}>
+                                        {!aiResponse && (
+                                            <h2 className="text-2xl font-bold text-white mb-2">
+                                                Recherche d'information sur <span className="text-indigo-400">&quot;{searchQuery}&quot;</span>
+                                            </h2>
                                         )}
 
-                                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 prose prose-sm prose-invert max-w-none">
-                                            <div className="p-4 rounded-xl">
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm]}
-                                                    components={{
-                                                        h2: ({ node, ...props }) => <h2 className="text-xl font-black text-white mt-0 mb-4 pb-2 border-b-2 border-gray-700" {...props} />,
-                                                        strong: ({ node, ...props }) => <strong className="font-black text-indigo-400" {...props} />,
-                                                        ul: ({ node, ...props }) => <ul className="space-y-2 my-4 text-gray-300" {...props} />,
-                                                        li: ({ node, ...props }) => <li className="flex gap-2 items-start" {...props} />,
-                                                        p: ({ node, ...props }) => <p className="text-gray-300 leading-relaxed" {...props} />,
-                                                    }}
-                                                >
-                                                    {aiResponse}
-                                                </ReactMarkdown>
+                                        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] prose prose-sm prose-invert max-w-none">
+                                            <div className="p-1 rounded-xl">
+                                                {aiResponse ? (
+                                                    <>
+                                                        <ReactMarkdown
+                                                            remarkPlugins={[remarkGfm]}
+                                                            components={{
+                                                                h2: ({ node, ...props }) => <h2 className="text-xl font-black text-white mt-0 mb-4 pb-2 border-b-2 border-gray-700" {...props} />,
+                                                                strong: ({ node, ...props }) => <strong className="font-black text-indigo-400" {...props} />,
+                                                                ul: ({ node, ...props }) => <ul className="space-y-2 my-4 text-gray-300" {...props} />,
+                                                                li: ({ node, ...props }) => <li className="flex gap-2 items-start" {...props} />,
+                                                                p: ({ node, ...props }) => <p className="text-gray-300 leading-relaxed" {...props} />,
+                                                            }}
+                                                        >
+                                                            {aiResponse}
+                                                        </ReactMarkdown>
+
+                                                        <div className="mt-6 flex justify-center pb-2">
+                                                            <button
+                                                                onClick={handleSuggestCard}
+                                                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-full font-bold text-sm hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg hover:shadow-indigo-500/25 transform hover:scale-105"
+                                                            >
+                                                                <Sparkles className="w-4 h-4" />
+                                                                Utile pour la formation / Créer une carte mémo
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-4">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                                                        <p className="text-lg font-medium animate-pulse">{loadingAiMessage || "Analyse en cours..."}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1209,8 +1253,34 @@ CONSIGNES POUR METADATA :
 
                 </main>
 
-                {/* Footer */}
+            {/* Footer */}
                 <Footer />
+
+                {/* Contribution Popup */}
+                {showContributionPopup && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-200 text-center relative overflow-hidden">
+                            {/* Decorative background effect */}
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-500 via-pink-500 to-indigo-500"></div>
+                            
+                            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                <Sparkles className="w-8 h-8 text-indigo-600" />
+                            </div>
+                            
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Merci !</h3>
+                            <p className="text-gray-600 mb-8 leading-relaxed">
+                                Merci pour ta contribution à la formation !
+                            </p>
+                            
+                            <button
+                                onClick={() => setShowContributionPopup(false)}
+                                className="w-full py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );
