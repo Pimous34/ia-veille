@@ -151,7 +151,7 @@ export default function ShortsFeed() {
             // 2. Fetch Content
             const { data: rawContent, error } = await supabase
                 .from('articles')
-                .select('*')
+                .select('id, title, excerpt, image_url, published_at, created_at, url, tags, source_id')
                 .order('published_at', { ascending: false })
                 .limit(50);
 
@@ -170,7 +170,7 @@ export default function ShortsFeed() {
                      // Fetch specific item if not in the random batch
                      const { data: specificItem } = await supabase
                         .from('articles')
-                        .select('*')
+                        .select('id, title, excerpt, image_url, published_at, created_at, url, tags, source_id')
                         .eq('id', initialId)
                         .single();
                      
@@ -197,11 +197,11 @@ export default function ShortsFeed() {
                     id: item.id,
                     type: isVideo ? 'video' : 'article',
                     title: item.title,
-                    description: item.resume_ia || item.excerpt || 'Pas de résumé disponible.',
+                    description: item.excerpt || 'Pas de résumé disponible.',
                     imageUrl: imageUrl, // Pass raw (could be null/expired), component handles fallback
                     date: item.published_at || item.created_at,
                     source: isVideo ? 'YouTube' : getSafeHostname(item.url),
-                    link: item.url || item.link,
+                    link: item.url,
                     tags: item.tags || [],
                     originalData: item
                 };

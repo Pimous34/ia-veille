@@ -397,14 +397,14 @@ export default function HomeClient({
                 // Search Articles (Title & Excerpt)
                 const { data: articles } = await supabase
                     .from('articles')
-                    .select('*')
+                    .select('id, title, excerpt, tags, published_at, url, image_url')
                     .or(`title.ilike.%${searchQuery}%,excerpt.ilike.%${searchQuery}%`)
                     .limit(10);
 
                 // Search Videos (Title)
                 const { data: videos } = await supabase
                     .from('daily_news_videos')
-                    .select('*')
+                    .select('id, title, thumbnail_url, video_url, date, status')
                     .ilike('title', `%${searchQuery}%`)
                     .limit(10);
 
@@ -543,7 +543,7 @@ CONSIGNES POUR METADATA :
                                     // Fetch Articles with AI Keywords
                                     const { data: aiArticles } = await supabase
                                         .from('articles')
-                                        .select('*')
+                                        .select('id, title, excerpt, tags, published_at, url, image_url')
                                         .or(keywordQuery)
                                         .limit(5);
 
@@ -565,7 +565,7 @@ CONSIGNES POUR METADATA :
                                     const videoKeywordQuery = metadata.keywords.map((k: string) => `title.ilike.%${k}%`).join(',');
                                     const { data: aiDbVideos } = await supabase
                                         .from('daily_news_videos')
-                                        .select('*')
+                                        .select('id, title, thumbnail_url, video_url, date, status')
                                         .or(videoKeywordQuery)
                                         .limit(5);
 

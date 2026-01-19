@@ -238,7 +238,7 @@ export default function FlashcardsClient({ initialFlashcards, initialQuery }: Fl
     
     const { data: templates } = await supabase
       .from('flashcard_templates')
-      .select('*')
+      .select('id')
       .limit(50);
 
     if (!templates) return;

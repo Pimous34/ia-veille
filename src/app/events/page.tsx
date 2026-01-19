@@ -14,7 +14,6 @@ interface Event {
     ville: string;
     date: string;
     url: string;
-    created_at: string;
 }
 
 export default function EventsPage() {
@@ -25,7 +24,7 @@ export default function EventsPage() {
         async function fetchEvents() {
             const { data, error } = await supabase
                 .from('events')
-                .select('*')
+                .select('id, nom, description, ville, date, url')
                 .order('date', { ascending: true });
 
             if (error) {

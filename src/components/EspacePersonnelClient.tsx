@@ -117,7 +117,7 @@ export default function EspacePersonnelClient() {
     const loadSavedArticles = async (userId: string) => {
         const { data, error } = await supabase
             .from('saved_articles')
-            .select('*, articles(*)')
+            .select('id, saved_at, status, user_id, articles(id, title, excerpt, image_url, url, published_at)')
             .eq('user_id', userId)
             .order('saved_at', { ascending: false });
 
@@ -149,7 +149,7 @@ export default function EspacePersonnelClient() {
     const loadLearningHistory = async (userId: string) => {
         const { data, error } = await supabase
             .from('reading_history')
-            .select('*')
+            .select('id, read_at, reading_duration, article_category, article_tags, article_title')
             .eq('user_id', userId)
             .order('read_at', { ascending: false });
 

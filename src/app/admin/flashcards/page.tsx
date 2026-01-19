@@ -65,7 +65,7 @@ export default function AdminMemoCardsPage() {
     try {
       const { data, error } = await supabase
         .from('suggested_flashcards')
-        .select('*')
+        .select('id, user_id, front, back, category, status, type, template_id, created_at')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -93,7 +93,7 @@ export default function AdminMemoCardsPage() {
 
         let query = supabase
           .from('flashcard_templates')
-          .select('*')
+          .select('id, front, back, category, created_at')
           .order('created_at', { ascending: false })
           .range(start, end);
 

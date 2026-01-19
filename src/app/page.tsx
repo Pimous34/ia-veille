@@ -110,7 +110,7 @@ export default async function Home() {
   // 1. Fetch Latest JTs
   const jtPromise = supabase
       .from('daily_news_videos')
-      .select('*')
+      .select('id, video_url, thumbnail_url, title, date, article_ids, status')
       .eq('status', 'completed')
       .order('date', { ascending: false })
       .limit(10);
@@ -118,7 +118,7 @@ export default async function Home() {
   // 2. Fetch Articles for Buzz
   const articlesPromise = supabase
       .from('articles')
-      .select('*')
+      .select('id, title, excerpt, tags, published_at, url, image_url, source_id')
       .order('published_at', { ascending: false })
       .limit(30);
 
@@ -131,7 +131,7 @@ export default async function Home() {
   // 4. Fetch Tutorials
   const tutorialsPromise = supabase
       .from('tutorials')
-      .select('*')
+      .select('id, software, channel_name, url, image_url, created_at')
       .order('created_at', { ascending: false })
       .limit(20); // Limit to 20 for client-side filtering flexibility if needed later
 
@@ -190,7 +190,7 @@ export default async function Home() {
       const ids = sourceIdsData.map(s => s.id);
       const { data: extArticles } = await supabase
           .from('articles')
-          .select('*')
+          .select('id, title, url, image_url, published_at, source_id')
           .in('source_id', ids)
           .order('published_at', { ascending: false })
           .limit(10);
