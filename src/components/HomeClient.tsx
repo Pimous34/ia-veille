@@ -16,6 +16,8 @@ import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firest
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Sparkles, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+
 
 // --- Types ---
 
@@ -273,8 +275,10 @@ export default function HomeClient({
     const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>(initialVideosColumn || []); // List for right column (mixed)
     const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]); // List for right column (search results)
     const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
+    const [savedArticles, setSavedArticles] = useState<Record<string, 'saved' | 'watch_later'>>({});
 
     /* ---------------------- EFFECTS ---------------------- */
+
 
     // Fetch Next Course
     useEffect(() => {
@@ -294,9 +298,143 @@ export default function HomeClient({
         fetchNextCourse();
     }, []);
 
+    // Load saved articles for the user
+    useEffect(() => {
+        const loadSavedArticles = async () => {
+            if (!user) {
+                setSavedArticles({});
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('saved_articles')
+                    .select('article_id, status')
+                    .eq('user_id', user.id);
+
+                if (error) throw error;
+
+                if (data) {
+                    const saved: Record<string, 'saved' | 'watch_later'> = {};
+                    data.forEach(item => {
+                        saved[item.article_id] = item.status;
+                    });
+                    setSavedArticles(saved);
+                }
+            } catch (error) {
+                console.error('Error loading saved articles:', error);
+            }
+        };
+
+        loadSavedArticles();
+    }, [user, supabase]);
+
+
     const videoRef = useRef<HTMLVideoElement>(null);
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const isNavigatingRef = useRef(false);
+
+    /* ---------------------- HANDLERS ---------------------- */
+
+    // Handle Save Article
+    const handleSaveArticle = async (articleId: string | number, status: 'saved' | 'watch_later', e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+
+        if (!user) {
+            toast.error('Veuillez vous connecter pour sauvegarder des articles');
+            router.push('/auth');
+            return;
+        }
+
+        try {
+            const articleIdStr = articleId.toString();
+            const currentStatus = savedArticles[articleIdStr];
+
+            // If already saved with same status, remove it
+            if (currentStatus === status) {
+                const { data: existing } = await supabase
+                    .from('saved_articles')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .eq('article_id', articleIdStr)
+                    .single();
+
+                if (existing) {
+                    const { error: deleteError } = await supabase
+                        .from('saved_articles')
+                        .delete()
+                        .eq('id', existing.id);
+
+                    if (deleteError) throw deleteError;
+
+                    // Update local state
+                    setSavedArticles(prev => {
+                        const newState = { ...prev };
+                        delete newState[articleIdStr];
+                        return newState;
+                    });
+
+                    toast.success(
+                        status === 'saved' ? '❤️ Retiré des favoris' : '🕐 Retiré de "À regarder plus tard"',
+                        { duration: 2000 }
+                    );
+                }
+                return;
+            }
+
+            // Check if already saved with different status
+            const { data: existing } = await supabase
+                .from('saved_articles')
+                .select('id, status')
+                .eq('user_id', user.id)
+                .eq('article_id', articleIdStr)
+                .single();
+
+            if (existing) {
+                // Update status
+                const { error: updateError } = await supabase
+                    .from('saved_articles')
+                    .update({
+                        status,
+                        saved_at: new Date().toISOString()
+                    })
+                    .eq('id', existing.id);
+
+                if (updateError) throw updateError;
+
+                // Update local state
+                setSavedArticles(prev => ({ ...prev, [articleIdStr]: status }));
+
+                toast.success(
+                    status === 'saved' ? '❤️ Article sauvegardé !' : '🕐 Ajouté à "À regarder plus tard" !',
+                    { duration: 2000 }
+                );
+            } else {
+                // Insert new saved article
+                const { error: insertError } = await supabase
+                    .from('saved_articles')
+                    .insert({
+                        user_id: user.id,
+                        article_id: articleIdStr,
+                        status,
+                        saved_at: new Date().toISOString()
+                    });
+
+                if (insertError) throw insertError;
+
+                // Update local state
+                setSavedArticles(prev => ({ ...prev, [articleIdStr]: status }));
+
+                toast.success(
+                    status === 'saved' ? '❤️ Article sauvegardé !' : '🕐 Ajouté à "À regarder plus tard" !',
+                    { duration: 2000 }
+                );
+            }
+        } catch (error) {
+            console.error('Error saving article:', error);
+            toast.error('Erreur lors de la sauvegarde');
+        }
+    };
 
 
 
@@ -1118,17 +1256,17 @@ CONSIGNES POUR METADATA :
                                             {/* Action Buttons */}
                                             <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        alert('Article sauvegardé !');
-                                                    }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
+                                                    onClick={(e) => handleSaveArticle(article.id, 'saved', e)}
+                                                    className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg ${savedArticles[article.id.toString()] === 'saved'
+                                                        ? 'bg-pink-500 text-white'
+                                                        : 'bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white'
+                                                        }`}
                                                     aria-label="Sauvegarder"
-                                                    title="Sauvegarder"
+                                                    title={savedArticles[article.id.toString()] === 'saved' ? 'Retirer des favoris' : 'Sauvegarder'}
                                                 >
                                                     <svg
                                                         viewBox="0 0 24 24"
-                                                        fill="none"
+                                                        fill={savedArticles[article.id.toString()] === 'saved' ? 'currentColor' : 'none'}
                                                         stroke="currentColor"
                                                         strokeWidth="2"
                                                         className="w-5 h-5"
@@ -1138,13 +1276,13 @@ CONSIGNES POUR METADATA :
                                                 </button>
 
                                                 <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        alert('Ajouté à "À regarder plus tard" !');
-                                                    }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
+                                                    onClick={(e) => handleSaveArticle(article.id, 'watch_later', e)}
+                                                    className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg ${savedArticles[article.id.toString()] === 'watch_later'
+                                                        ? 'bg-pink-500 text-white'
+                                                        : 'bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white'
+                                                        }`}
                                                     aria-label="À regarder plus tard"
-                                                    title="À regarder plus tard"
+                                                    title={savedArticles[article.id.toString()] === 'watch_later' ? 'Retirer de "À regarder plus tard"' : 'À regarder plus tard'}
                                                 >
                                                     <svg
                                                         viewBox="0 0 24 24"
@@ -1153,8 +1291,14 @@ CONSIGNES POUR METADATA :
                                                         strokeWidth="2"
                                                         className="w-5 h-5"
                                                     >
-                                                        <circle cx="12" cy="12" r="10"></circle>
-                                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                                        <circle
+                                                            cx="12"
+                                                            cy="12"
+                                                            r="10"
+                                                            fill={savedArticles[article.id.toString()] === 'watch_later' ? 'currentColor' : 'none'}
+                                                            fillOpacity={savedArticles[article.id.toString()] === 'watch_later' ? '0.2' : '0'}
+                                                        />
+                                                        <polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
                                                 </button>
                                             </div>
