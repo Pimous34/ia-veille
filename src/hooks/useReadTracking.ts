@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
 const STORAGE_KEY = 'oreegamia_read_items';
@@ -29,10 +29,13 @@ export function useReadTracking() {
 
     const [supabase] = useState(() => createClient());
 
+    // Track items read in this session to prevent spamming the API on scroll
+    const sessionReadIds = useRef<Set<string>>(new Set());
+
     const markAsRead = async (id: string | number, meta?: { title?: string, category?: string, tags?: string[], duration?: number }) => {
         const idStr = id.toString();
         
-        // Always update local state immediately
+        // 1. Update Local Storage (Persistent)
         if (!readIds.includes(idStr)) {
             const newIds = [...readIds, idStr];
             setReadIds(newIds);
@@ -41,12 +44,16 @@ export function useReadTracking() {
             } catch (e) {
                 console.error('Failed to save read status:', e);
             }
+        }
 
-            // Sync with Supabase if user is logged in
+        // 2. Sync with Supabase (if not done in this session)
+        if (!sessionReadIds.current.has(idStr)) {
+            sessionReadIds.current.add(idStr); // Mark as processed for this session
+            
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session?.user) {
-                    await supabase.from('reading_history').insert({
+                    const { error } = await supabase.from('reading_history').insert({
                         user_id: session.user.id,
                         article_id: id,
                         read_at: new Date().toISOString(),
@@ -56,6 +63,14 @@ export function useReadTracking() {
                         reading_duration: meta?.duration || 0,
                         device: 'web'
                     });
+
+                    if (!error) {
+                        // console.log("Synced read to Supabase");
+                        // Optional: trigger a toast or UI update? 
+                        // For now we keep it silent to not annoy user, or maybe small indicator?
+                    } else {
+                        console.error("Supabase insert error:", error);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to sync read status to Supabase", err);
