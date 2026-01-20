@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
 const STORAGE_KEY = 'oreegamia_read_items';
 
@@ -26,8 +27,12 @@ export function useReadTracking() {
         }
     }, []);
 
-    const markAsRead = (id: string | number) => {
+    const [supabase] = useState(() => createClient());
+
+    const markAsRead = async (id: string | number, meta?: { title?: string, category?: string, tags?: string[], duration?: number }) => {
         const idStr = id.toString();
+        
+        // Always update local state immediately
         if (!readIds.includes(idStr)) {
             const newIds = [...readIds, idStr];
             setReadIds(newIds);
@@ -35,6 +40,25 @@ export function useReadTracking() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(newIds));
             } catch (e) {
                 console.error('Failed to save read status:', e);
+            }
+
+            // Sync with Supabase if user is logged in
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    await supabase.from('reading_history').insert({
+                        user_id: session.user.id,
+                        article_id: id,
+                        read_at: new Date().toISOString(),
+                        article_title: meta?.title || 'Article sans titre',
+                        article_category: meta?.category || 'Non catégorisé',
+                        article_tags: meta?.tags || [],
+                        reading_duration: meta?.duration || 0,
+                        device: 'web'
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to sync read status to Supabase", err);
             }
         }
     };
