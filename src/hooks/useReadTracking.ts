@@ -60,8 +60,8 @@ export function useReadTracking() {
                         article_title: meta?.title || 'Article sans titre',
                         article_category: meta?.category || 'Non catégorisé',
                         article_tags: meta?.tags || [],
-                        reading_duration: meta?.duration || 0,
-                        device: 'web'
+                        reading_duration: meta?.duration || 0
+                        // device field removed as it does not exist in schema
                     });
 
                     if (!error) {
