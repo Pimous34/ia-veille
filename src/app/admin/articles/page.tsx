@@ -86,8 +86,8 @@ export default function AdminArticlesPage() {
 
       {/* Main Content */}
       <main className="main-content">
-        <div className="top-bar">
-          <h1 className="page-title">Gestion du Contenu</h1>
+        <div className="top-bar mt-12">
+          <h1 className="page-title text-pink-500">Gestion du Contenu</h1>
           <button onClick={() => router.push('/auth')} className="logout-btn">
             Déconnexion
           </button>

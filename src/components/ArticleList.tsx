@@ -178,7 +178,7 @@ const ArticleList = () => {
         const supabase = createClient();
         const { data, error } = await supabase
           .from('articles')
-          .select('*')
+          .select('id, title, excerpt, url, image_url, published_at, read_time, source_id, category_id')
           .order('published_at', { ascending: false })
           .limit(12);
 

@@ -72,7 +72,7 @@ const Hero = () => {
         // Récupérer les JT complétés, triés par date décroissante
         const { data: jts, error } = await supabase
           .from('daily_news_videos')
-          .select('*')
+          .select('id, date, title, video_url, thumbnail_url, article_ids, status')
           .eq('status', 'completed')
           .order('date', { ascending: false })
           .limit(5);

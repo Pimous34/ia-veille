@@ -49,7 +49,7 @@ export default function TeacherPage() {
       // Fetch Promos
       const { data: promosData } = await supabase
         .from('promos')
-        .select('*')
+        .select('id, name, tuto_config, video_config')
         .order('name');
       
       if (promosData) {
