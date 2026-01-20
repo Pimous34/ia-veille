@@ -1097,8 +1097,26 @@ CONSIGNES POUR METADATA :
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
                                                 {currentDaySchedule ? (
                                                     <div className="space-y-3 animate-in fade-in duration-300">
-                                                        <div className="text-center font-bold text-indigo-900 text-lg pb-1 border-b border-indigo-100/50">
-                                                            {currentDaySchedule.dateLabel}
+                                                        <div className="flex items-center justify-between pb-2 border-b border-indigo-100/50 mb-2">
+                                                            <button 
+                                                                onClick={() => setCurrentDayIndex(prev => Math.max(0, prev - 1))}
+                                                                disabled={currentDayIndex === 0}
+                                                                className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                                            </button>
+                                                            
+                                                            <div className="font-bold text-indigo-900 text-lg">
+                                                                {currentDaySchedule.dateLabel}
+                                                            </div>
+
+                                                            <button 
+                                                                onClick={() => setCurrentDayIndex(prev => Math.min(dailySchedules.length - 1, prev + 1))}
+                                                                disabled={currentDayIndex >= dailySchedules.length - 1}
+                                                                className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex >= dailySchedules.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                                            </button>
                                                         </div>
                                                         {currentDaySchedule.courses.map((course, idx) => {
                                                             const isNow = course.endDate && new Date() >= new Date(course.date) && new Date() <= new Date(course.endDate);
@@ -1106,7 +1124,6 @@ CONSIGNES POUR METADATA :
                                                             
                                                             let label = `À ${startTime}`;
                                                             if (isNow) label = "Maintenant";
-                                                            else if (idx === 0) label = "Prochain cours";
 
                                                             return (
                                                                 <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
@@ -1122,7 +1139,18 @@ CONSIGNES POUR METADATA :
                                                                         <div className="flex items-center gap-2">
                                                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                                                                             <span>
-                                                                                {course.location}
+                                                                                {course.location !== 'Distanciel' && course.location !== 'Présentiel' ? (
+                                                                                    <a 
+                                                                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(course.location)}`}
+                                                                                        target="_blank" 
+                                                                                        rel="noreferrer"
+                                                                                        className="hover:text-indigo-600 hover:underline transition-colors"
+                                                                                    >
+                                                                                        {course.location}
+                                                                                    </a>
+                                                                                ) : (
+                                                                                    course.location
+                                                                                )}
                                                                                 {course.meetLink && (
                                                                                     <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
                                                                                         Lien Google Meet
@@ -1148,30 +1176,7 @@ CONSIGNES POUR METADATA :
 
 
                                                     
-                                                    {/* Navigation Controls */}
-                                                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-indigo-100/50">
-                                                        {currentDayIndex > 0 ? (
-                                                            <button 
-                                                                onClick={() => setCurrentDayIndex(prev => prev - 1)}
-                                                                className="flex items-center gap-1 text-[10px] uppercase font-bold text-indigo-400 hover:text-indigo-600 transition-colors"
-                                                            >
-                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                                                                Jour précédent
-                                                            </button>
-                                                        ) : (
-                                                            <div></div> // Spacer
-                                                        )}
 
-                                                        {currentDayIndex < dailySchedules.length - 1 && (
-                                                            <button 
-                                                                onClick={() => setCurrentDayIndex(prev => prev + 1)}
-                                                                className="flex items-center gap-1 text-[10px] uppercase font-bold text-indigo-400 hover:text-indigo-600 transition-colors"
-                                                            >
-                                                                Jour suivant
-                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
                                                     </div>
                                                 ) : (
                                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-500 italic text-center">

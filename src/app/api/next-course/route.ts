@@ -162,12 +162,14 @@ export async function GET() {
         // Location & Meet
         let location = 'Présentiel';
         let meetLink = null;
-        if (description.includes('Salle : Distanciel') || description.toLowerCase().includes('distanciel')) {
-            location = 'Distanciel';
-            const linkMatch = description.match(/https:\/\/meet\.google\.com\/[a-z0-9-]+/);
-            if (linkMatch) meetLink = linkMatch[0];
-        } else if (event.location) {
+        
+        const linkMatch = description.match(/https:\/\/meet\.google\.com\/[a-z0-9-]+/);
+        if (linkMatch) meetLink = linkMatch[0];
+
+        if (event.location && event.location.trim()) {
             location = event.location;
+        } else if (description.includes('Salle : Distanciel') || description.toLowerCase().includes('distanciel')) {
+            location = 'Distanciel';
         }
 
         // Instructor
