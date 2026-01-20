@@ -185,6 +185,7 @@ export async function GET() {
             meetLink,
             instructor,
             date: event.dtstart,
+            endDate: event.dtend,
             full_description: description
         };
     });

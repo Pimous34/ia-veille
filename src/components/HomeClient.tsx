@@ -56,6 +56,7 @@ interface NextCourse {
     instructor?: string;
     meetLink?: string;
     date: string;
+    endDate?: string;
 }
 
 // --- Constants & Helpers ---
@@ -1096,14 +1097,24 @@ CONSIGNES POUR METADATA :
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
                                                 {currentDaySchedule ? (
                                                     <div className="space-y-3 animate-in fade-in duration-300">
-                                                        {currentDaySchedule.courses.map((course, idx) => (
-                                                            <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
-                                                                <div className="flex items-center gap-2 mb-2">
-                                                                    <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                                                                        {idx === 0 ? 'Prochain cours' : `Cours ${new Date(course.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}`}
-                                                                    </span>
-                                                                    <span className="text-xs text-gray-500">{currentDaySchedule.dateLabel}</span>
-                                                                </div>
+                                                        <div className="text-center font-bold text-indigo-900 text-lg pb-1 border-b border-indigo-100/50">
+                                                            {currentDaySchedule.dateLabel}
+                                                        </div>
+                                                        {currentDaySchedule.courses.map((course, idx) => {
+                                                            const isNow = course.endDate && new Date() >= new Date(course.date) && new Date() <= new Date(course.endDate);
+                                                            const startTime = new Date(course.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}).replace(':', 'h');
+                                                            
+                                                            let label = `À ${startTime}`;
+                                                            if (isNow) label = "Maintenant";
+                                                            else if (idx === 0) label = "Prochain cours";
+
+                                                            return (
+                                                                <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <span className={`${isNow ? 'bg-green-600 animate-pulse' : 'bg-indigo-600'} text-white text-xs px-2 py-0.5 rounded-full font-bold transition-colors`}>
+                                                                            {label}
+                                                                        </span>
+                                                                    </div>
                                                                 <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
         
                                                                 <div className="space-y-1.5 text-xs text-gray-700">
@@ -1129,7 +1140,8 @@ CONSIGNES POUR METADATA :
                                                                     )}
                                                                 </div>
                                                             </div>
-                                                        ))}
+                                                            );
+                                                        })}
 
 
 
