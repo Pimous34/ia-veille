@@ -274,7 +274,11 @@ export default function HomeClient({
 
     const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>(initialVideosColumn || []); // List for right column (mixed)
     const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]); // List for right column (search results)
-    const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
+    const [upcomingCourses, setUpcomingCourses] = useState<NextCourse[]>([]);
+    const [dailySchedules, setDailySchedules] = useState<{ dateLabel: string, courses: NextCourse[] }[]>([]);
+    const [currentDayIndex, setCurrentDayIndex] = useState(0);
+
+    const currentDaySchedule = dailySchedules.length > 0 ? dailySchedules[currentDayIndex] : null;
 
     /* ---------------------- EFFECTS ---------------------- */
 
@@ -285,8 +289,25 @@ export default function HomeClient({
                 const response = await fetch('/api/next-course');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.found) {
-                        setNextCourse(data);
+                    if (data.found && data.courses) {
+                        setUpcomingCourses(data.courses);
+                        
+                        // Group by Day
+                        const grouped: { [key: string]: NextCourse[] } = {};
+                        data.courses.forEach((course: NextCourse) => {
+                            const dateKey = new Date(course.date).toDateString(); // Groups by Day
+                            if (!grouped[dateKey]) {
+                                grouped[dateKey] = [];
+                            }
+                            grouped[dateKey].push(course);
+                        });
+
+                        const schedules = Object.values(grouped).map(courses => ({
+                            dateLabel: new Date(courses[0].date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                            courses: courses
+                        }));
+
+                        setDailySchedules(schedules);
                     }
                 }
             } catch (error) {
@@ -1073,36 +1094,72 @@ CONSIGNES POUR METADATA :
                                                 Infos
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
-                                                {nextCourse ? (
-                                                    <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">Prochain cours</span>
-                                                            <span className="text-xs text-gray-500">{new Date(nextCourse.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                                                        </div>
-                                                        <p className="font-bold text-base mb-2 leading-tight">{nextCourse.title}</p>
-
-                                                        <div className="space-y-1.5 text-xs text-gray-700">
-                                                            {nextCourse.location && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                                                    <span>
-                                                                        {nextCourse.location}
-                                                                        {nextCourse.meetLink && (
-                                                                            <a href={nextCourse.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
-                                                                                Lien Google Meet
-                                                                            </a>
-                                                                        )}
+                                                {currentDaySchedule ? (
+                                                    <div className="space-y-3 animate-in fade-in duration-300">
+                                                        {currentDaySchedule.courses.map((course, idx) => (
+                                                            <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                                                                        {idx === 0 ? 'Prochain cours' : `Cours ${new Date(course.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}`}
                                                                     </span>
+                                                                    <span className="text-xs text-gray-500">{currentDaySchedule.dateLabel}</span>
                                                                 </div>
-                                                            )}
+                                                                <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
+        
+                                                                <div className="space-y-1.5 text-xs text-gray-700">
+                                                                    {course.location && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                                            <span>
+                                                                                {course.location}
+                                                                                {course.meetLink && (
+                                                                                    <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
+                                                                                        Lien Google Meet
+                                                                                    </a>
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+        
+                                                                    {course.instructor && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                                            <span>Formateur : <span className="font-medium">{course.instructor}</span></span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
 
-                                                            {nextCourse.instructor && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                                    <span>Formateur : <span className="font-medium">{nextCourse.instructor}</span></span>
-                                                                </div>
-                                                            )}
-                                                        </div>
+
+
+
+
+                                                    
+                                                    {/* Navigation Controls */}
+                                                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-indigo-100/50">
+                                                        {currentDayIndex > 0 ? (
+                                                            <button 
+                                                                onClick={() => setCurrentDayIndex(prev => prev - 1)}
+                                                                className="flex items-center gap-1 text-[10px] uppercase font-bold text-indigo-400 hover:text-indigo-600 transition-colors"
+                                                            >
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                                                Jour précédent
+                                                            </button>
+                                                        ) : (
+                                                            <div></div> // Spacer
+                                                        )}
+
+                                                        {currentDayIndex < dailySchedules.length - 1 && (
+                                                            <button 
+                                                                onClick={() => setCurrentDayIndex(prev => prev + 1)}
+                                                                className="flex items-center gap-1 text-[10px] uppercase font-bold text-indigo-400 hover:text-indigo-600 transition-colors"
+                                                            >
+                                                                Jour suivant
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                     </div>
                                                 ) : (
                                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-500 italic text-center">
