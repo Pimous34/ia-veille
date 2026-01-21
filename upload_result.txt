@@ -1,0 +1,74 @@
+Note: Unnecessary use of -X or --request, POST is already inferred.
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Host pjiobifgcvdapikurlbn.supabase.co:443 was resolved.
+* IPv6: 64:ff9b::6812:260a, 64:ff9b::ac40:95f6
+* IPv4: 172.64.149.246, 104.18.38.10
+*   Trying [64:ff9b::6812:260a]:443...
+* schannel: disabled automatic use of client certificate
+* ALPN: curl offers http/1.1
+* ALPN: server accepted http/1.1
+* Established connection to pjiobifgcvdapikurlbn.supabase.co (64:ff9b::6812:260a port 443) from 2a04:cec0:121a:c608:505b:4b97:a09:363e port 53151 
+* using HTTP/1.x
+> POST /storage/v1/object/ressources-intervenants/test_upload.txt HTTP/1.1
+
+> Host: pjiobifgcvdapikurlbn.supabase.co
+
+> User-Agent: curl/8.16.0
+
+> Accept: */*
+
+> Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTEwMjQ4MSwiZXhwIjoyMDgwNjc4NDgxfQ.TDVP4swScKmcyyrn9e3iXMRjEEiwQsSooGqpX70imEA
+
+> Content-Type: text/plain
+
+> Content-Length: 50
+
+> 
+
+} [50 bytes data]
+* upload completely sent off: 50 bytes
+* schannel: remote party requests renegotiation
+* schannel: renegotiating SSL/TLS connection
+* schannel: SSL/TLS connection renegotiated
+< HTTP/1.1 400 Bad Request
+
+< Date: Tue, 20 Jan 2026 14:41:33 GMT
+
+< Content-Type: application/json; charset=utf-8
+
+< Content-Length: 80
+
+< Connection: keep-alive
+
+< Server: cloudflare
+
+< CF-Ray: 9c0f5554cf4513d3-MRS
+
+< CF-Cache-Status: DYNAMIC
+
+< Access-Control-Allow-Origin: *
+
+< Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+< sb-gateway-mode: direct
+
+< sb-gateway-version: 1
+
+< sb-project-ref: pjiobifgcvdapikurlbn
+
+< sb-request-id: 019bdbda-9104-762a-826f-081ecda0f2ae
+
+< Set-Cookie: __cf_bm=F3QQJCmhc13UmLz_nmYOTIAbWAakhRDlWtU00CJQGhg-1768920093-1.0.1.1-ASbeMj2OG8FEKMhUeJyHtXSFCGnRYHVSqkfz2VMZmzqIltaYKy8CfA6UQrs6Wi13hejYyBeIyZCYMMIihSy0cI1xkI3i1CYLR6Jq41JQACI; path=/; expires=Tue, 20-Jan-26 15:11:33 GMT; domain=.supabase.co; HttpOnly; Secure; SameSite=None
+
+< alt-svc: h3=":443"; ma=86400
+
+< 
+
+{ [80 bytes data]
+
+100   130  100    80  100    50    225    140 --:--:-- --:--:-- --:--:--   368
+100   130  100    80  100    50    225    140 --:--:-- --:--:-- --:--:--   368
+* Connection #0 to host pjiobifgcvdapikurlbn.supabase.co:443 left intact
+{"statusCode":"409","error":"Duplicate","message":"The resource already exists"}
