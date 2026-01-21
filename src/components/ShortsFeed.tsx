@@ -252,30 +252,21 @@ export default function ShortsFeed() {
     return (
         <div
             ref={containerRef}
-            className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar bg-background text-foreground"
+            className="w-full h-[calc(100dvh-80px)] mt-20 overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar bg-background text-foreground"
             onScroll={handleScroll}
-            style={{ scrollSnapType: 'y mandatory' }}
+            style={{ scrollSnapType: 'y mandatory', scrollSnapStop: 'always' }}
         >
-            {/* Close Button */}
-            <button
-                onClick={() => router.push('/')}
-                className="fixed top-6 left-6 z-50 p-2 bg-background/40 backdrop-blur-md rounded-full text-foreground hover:bg-background/60 transition-colors border border-border"
-                aria-label="Retour"
-            >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-            </button>
+
 
             {items.map((item, index) => (
                 <div
                     key={`${item.type}-${item.id}-${index}`}
-                    className="w-full h-screen snap-start relative flex items-start justify-center bg-background overflow-hidden pt-28"
+                    className="w-full h-full snap-start snap-always relative flex items-center justify-center bg-background overflow-hidden p-4"
                 >
 
 
                     {/* Main Content Card */}
-                    <div className="relative z-20 w-full max-w-2xl h-[80vh] bg-card rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 animate-in fade-in duration-500 border border-border">
+                    <div className="relative z-20 w-full max-w-2xl h-[92%] bg-card rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 animate-in fade-in duration-500 border border-border">
 
                         {/* Image or Video Section (Top 45%) */}
                         <div className="relative h-[45%] w-full bg-black">
