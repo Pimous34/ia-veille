@@ -70,7 +70,7 @@ const Hero = () => {
         // Récupérer les JT complétés, triés par date décroissante
         const { data: jts, error } = await supabase
           .from('daily_news_videos')
-          .select('*')
+          .select('id, date, title, video_url, thumbnail_url, article_ids, status')
           .eq('status', 'completed')
           .order('date', { ascending: false })
           .limit(5);
@@ -119,58 +119,36 @@ const Hero = () => {
   }, [currentVideo]);
 
   useEffect(() => {
-    const jingleUrl = 'https://jrlecaepyoivtplpvwoe.supabase.co/storage/v1/object/public/jt-assets/assets/jingle.mp4';
-
     if (!videoRef.current) return;
 
     // Re-initialize player if needed or just update src
     if (!playerRef.current) {
-      const player = videojs(videoRef.current, {
-        controls: true,
-        autoplay: true,
-        muted: true,
-        loop: false, // Disable default loop to handle jingle sequence
-        preload: 'auto',
-        fill: true,
-        sources: [{ type: 'video/mp4', src: jingleUrl }] // Initialize with Jingle
-      });
-      playerRef.current = player;
-
-      player.on('error', () => {
-        const error = player.error();
-        console.error('Video player error:', error);
-        setVideoUnavailable(true);
-      });
-
-      // Handle Jingle -> Main Video sequence
-      player.on('ended', () => {
-        const currentPlayer = playerRef.current;
-        if (currentPlayer) {
-          const currentSrc = currentPlayer.currentSrc();
-
-          // Check if we just finished the jingle
-          // Use includes to be safer against slight URL variations
-          if (currentSrc === jingleUrl || currentSrc.includes('jingle.mp4')) {
-            const nextVideo = currentVideoRef.current;
-            if (nextVideo && nextVideo.src) {
-              currentPlayer.src({ type: 'video/mp4', src: nextVideo.src });
-              currentPlayer.loop(true); // Loop the main video
-              currentPlayer.load(); // Ensure the new source is loaded
-              currentPlayer.play()?.catch(e => console.error('Error playing main video:', e));
-            }
-          }
-        }
-      });
+      if (currentVideoRef.current && currentVideoRef.current.src) {
+           const player = videojs(videoRef.current, {
+            controls: true,
+            autoplay: true,
+            muted: true,
+            loop: true, // Loop the main video directly
+            preload: 'auto',
+            fill: true,
+            sources: [{ type: 'video/mp4', src: currentVideoRef.current.src }]
+          });
+          playerRef.current = player;
+    
+          player.on('error', () => {
+            const error = player.error();
+            console.error('Video player error:', error);
+            setVideoUnavailable(true);
+          });
+      }
     }
 
-    // When current video changes (e.g. scroll), start with Jingle
+    // When current video changes (e.g. scroll)
     const player = playerRef.current;
-    if (player) {
-      // Reset loop state for jingle
-      player.loop(false);
-
-      // Play Jingle first
-      player.src({ type: 'video/mp4', src: jingleUrl });
+    if (player && currentVideoRef.current && currentVideoRef.current.src) {
+      // Play Main Video directly
+      player.src({ type: 'video/mp4', src: currentVideoRef.current.src });
+      player.loop(true);
       player.play()?.catch(e => console.log('Autoplay prevented:', e));
     }
 

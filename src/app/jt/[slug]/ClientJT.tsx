@@ -33,7 +33,7 @@ export default function ClientJT() {
       // Fetch current video and previous ones (older dates)
       const { data, error } = await supabase
         .from('daily_news_videos')
-        .select('*')
+        .select('id, date, video_url, thumbnail_url, title')
         .lte('date', slug)
         .eq('status', 'completed')
         .order('date', { ascending: false })

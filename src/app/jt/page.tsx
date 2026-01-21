@@ -13,7 +13,6 @@ interface DailyNewsVideo {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   article_ids: string[];
   view_count: number;
-  created_at: string;
 }
 
 function formatDuration(seconds: number | null): string {
@@ -45,7 +44,7 @@ export default async function JTListPage() {
   try {
     const { data, error: fetchError } = await supabase
       .from('daily_news_videos')
-      .select('*')
+      .select('id, date, title, thumbnail_url, video_url, duration, view_count, article_ids, status')
       .eq('status', 'completed')
       .order('date', { ascending: false })
       .limit(20);

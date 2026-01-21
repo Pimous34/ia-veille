@@ -117,7 +117,7 @@ export default function EspacePersonnelClient() {
     const loadSavedArticles = async (userId: string) => {
         const { data, error } = await supabase
             .from('saved_articles')
-            .select('*, articles(*)')
+            .select('id, saved_at, status, user_id, articles(id, title, excerpt, image_url, url, published_at)')
             .eq('user_id', userId)
             .order('saved_at', { ascending: false });
 
@@ -147,21 +147,40 @@ export default function EspacePersonnelClient() {
     };
 
     const loadLearningHistory = async (userId: string) => {
-        const { data, error } = await supabase
+        // Fetch legacy history for charts/timeline
+        const { data: historyData, error } = await supabase
             .from('reading_history')
-            .select('*')
+            .select('id, read_at, reading_duration, article_category, article_tags, article_title')
             .eq('user_id', userId)
             .order('read_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching history:', error);
-            return;
+            // Don't return, try to fetch profile stats anyway
         }
 
-        if (data) {
-            const stats = calculateReadingStats(data);
-            setHistoryStats(stats);
+        // Fetch New User Profile Stats
+        const { data: profileData } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        // Calculate stats from history (legacy or partial)
+        const stats = calculateReadingStats(historyData || []);
+
+        // Override with official profile stats if available
+        if (profileData) {
+            // Prioritize the profile counters if they are non-zero or authoritative
+            stats.totalReadings = profileData.articles_read_count ?? stats.totalReadings;
+            stats.readingStreak = profileData.current_streak ?? stats.readingStreak;
+            // You could also add XP or other new stats here if the UI supported them
+        } else {
+             // Optional: Create profile if missing?
+             // For now, we just rely on existing calculations or 0
         }
+        
+        setHistoryStats(stats);
     };
 
     const removeArticle = async (articleId: number | string, e: React.MouseEvent) => {

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
+import ResourcesCarousel from '@/components/ResourcesCarousel';
 import Footer from '@/components/Footer';
 
 
@@ -16,6 +17,7 @@ import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firest
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 // --- Types ---
 
@@ -55,6 +57,7 @@ interface NextCourse {
     instructor?: string;
     meetLink?: string;
     date: string;
+    endDate?: string;
 }
 
 // --- Constants & Helpers ---
@@ -142,38 +145,7 @@ const fallbackJtArticles: Article[] = [
     }
 ];
 
-const fallbackCoursePrepArticles: Article[] = [
-    {
-        id: 8,
-        title: "Les fondamentaux de l'IA pour débutants",
-        excerpt: "Comprendre les bases de l'intelligence artificielle avant de plonger dans les outils avancés.",
-        category: "IA",
-        tags: ["ChatGPT", "Gemini"],
-        date: "2024-01-17",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800"
-    },
-    {
-        id: 9,
-        title: "Premiers pas avec les prompts efficaces",
-        excerpt: "Apprenez à formuler des prompts qui donnent des résultats précis et pertinents.",
-        category: "IA",
-        tags: ["ChatGPT", "Claude"],
-        date: "2024-01-17",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1676299080923-6c98c0cf4e48?w=800"
-    },
-    {
-        id: 10,
-        title: "Introduction aux outils No-Code",
-        excerpt: "Découvrez les plateformes No-Code les plus populaires et leurs cas d'usage.",
-        category: "No-Code",
-        tags: ["Bubble", "Webflow"],
-        date: "2024-01-16",
-        link: "#",
-        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800"
-    }
-];
+
 
 // --- Helper Components ---
 
@@ -267,7 +239,7 @@ export default function HomeClient({
     /* ---------------------- STATE ---------------------- */
     const [activeTab, setActiveTab] = useState('tous');
     const [trendingArticles, setTrendingArticles] = useState<Article[]>(initialArticles || []);
-    const [coursePrepArticles, setCoursePrepArticles] = useState<Article[]>([]); // Assuming this needs separate logic or filter from articles
+
     const [tutorials, setTutorials] = useState<Tutorial[]>(initialTutorials || []);
 
     // JT & AI States
@@ -281,6 +253,7 @@ export default function HomeClient({
     const [searchAnswer, setSearchAnswer] = useState<Article | null>(null);
     const [aiResponse, setAiResponse] = useState<string | null>(null);
     const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
+    const [showContributionPopup, setShowContributionPopup] = useState(false);
 
     // New States for Videos and Next Course
 
@@ -303,7 +276,11 @@ export default function HomeClient({
 
     const [videosColumnList, setVideosColumnList] = useState<JtVideo[]>(initialVideosColumn || []); // List for right column (mixed)
     const [searchResultVideos, setSearchResultVideos] = useState<JtVideo[]>([]); // List for right column (search results)
-    const [nextCourse, setNextCourse] = useState<NextCourse | null>(null);
+    const [upcomingCourses, setUpcomingCourses] = useState<NextCourse[]>([]);
+    const [dailySchedules, setDailySchedules] = useState<{ dateLabel: string, courses: NextCourse[] }[]>([]);
+    const [currentDayIndex, setCurrentDayIndex] = useState(0);
+
+    const currentDaySchedule = dailySchedules.length > 0 ? dailySchedules[currentDayIndex] : null;
 
     /* ---------------------- EFFECTS ---------------------- */
 
@@ -314,8 +291,25 @@ export default function HomeClient({
                 const response = await fetch('/api/next-course');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.found) {
-                        setNextCourse(data);
+                    if (data.found && data.courses) {
+                        setUpcomingCourses(data.courses);
+                        
+                        // Group by Day
+                        const grouped: { [key: string]: NextCourse[] } = {};
+                        data.courses.forEach((course: NextCourse) => {
+                            const dateKey = new Date(course.date).toDateString(); // Groups by Day
+                            if (!grouped[dateKey]) {
+                                grouped[dateKey] = [];
+                            }
+                            grouped[dateKey].push(course);
+                        });
+
+                        const schedules = Object.values(grouped).map(courses => ({
+                            dateLabel: new Date(courses[0].date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+                            courses: courses
+                        }));
+
+                        setDailySchedules(schedules);
                     }
                 }
             } catch (error) {
@@ -428,14 +422,14 @@ export default function HomeClient({
                 // Search Articles (Title & Excerpt)
                 const { data: articles } = await supabase
                     .from('articles')
-                    .select('*')
+                    .select('id, title, excerpt, tags, published_at, url, image_url')
                     .or(`title.ilike.%${searchQuery}%,excerpt.ilike.%${searchQuery}%`)
                     .limit(10);
 
                 // Search Videos (Title)
                 const { data: videos } = await supabase
                     .from('daily_news_videos')
-                    .select('*')
+                    .select('id, title, thumbnail_url, video_url, date, status')
                     .ilike('title', `%${searchQuery}%`)
                     .limit(10);
 
@@ -574,7 +568,7 @@ CONSIGNES POUR METADATA :
                                     // Fetch Articles with AI Keywords
                                     const { data: aiArticles } = await supabase
                                         .from('articles')
-                                        .select('*')
+                                        .select('id, title, excerpt, tags, published_at, url, image_url')
                                         .or(keywordQuery)
                                         .limit(5);
 
@@ -596,7 +590,7 @@ CONSIGNES POUR METADATA :
                                     const videoKeywordQuery = metadata.keywords.map((k: string) => `title.ilike.%${k}%`).join(',');
                                     const { data: aiDbVideos } = await supabase
                                         .from('daily_news_videos')
-                                        .select('*')
+                                        .select('id, title, thumbnail_url, video_url, date, status')
                                         .or(videoKeywordQuery)
                                         .limit(5);
 
@@ -766,9 +760,45 @@ CONSIGNES POUR METADATA :
     };
 
 
+    const handleSuggestCard = async () => {
+        if (!aiResponse) return;
+        const frontMatch = aiResponse.match(/## (.*)/);
+        const front = frontMatch ? frontMatch[1].trim() : `Concept: ${searchQuery}`;
 
+        if (!user) {
+            toast.error("Vous devez être connecté pour suggérer une carte !");
+            return;
+        }
 
+        // Check for duplicates first
+        const { data: existingSuggestions } = await supabase
+            .from('suggested_flashcards')
+            .select('id')
+            .eq('front', front)
+            .in('status', ['pending', 'approved'])
+            .maybeSingle();
 
+        if (existingSuggestions) {
+            toast.error("Cette carte est déjà en cours de validation ou existe déjà !");
+            return;
+        }
+
+        const { error } = await supabase.from('suggested_flashcards').insert({
+            user_id: user.id,
+            front: front,
+            back: aiResponse,
+            category: 'Généré par IA',
+            type: 'new_card',
+            status: 'pending'
+        });
+
+        if (error) {
+            console.error("Suggestion Error:", error);
+            toast.error("Erreur lors de la suggestion");
+        } else {
+            setShowContributionPopup(true);
+        }
+    };
 
     return (
         <>
@@ -791,51 +821,47 @@ CONSIGNES POUR METADATA :
                             )}
                             <div className="hero-container">
                                 {/* Search Results Mode for Hero */}
-                                {isSearching && aiResponse ? (
-                                    <div className="video-column border-2 border-dashed border-gray-800 rounded-2xl p-6 bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden">
-                                        {searchAnswer && (
-                                            <div className="flex gap-4 items-center bg-gray-900 p-4 rounded-xl shadow-sm border border-gray-800 mb-2">
-                                                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                                                    <SafeImage
-                                                        src={searchAnswer.image}
-                                                        alt={searchAnswer.title}
-                                                        fallbackTitle={searchAnswer.title}
-                                                        fill
-                                                        className="object-cover"
-                                                    />
-                                                    {isRead(searchAnswer.id) && (
-                                                        <div className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1 z-10 font-bold uppercase tracking-wide">
-                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                            Lu
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-bold text-white line-clamp-1">{searchAnswer.title}</h4>
-                                                    <button
-                                                        onClick={() => router.push(`/shorts?id=${searchAnswer.id}`)}
-                                                        className="text-xs text-indigo-400 font-semibold hover:underline"
-                                                    >
-                                                        Lire l'article complet →
-                                                    </button>
-                                                </div>
-                                            </div>
+                                {isSearching ? (
+                                    <div className={`video-column border-2 border-dashed border-gray-800 rounded-2xl bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden transition-all duration-300 ${aiResponse ? 'p-2' : 'p-6'}`}>
+                                        {!aiResponse && (
+                                            <h2 className="text-2xl font-bold text-white mb-2">
+                                                Recherche d'information sur <span className="text-indigo-400">&quot;{searchQuery}&quot;</span>
+                                            </h2>
                                         )}
 
-                                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 prose prose-sm prose-invert max-w-none">
-                                            <div className="p-4 rounded-xl">
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm]}
-                                                    components={{
-                                                        h2: ({ node, ...props }) => <h2 className="text-xl font-black text-white mt-0 mb-4 pb-2 border-b-2 border-gray-700" {...props} />,
-                                                        strong: ({ node, ...props }) => <strong className="font-black text-indigo-400" {...props} />,
-                                                        ul: ({ node, ...props }) => <ul className="space-y-2 my-4 text-gray-300" {...props} />,
-                                                        li: ({ node, ...props }) => <li className="flex gap-2 items-start" {...props} />,
-                                                        p: ({ node, ...props }) => <p className="text-gray-300 leading-relaxed" {...props} />,
-                                                    }}
-                                                >
-                                                    {aiResponse}
-                                                </ReactMarkdown>
+                                        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] prose prose-sm prose-invert max-w-none">
+                                            <div className="p-1 rounded-xl">
+                                                {aiResponse ? (
+                                                    <>
+                                                        <ReactMarkdown
+                                                            remarkPlugins={[remarkGfm]}
+                                                            components={{
+                                                                h2: ({ node, ...props }) => <h2 className="text-xl font-black text-white mt-0 mb-4 pb-2 border-b-2 border-gray-700" {...props} />,
+                                                                strong: ({ node, ...props }) => <strong className="font-black text-indigo-400" {...props} />,
+                                                                ul: ({ node, ...props }) => <ul className="space-y-2 my-4 text-gray-300" {...props} />,
+                                                                li: ({ node, ...props }) => <li className="flex gap-2 items-start" {...props} />,
+                                                                p: ({ node, ...props }) => <p className="text-gray-300 leading-relaxed" {...props} />,
+                                                            }}
+                                                        >
+                                                            {aiResponse}
+                                                        </ReactMarkdown>
+
+                                                        <div className="mt-6 flex justify-center pb-2">
+                                                            <button
+                                                                onClick={handleSuggestCard}
+                                                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-full font-bold text-sm hover:from-violet-500 hover:to-indigo-500 transition-all shadow-lg hover:shadow-indigo-500/25 transform hover:scale-105"
+                                                            >
+                                                                <Sparkles className="w-4 h-4" />
+                                                                Utile pour la formation / Créer une carte mémo
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-4">
+                                                        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+                                                        <p className="text-lg font-medium animate-pulse">{loadingAiMessage || "Analyse en cours..."}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -893,9 +919,6 @@ CONSIGNES POUR METADATA :
                                                     ref={videoRef}
                                                     className="video-player"
                                                     controls
-                                                    autoPlay
-                                                    muted
-                                                    playsInline
                                                     poster={jtVideo?.thumbnail_url || "https://placehold.co/1920x1080?text=Chargement+du+JT..."}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover', background: 'black' }}
                                                 >
@@ -974,6 +997,8 @@ CONSIGNES POUR METADATA :
                                         )}
                                     </div>
                                 )}
+                                {/* End Search Rendering */}
+
                                 <div className="articles-column">
                                     <div className="vignettes-container" style={{ gap: '2.5rem' }}> {/* Increased internal gap */}
                                         {/* Sujets du JT Column */}
@@ -1071,36 +1096,88 @@ CONSIGNES POUR METADATA :
                                                 Infos
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
-                                                {nextCourse ? (
-                                                    <div className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">Prochain cours</span>
-                                                            <span className="text-xs text-gray-500">{new Date(nextCourse.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                                                        </div>
-                                                        <p className="font-bold text-base mb-2 leading-tight">{nextCourse.title}</p>
+                                                {currentDaySchedule ? (
+                                                    <div className="space-y-3 animate-in fade-in duration-300">
+                                                        <div className="flex items-center justify-between pb-2 border-b border-indigo-100/50 mb-2">
+                                                            <button 
+                                                                onClick={() => setCurrentDayIndex(prev => Math.max(0, prev - 1))}
+                                                                disabled={currentDayIndex === 0}
+                                                                className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                                            </button>
+                                                            
+                                                            <div className="font-bold text-indigo-900 text-lg">
+                                                                {currentDaySchedule.dateLabel}
+                                                            </div>
 
-                                                        <div className="space-y-1.5 text-xs text-gray-700">
-                                                            {nextCourse.location && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                                                    <span>
-                                                                        {nextCourse.location}
-                                                                        {nextCourse.meetLink && (
-                                                                            <a href={nextCourse.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
-                                                                                Lien Google Meet
-                                                                            </a>
-                                                                        )}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-
-                                                            {nextCourse.instructor && (
-                                                                <div className="flex items-center gap-2">
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                                    <span>Formateur : <span className="font-medium">{nextCourse.instructor}</span></span>
-                                                                </div>
-                                                            )}
+                                                            <button 
+                                                                onClick={() => setCurrentDayIndex(prev => Math.min(dailySchedules.length - 1, prev + 1))}
+                                                                disabled={currentDayIndex >= dailySchedules.length - 1}
+                                                                className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex >= dailySchedules.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                                            </button>
                                                         </div>
+                                                        {currentDaySchedule.courses.map((course, idx) => {
+                                                            const isNow = course.endDate && new Date() >= new Date(course.date) && new Date() <= new Date(course.endDate);
+                                                            const startTime = new Date(course.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}).replace(':', 'h');
+                                                            
+                                                            let label = `À ${startTime}`;
+                                                            if (isNow) label = "Maintenant";
+
+                                                            return (
+                                                                <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <span className={`${isNow ? 'bg-green-600 animate-pulse' : 'bg-indigo-600'} text-white text-xs px-2 py-0.5 rounded-full font-bold transition-colors`}>
+                                                                            {label}
+                                                                        </span>
+                                                                    </div>
+                                                                <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
+        
+                                                                <div className="space-y-1.5 text-xs text-gray-700">
+                                                                    {course.location && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                                            <span>
+                                                                                {course.location !== 'Distanciel' && course.location !== 'Présentiel' ? (
+                                                                                    <a 
+                                                                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(course.location)}`}
+                                                                                        target="_blank" 
+                                                                                        rel="noreferrer"
+                                                                                        className="hover:text-indigo-600 hover:underline transition-colors"
+                                                                                    >
+                                                                                        {course.location}
+                                                                                    </a>
+                                                                                ) : (
+                                                                                    course.location
+                                                                                )}
+                                                                                {course.meetLink && (
+                                                                                    <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
+                                                                                        Lien Google Meet
+                                                                                    </a>
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+        
+                                                                    {course.instructor && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                                            <span>Formateur : <span className="font-medium">{course.instructor}</span></span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            );
+                                                        })}
+
+
+
+
+
+                                                    
+
                                                     </div>
                                                 ) : (
                                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm text-gray-500 italic text-center">
@@ -1112,6 +1189,9 @@ CONSIGNES POUR METADATA :
                                                     <p className="font-bold mb-1">Mises à jour</p>
                                                     <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
                                                 </div>
+
+                                                {/* Resources Carousel */}
+                                                <ResourcesCarousel />
                                             </div>
                                         </div>
                                     </div>
@@ -1247,42 +1327,39 @@ CONSIGNES POUR METADATA :
                     </section>
 
                     {/* Course Prep */}
-                    <section className="course-prep-section" id="courseprep">
-                        <div className="container">
-                            <h2 className="section-title">Préparez le prochain cours</h2>
-                            <p className="section-subtitle">Articles recommandés pour bien démarrer votre prochaine session de formation</p>
-                            <div className="articles-grid">
-                                {coursePrepArticles.map(article => (
-                                    <article key={article.id} className="article-card" onClick={() => article.link && window.open(article.link, '_blank')}>
-                                        <div className="article-image-container relative h-48 w-full">
-                                            <Image
-                                                src={article.image}
-                                                alt={article.title}
-                                                fill
-                                                className="article-image object-cover"
-                                                unoptimized
-                                            />
-                                        </div>
-                                        <div className="article-content">
-                                            <div className="article-tags">
-                                                {article.category && <span className="article-tag">{article.category}</span>}
-                                            </div>
-                                            <h3 className="article-title">{article.title}</h3>
-                                            <div className="article-meta">
-                                                <span className="article-link">Lire →</span>
-                                            </div>
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
+
 
                 </main>
 
                 {/* Footer */}
                 <Footer />
-            </div >
+
+                {/* Contribution Popup */}
+                {showContributionPopup && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-200 text-center relative overflow-hidden">
+                            {/* Decorative background effect */}
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-500 via-pink-500 to-indigo-500"></div>
+
+                            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                                <Sparkles className="w-8 h-8 text-indigo-600" />
+                            </div>
+
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Merci !</h3>
+                            <p className="text-gray-600 mb-8 leading-relaxed">
+                                Merci pour ta contribution à la formation !
+                            </p>
+
+                            <button
+                                onClick={() => setShowContributionPopup(false)}
+                                className="w-full py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </>
     );
 }

@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   refreshUser: () => Promise<void>;
   supabase: SupabaseClient;
 }
@@ -14,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  isAdmin: false,
   refreshUser: async () => {},
   supabase: {} as SupabaseClient, // Placeholder, will be overridden by provider
 });
@@ -22,6 +24,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [supabase] = useState(() => createClient());
 
@@ -30,21 +33,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         // Verification of existence in students, admins or intervenants
-        const { data: isAdmin } = await supabase.from('admins').select('id').eq('email', user.email).maybeSingle();
+        const { data: adminRecord } = await supabase.from('admins').select('id').eq('email', user.email).maybeSingle();
         const { data: isStudent } = await supabase.from('students').select('id').eq('email', user.email).maybeSingle();
         const { data: isIntervenant } = await supabase.from('intervenants').select('id').eq('email', user.email).maybeSingle();
 
         /*
-        if (!isAdmin && !isStudent && !isIntervenant) {
+        if (!adminRecord && !isStudent && !isIntervenant) {
           console.error(`⛔ ACCÈS REFUSÉ : L'email ${user.email} n'est pas trouvé dans les tables admins, students, ou intervenants. Déconnexion forcée.`);
           await supabase.auth.signOut();
           setUser(null);
+          setIsAdmin(false);
           if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
              window.location.href = '/auth?error=unauthorized';
           }
           return;
         }
         */
+       
+        setIsAdmin(!!adminRecord);
+      } else {
+        setIsAdmin(false);
       }
       setUser(user);
     } catch (error) {
@@ -63,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (event === 'SIGNED_OUT') {
          if (mounted) {
             setUser(null);
+            setIsAdmin(false);
             setLoading(false);
          }
          // Optional: Redirect to auth page if needed, but usually just clearing state is enough for UI to react
@@ -71,12 +80,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (session?.user) {
         // Verification of existence in students, admins or intervenants
-        const { data: isAdmin } = await supabase.from('admins').select('id').eq('email', session.user.email).maybeSingle();
+        const { data: adminRecord } = await supabase.from('admins').select('id').eq('email', session.user.email).maybeSingle();
         const { data: isStudent } = await supabase.from('students').select('id').eq('email', session.user.email).maybeSingle();
         const { data: isIntervenant } = await supabase.from('intervenants').select('id').eq('email', session.user.email).maybeSingle();
 
         /*
-        if (!isAdmin && !isStudent && !isIntervenant) {
+        if (!adminRecord && !isStudent && !isIntervenant) {
             console.error(`⛔ ACCÈS REFUSÉ (onAuthStateChange) : L'email ${session.user.email} n'est pas autorisé. Déconnexion.`);
             await supabase.auth.signOut();
             if (mounted) {
@@ -90,6 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         */
             if (mounted) {
               setUser(session.user);
+              setIsAdmin(!!adminRecord);
               setLoading(false);
             }
         // }
@@ -97,6 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // No session (and not explicitly SIGNED_OUT event caught above, e.g. INITIAL_SESSION)
         if (mounted) {
           setUser(null);
+          setIsAdmin(false);
           setLoading(false);
         }
       }
@@ -124,7 +135,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [refreshUser, supabase]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser, supabase }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, refreshUser, supabase }}>
       {children}
     </AuthContext.Provider>
   );

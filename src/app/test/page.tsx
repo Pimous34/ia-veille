@@ -15,7 +15,7 @@ export default function TestPage() {
         const supabase = createClient();
         
         // Test simple query
-        const { data, error } = await supabase.from('app_messages').select('*').limit(1);
+        const { data, error } = await supabase.from('app_messages').select('id, text, type').limit(1);
         
         if (error) {
           setStatus('Erreur Supabase ❌');
