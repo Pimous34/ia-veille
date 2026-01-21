@@ -112,7 +112,13 @@ export default function ShortsFeed() {
         timerRef.current = setTimeout(() => {
             if (items[index]) {
                 console.log(`Marking item ${items[index].id} as read`);
-                markAsRead(items[index].id);
+                const item = items[index];
+                markAsRead(item.id, {
+                    title: item.title,
+                    category: item.tags?.[0] || 'Short',
+                    tags: item.tags,
+                    duration: 1 // default duration 1 min or calculate?
+                });
             }
         }, 7000); // 7 seconds
     };
