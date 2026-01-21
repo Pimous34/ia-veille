@@ -89,7 +89,7 @@ export default function ShortsFeed() {
     const [supabase] = useState(() => createClient());
 
     // Read Tracking
-    const { markAsRead, isRead } = useReadTracking();
+    const { markAsRead, isRead, toggleLike, toggleBookmark, isLiked, isBookmarked } = useReadTracking();
     const [activeIndex, setActiveIndex] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -314,6 +314,29 @@ export default function ShortsFeed() {
                                     className="w-full h-full object-cover"
                                 />
                             )}
+
+                            {/* Action Buttons (Top Right) */}
+                            <div className="absolute top-4 right-4 flex flex-col gap-3 z-30">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleLike(item.id); }}
+                                    className={`p-2.5 rounded-full backdrop-blur-md shadow-lg transition-all duration-200 active:scale-90 ${isLiked(item.id) ? 'bg-pink-500 text-white' : 'bg-black/40 text-white hover:bg-black/60 border border-white/20'}`}
+                                    title={isLiked(item.id) ? "Retirer des favoris" : "J'aime"}
+                                >
+                                    <svg viewBox="0 0 24 24" fill={isLiked(item.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleBookmark(item.id); }}
+                                    className={`p-2.5 rounded-full backdrop-blur-md shadow-lg transition-all duration-200 active:scale-90 ${isBookmarked(item.id) ? 'bg-blue-600 text-white' : 'bg-black/40 text-white hover:bg-black/60 border border-white/20'}`}
+                                    title={isBookmarked(item.id) ? "Retirer de la liste" : "À regarder plus tard"}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isBookmarked(item.id) ? "2.5" : "2"} className="w-6 h-6">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
 
                             <div className="absolute top-4 left-4 flex gap-2 z-10 flex-col">
                                 <div className="flex gap-2">

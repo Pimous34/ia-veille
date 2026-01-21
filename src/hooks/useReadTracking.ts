@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
-const STORAGE_KEY = 'oreegamia_read_items';
+const STORAGE_KEY_READ = 'oreegamia_read_items';
+const STORAGE_KEY_LIKES = 'oreegamia_liked_items';
+const STORAGE_KEY_BOOKMARKS = 'oreegamia_bookmarked_items';
 
 interface ArticleMetadata {
     title: string;
@@ -13,11 +15,14 @@ interface ArticleMetadata {
 }
 
 /**
- * Hook to manage the read status of items (articles/videos).
- * Persists data in localStorage and syncs with Supabase reading_history table.
+ * Hook to manage the read/like/bookmark status of items.
+ * Persists data in localStorage and syncs with Supabase article_interactions table.
  */
 export function useReadTracking() {
     const [readIds, setReadIds] = useState<string[]>([]);
+    const [likedIds, setLikedIds] = useState<string[]>([]);
+    const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
+
     const [isLoaded, setIsLoaded] = useState(false);
     const [supabase] = useState(() => createClient());
     const [userId, setUserId] = useState<string | null>(null);
@@ -25,49 +30,59 @@ export function useReadTracking() {
     // Track items read in this session to prevent spamming the API on scroll
     const sessionReadIds = useRef<Set<string>>(new Set());
 
-    // Load user and read IDs on mount
+    // Load user and interactons on mount
     useEffect(() => {
         const loadData = async () => {
             try {
                 // Get current user
                 const { data: { session } } = await supabase.auth.getSession();
 
-                let localIds: string[] = [];
-                let dbIds: string[] = [];
+                let localReads: string[] = [];
+                let localLikes: string[] = [];
+                let localBookmarks: string[] = [];
 
-                // Load from localStorage first
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    localIds = JSON.parse(stored);
-                }
+                // Load from localStorage
+                try {
+                    const sRead = localStorage.getItem(STORAGE_KEY_READ);
+                    if (sRead) localReads = JSON.parse(sRead);
 
-                // If user is logged in, load from database
+                    const sLikes = localStorage.getItem(STORAGE_KEY_LIKES);
+                    if (sLikes) localLikes = JSON.parse(sLikes);
+
+                    const sBookmarks = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
+                    if (sBookmarks) localBookmarks = JSON.parse(sBookmarks);
+                } catch (e) { console.error("Local storage error", e); }
+
+                // If user is logged in, load from database (article_interactions)
                 if (session?.user) {
                     setUserId(session.user.id);
 
-                    const { data: historyData, error } = await supabase
-                        .from('reading_history')
-                        .select('article_id')
+                    const { data: interactions, error } = await supabase
+                        .from('article_interactions')
+                        .select('article_id, is_read, is_liked, is_bookmarked')
                         .eq('user_id', session.user.id);
 
-                    if (!error && historyData) {
-                        dbIds = historyData.map(item => item.article_id);
+                    if (!error && interactions) {
+                        const dbReads = interactions.filter(i => i.is_read).map(i => i.article_id);
+                        const dbLikes = interactions.filter(i => i.is_liked).map(i => i.article_id);
+                        const dbBookmarks = interactions.filter(i => i.is_bookmarked).map(i => i.article_id);
+
+                        // Merge DB and Local (DB wins for sync usually, but here we union)
+                        localReads = [...new Set([...localReads, ...dbReads])];
+                        localLikes = [...new Set([...localLikes, ...dbLikes])];
+                        localBookmarks = [...new Set([...localBookmarks, ...dbBookmarks])];
                     }
                 }
 
-                // Merge localStorage and database IDs (remove duplicates)
-                const mergedIds = [...new Set([...localIds, ...dbIds])];
-                setReadIds(mergedIds);
+                setReadIds(localReads);
+                setLikedIds(localLikes);
+                setBookmarkedIds(localBookmarks);
 
-                // Init session read ids
-                mergedIds.forEach(id => sessionReadIds.current.add(id));
+                // Init session read cache
+                localReads.forEach(id => sessionReadIds.current.add(id));
 
-                // Update localStorage with merged data
-                if (mergedIds.length > 0) {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedIds));
-                }
             } catch (e) {
-                console.error('Failed to load read status:', e);
+                console.error('Failed to load interactions:', e);
             } finally {
                 setIsLoaded(true);
             }
@@ -79,27 +94,7 @@ export function useReadTracking() {
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
                 setUserId(session.user.id);
-
-                // Reload data from database when user logs in
-                try {
-                    const { data: historyData, error } = await supabase
-                        .from('reading_history')
-                        .select('article_id')
-                        .eq('user_id', session.user.id);
-
-                    if (!error && historyData) {
-                        const dbIds = historyData.map(item => item.article_id);
-                        const stored = localStorage.getItem(STORAGE_KEY);
-                        const localIds = stored ? JSON.parse(stored) : [];
-                        const mergedIds = [...new Set([...localIds, ...dbIds])];
-                        setReadIds(mergedIds);
-                        // Update session cache too
-                        mergedIds.forEach(id => sessionReadIds.current.add(id));
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedIds));
-                    }
-                } catch (e) {
-                    console.error('Failed to reload read status on auth change:', e);
-                }
+                // Trigger reload could be better, but for now basic set
             } else {
                 setUserId(null);
             }
@@ -110,78 +105,112 @@ export function useReadTracking() {
         };
     }, [supabase]);
 
+    // Update Local Storage Helper
+    const updateLocalStorage = (key: string, ids: string[]) => {
+        try {
+            localStorage.setItem(key, JSON.stringify(ids));
+        } catch (e) { console.error("LS Error", e); }
+    };
+
+    // --- Actions ---
+
     const markAsRead = async (id: string | number, metadata?: ArticleMetadata, readingDuration?: number) => {
         const idStr = id.toString();
 
-        // Skip if already tracked in this session to prevent spam
-        if (sessionReadIds.current.has(idStr)) {
-            // Optional logic: if we want to allow re-reading logic, we can remove this check or adapt
-            return;
-        }
+        // Anti-spam check for reads (only auto-trigger once per session usually)
+        if (sessionReadIds.current.has(idStr)) return;
 
-        // Skip if locally known as read (double check)
+        // If already read, just update session cache and return (unless we want to update timestamp?)
         if (readIds.includes(idStr)) {
-            console.log(`ℹ️ Article ${idStr} already marked as read`);
             sessionReadIds.current.add(idStr);
             return;
         }
 
-        console.log(`📖 Marking article ${idStr} as read`, { metadata, readingDuration });
-
-        // Mark as processed in session immediately
-        sessionReadIds.current.add(idStr);
-
-        // Update localStorage
         const newIds = [...readIds, idStr];
         setReadIds(newIds);
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newIds));
-        } catch (e) {
-            console.error('Failed to save read status to localStorage:', e);
-        }
+        sessionReadIds.current.add(idStr);
+        updateLocalStorage(STORAGE_KEY_READ, newIds);
 
-        // Save to database if user is logged in
-        if (userId && metadata) {
-            console.log(`💾 Saving to reading_history for user ${userId}`);
-            console.log('📝 Data to insert:', {
+        // DB Update
+        if (userId) {
+            // 1. Log to reading_history (Log)
+            supabase.from('reading_history').insert({
                 user_id: userId,
                 article_id: idStr,
-                article_title: metadata.title,
-                article_category: metadata.category || null,
-                article_tags: metadata.tags || null,
-                reading_duration: readingDuration || 7,
-                read_at: new Date().toISOString()
+                article_title: metadata?.title,
+                article_category: metadata?.category,
+                reading_duration: readingDuration || 7
+            }).then(({ error }) => {
+                if (error) console.error("Error logging read:", error);
             });
 
-            try {
-                const { error, data } = await supabase
-                    .from('reading_history')
-                    .insert({
-                        user_id: userId,
-                        article_id: idStr,
-                        article_title: metadata.title,
-                        article_category: metadata.category || null,
-                        article_tags: metadata.tags || null,
-                        reading_duration: readingDuration || metadata.duration || 7, // Handle both props
-                        read_at: new Date().toISOString()
-                    })
-                    .select();
-
-                if (error) {
-                    console.error('❌ Failed to save to reading_history:', error);
-                } else {
-                    console.log(`✅ Successfully saved article ${idStr} to reading_history`, data);
-                }
-            } catch (e) {
-                console.error('❌ Error saving to database:', e);
-            }
+            // 2. Update interaction state (Upsert)
+            // Note: Trigger on reading_history might handle this, but explicit upsert is safe
+            // We use the trigger in SQL usually, but if trigger fails/doesn't exist:
+            /* 
+               supabase.from('article_interactions').upsert({ 
+                 user_id: userId, article_id: idStr, is_read: true, last_interacted_at: new Date() 
+               }, { onConflict: 'user_id, article_id' }) 
+            */
         }
     };
 
-    const isRead = (id: string | number) => {
-        if (!id) return false;
-        return readIds.includes(id.toString());
+    const toggleLike = async (id: string | number) => {
+        const idStr = id.toString();
+        const isLiked = likedIds.includes(idStr);
+        const newStatus = !isLiked;
+
+        const newIds = newStatus
+            ? [...likedIds, idStr]
+            : likedIds.filter(i => i !== idStr);
+
+        setLikedIds(newIds);
+        updateLocalStorage(STORAGE_KEY_LIKES, newIds);
+
+        if (userId) {
+            const { error } = await supabase.from('article_interactions').upsert({
+                user_id: userId,
+                article_id: idStr, // Assuming UUID if possible, else might fail if table strictly UUID
+                is_liked: newStatus,
+                last_interacted_at: new Date().toISOString()
+            }, { onConflict: 'user_id, article_id' });
+
+            if (error) console.error("Toggle Like Error:", error);
+        }
     };
 
-    return { readIds, markAsRead, isRead, isLoaded, userId };
+    const toggleBookmark = async (id: string | number) => {
+        const idStr = id.toString();
+        const isBookmarked = bookmarkedIds.includes(idStr);
+        const newStatus = !isBookmarked;
+
+        const newIds = newStatus
+            ? [...bookmarkedIds, idStr]
+            : bookmarkedIds.filter(i => i !== idStr);
+
+        setBookmarkedIds(newIds);
+        updateLocalStorage(STORAGE_KEY_BOOKMARKS, newIds);
+
+        if (userId) {
+            const { error } = await supabase.from('article_interactions').upsert({
+                user_id: userId,
+                article_id: idStr,
+                is_bookmarked: newStatus,
+                last_interacted_at: new Date().toISOString()
+            }, { onConflict: 'user_id, article_id' });
+
+            if (error) console.error("Toggle Bookmark Error:", error);
+        }
+    };
+
+    const isRead = (id: string | number) => readIds.includes(id?.toString());
+    const isLiked = (id: string | number) => likedIds.includes(id?.toString());
+    const isBookmarked = (id: string | number) => bookmarkedIds.includes(id?.toString());
+
+    return {
+        readIds, likedIds, bookmarkedIds,
+        markAsRead, toggleLike, toggleBookmark,
+        isRead, isLiked, isBookmarked,
+        isLoaded, userId
+    };
 }
