@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user && !request.nextUrl.pathname.startsWith('/auth')) {
+  if (!user && !request.nextUrl.pathname.startsWith('/auth') && !request.nextUrl.pathname.startsWith('/api/sync')) {
     // Redirect to login page if not logged in
     const url = request.nextUrl.clone()
     url.pathname = '/auth'
@@ -96,7 +96,7 @@ export async function middleware(request: NextRequest) {
       console.warn(`Unauthorized access attempt by ${user.email}`);
       // Force signout (optional but safer to clear session)
       await supabase.auth.signOut();
-      
+
       const url = request.nextUrl.clone()
       url.pathname = '/auth'
       url.searchParams.set('error', 'unauthorized')

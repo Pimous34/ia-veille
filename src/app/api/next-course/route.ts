@@ -136,47 +136,65 @@ export async function GET() {
     // Sort by start time
     activeEvents.sort((a, b) => a.dtstart.getTime() - b.dtstart.getTime());
 
-    const nextEvent = activeEvents[0];
+    // Deduplicate events (same summary and same start time)
+    const uniqueEvents: any[] = [];
+    const seenEvents = new Set();
 
-    // --- 4. Processing Logic (Same as before) ---
-    
-    // Clean Title
-    let title = nextEvent.summary || 'Cours';
-    title = title.replace(/^PBNC\.\d{2}-\d{2}\.CDP\.[^—]+—\s*/, '');
-    title = title.replace(/^PBNC\..*? —\s*/, ''); 
-    title = title.replace(/—\s*$/, '').trim();
+    for (const event of activeEvents) {
+        const uniqueKey = `${event.dtstart.toISOString()}-${event.summary}`;
+        if (!seenEvents.has(uniqueKey)) {
+            seenEvents.add(uniqueKey);
+            uniqueEvents.push(event);
+        }
+    }
 
-    // Clean Description
-    const description = nextEvent.description || '';
+    // --- 4. Processing Logic ---
+    const upcomingCourses = uniqueEvents.slice(0, 10).map(event => {
+        // Clean Title
+        let title = event.summary || 'Cours';
+        title = title.replace(/^PBNC\.\d{2}-\d{2}\.CDP\.[^—]+—\s*/, '');
+        title = title.replace(/^PBNC\..*? —\s*/, ''); 
+        title = title.replace(/—\s*$/, '').trim();
 
-    // Location & Meet
-    let location = 'Présentiel';
-    let meetLink = null;
-    if (description.includes('Salle : Distanciel') || description.toLowerCase().includes('distanciel')) {
-        location = 'Distanciel';
+        // Clean Description
+        const description = event.description || '';
+
+        // Location & Meet
+        let location = 'Présentiel';
+        let meetLink = null;
+        
         const linkMatch = description.match(/https:\/\/meet\.google\.com\/[a-z0-9-]+/);
         if (linkMatch) meetLink = linkMatch[0];
-    } else if (nextEvent.location) {
-        location = nextEvent.location;
-    }
 
-    // Instructor
-    let instructor = null;
-    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
-    const emails = description.match(emailRegex);
-    if (emails) {
-        const filtered = emails.filter((e: string) => !e.includes('group.calendar.google.com'));
-        if (filtered.length > 0) instructor = filtered[0];
-    }
+        if (event.location && event.location.trim()) {
+            location = event.location;
+        } else if (description.includes('Salle : Distanciel') || description.toLowerCase().includes('distanciel')) {
+            location = 'Distanciel';
+        }
+
+        // Instructor
+        let instructor = null;
+        const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
+        const emails = description.match(emailRegex);
+        if (emails) {
+            const filtered = emails.filter((e: string) => !e.includes('group.calendar.google.com'));
+            if (filtered.length > 0) instructor = filtered[0];
+        }
+
+        return {
+            title,
+            location,
+            meetLink,
+            instructor,
+            date: event.dtstart,
+            endDate: event.dtend,
+            full_description: description
+        };
+    });
 
     return NextResponse.json({
-        found: true,
-        title,
-        location,
-        meetLink,
-        instructor,
-        date: nextEvent.dtstart,
-        full_description: description
+        found: upcomingCourses.length > 0,
+        courses: upcomingCourses
     });
 
   } catch (error: any) {

@@ -115,9 +115,10 @@ export default function ShortsFeed() {
                 const item = items[index];
                 markAsRead(item.id, {
                     title: item.title,
-                    category: item.type === 'video' ? 'Vidéo' : 'Article',
-                    tags: item.tags
-                }, 7);
+                    category: item.tags?.[0] || 'Short',
+                    tags: item.tags,
+                    duration: 1 // default duration 1 min or calculate?
+                });
             }
         }, 7000); // 7 seconds
     };
