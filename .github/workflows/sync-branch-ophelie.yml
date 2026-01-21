@@ -1,0 +1,44 @@
+name: Sync Branch_Ophelie with Master
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch: # Permet de déclencher manuellement
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Récupère tout l'historique
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+      
+      - name: Fetch all branches
+        run: |
+          git fetch origin master
+          git fetch origin Branch_Ophelie
+      
+      - name: Checkout Branch_Ophelie
+        run: git checkout Branch_Ophelie
+      
+      - name: Merge master into Branch_Ophelie
+        run: |
+          git merge origin/master --no-edit || {
+            echo "Merge conflict detected. Attempting auto-resolution..."
+            # En cas de conflit, on favorise les changements du master
+            git merge --strategy-option=theirs origin/master --no-edit
+          }
+      
+      - name: Push changes to Branch_Ophelie
+        run: git push origin Branch_Ophelie
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
