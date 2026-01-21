@@ -327,7 +327,7 @@ export default function AdminMemoCardsPage() {
 
     return (
         <>
-            <div className="flex min-h-screen bg-[#f8fafc]">
+            <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
                 {/* Sidebar */}
                 <aside className="sidebar">
                     <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
@@ -347,7 +347,7 @@ export default function AdminMemoCardsPage() {
                     <nav className="sidebar-nav">
                         <Link href="/admin" className="nav-item">
                             <span className="nav-icon">📊</span>
-                            <span>Dashboard</span>
+                            <span>Tableau de bord</span>
                         </Link>
                         <Link href="/admin/articles" className="nav-item">
                             <span className="nav-icon">📰</span>
@@ -401,14 +401,13 @@ export default function AdminMemoCardsPage() {
                     <div className="flex gap-4 mb-8">
                         <button
                             onClick={() => setView('suggestions')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${view === 'suggestions' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${view === 'suggestions' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                         >
                             <MessageSquare size={18} />
                             <span>Suggestions ({suggestions.filter(s => s.status === 'pending').length})</span>
                         </button>
                         <button
-                            onClick={() => setView('current')}
-                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all ${view === 'current' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all ${view === 'current' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                                 }`}
                         >
                             <Layers size={16} />
@@ -425,7 +424,7 @@ export default function AdminMemoCardsPage() {
                                     <input
                                         type="text"
                                         placeholder={view === 'suggestions' ? "Chercher dans les demandes..." : "Chercher une carte mémo..."}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 transition-colors"
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-indigo-500 transition-colors"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && view === 'current' && fetchTemplates(true)}
@@ -442,7 +441,7 @@ export default function AdminMemoCardsPage() {
                             </div>
                         </div>
 
-                        <div className="table-container min-h-[400px]">
+                        <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm p-6 overflow-hidden min-h-[400px]">
                             {view === 'suggestions' ? (
                                 loadingSuggestions ? (
                                     <div className="py-20 text-center text-gray-400">Chargement...</div>
@@ -484,8 +483,8 @@ export default function AdminMemoCardsPage() {
                                                                 </span>
                                                             )}
                                                         </td>
-                                                        <td className="align-top font-bold text-gray-900">{s.front}</td>
-                                                        <td className="align-top text-sm text-gray-500 line-clamp-3">{s.back}</td>
+                                                        <td className="align-top font-bold text-gray-900 dark:text-white">{s.front}</td>
+                                                        <td className="align-top text-sm text-gray-500 dark:text-gray-400 line-clamp-3">{s.back}</td>
                                                         <td className="align-top">
                                                             <span className="flex items-center gap-1 text-[10px] uppercase font-black px-3 py-1.5 rounded-full bg-blue-100 text-blue-700">
                                                                 <Clock size={12} /> Attente
@@ -521,8 +520,8 @@ export default function AdminMemoCardsPage() {
                                         <tbody>
                                             {templates.map((t, index) => (
                                                 <tr key={t.id} ref={index === templates.length - 1 ? lastElementRef : null}>
-                                                    <td className="align-top font-bold text-gray-900">{t.front}</td>
-                                                    <td className="align-top text-sm text-gray-500 line-clamp-3 leading-relaxed">{t.back}</td>
+                                                    <td className="align-top font-bold text-gray-900 dark:text-white">{t.front}</td>
+                                                    <td className="align-top text-sm text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed">{t.back}</td>
                                                     <td className="align-top">
                                                         <span className="text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-100 rounded text-gray-400 uppercase tracking-tighter">
                                                             {t.category}

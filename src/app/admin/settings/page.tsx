@@ -213,7 +213,7 @@ export default function AdminSettingsPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#f8fafc]">
+        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             {/* Sidebar */}
             <aside className="sidebar">
                 <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
@@ -233,7 +233,7 @@ export default function AdminSettingsPage() {
                 <nav className="sidebar-nav">
                     <Link href="/admin" className="nav-item">
                         <span className="nav-icon">📊</span>
-                        <span>Dashboard</span>
+                        <span>Tableau de bord</span>
                     </Link>
                     <Link href="/admin/articles" className="nav-item">
                         <span className="nav-icon">📰</span>
@@ -310,8 +310,8 @@ export default function AdminSettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in">
                             {/* Main Profile Info */}
                             <div className="md:col-span-2 space-y-6">
-                                <section className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-                                    <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                                <section className="bg-white dark:bg-slate-900 p-8 rounded-[32px] shadow-sm border border-gray-100 dark:border-white/5">
+                                    <h2 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                         <User className="text-indigo-500" size={20} />
                                         Informations Personnelles
                                     </h2>
@@ -323,7 +323,7 @@ export default function AdminSettingsPage() {
                                                     type="text"
                                                     value={profileForm.firstName}
                                                     onChange={(e) => setProfileForm({ ...profileForm, firstName: e.target.value })}
-                                                    className="w-full p-4 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-100 rounded-xl outline-none transition-all font-medium"
+                                                    className="w-full p-4 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-100 rounded-xl outline-none transition-all font-medium"
                                                 />
                                             </div>
                                             <div className="space-y-2">
@@ -332,7 +332,7 @@ export default function AdminSettingsPage() {
                                                     type="text"
                                                     value={profileForm.lastName}
                                                     onChange={(e) => setProfileForm({ ...profileForm, lastName: e.target.value })}
-                                                    className="w-full p-4 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-100 rounded-xl outline-none transition-all font-medium"
+                                                    className="w-full p-4 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-100 rounded-xl outline-none transition-all font-medium"
                                                 />
                                             </div>
                                         </div>
@@ -344,7 +344,7 @@ export default function AdminSettingsPage() {
                                                     type="email"
                                                     value={profileForm.email}
                                                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent focus:bg-white focus:border-indigo-100 rounded-xl outline-none transition-all font-medium"
+                                                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-100 rounded-xl outline-none transition-all font-medium"
                                                 />
                                             </div>
                                         </div>
@@ -361,8 +361,8 @@ export default function AdminSettingsPage() {
                                     </form>
                                 </section>
 
-                                <section className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-                                    <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                                <section className="bg-white dark:bg-slate-900 p-8 rounded-[32px] shadow-sm border border-gray-100 dark:border-white/5">
+                                    <h2 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                         <Key className="text-orange-500" size={20} />
                                         Sécurité
                                     </h2>
@@ -402,8 +402,8 @@ export default function AdminSettingsPage() {
                     {activeTab === 'team' && (
                         <div className="space-y-8 animate-fade-in">
                             {/* Add Admin Block */}
-                            <section className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-                                <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                            <section className="bg-white dark:bg-slate-900 p-8 rounded-[32px] shadow-sm border border-gray-100 dark:border-white/5">
+                                <h2 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                     <Plus className="text-indigo-500" size={20} />
                                     Ajouter un administrateur
                                 </h2>
@@ -454,9 +454,9 @@ export default function AdminSettingsPage() {
                             </section>
 
                             {/* Admin List */}
-                            <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden">
                                 <table className="w-full text-left">
-                                    <thead className="bg-gray-50/50 border-b border-gray-100">
+                                    <thead className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-white/5">
                                         <tr>
                                             <th className="p-6 text-xs font-black text-gray-400 uppercase tracking-widest">Administrateur</th>
                                             <th className="p-6 text-xs font-black text-gray-400 uppercase tracking-widest">Email</th>
@@ -465,13 +465,13 @@ export default function AdminSettingsPage() {
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         {admins.map((admin) => (
-                                            <tr key={admin.id} className="group hover:bg-gray-50/50 transition-colors">
+                                            <tr key={admin.id} className="group hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="p-6">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
                                                             {admin.first_name?.[0]}{admin.last_name?.[0]}
                                                         </div>
-                                                        <div className="font-bold text-gray-900">
+                                                        <div className="font-bold text-gray-900 dark:text-white">
                                                             {admin.first_name} {admin.last_name}
                                                         </div>
                                                     </div>
@@ -498,8 +498,8 @@ export default function AdminSettingsPage() {
 
                     {activeTab === 'data' && (
                         <div className="space-y-8 animate-fade-in">
-                            <section className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-                                <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
+                            <section className="bg-white dark:bg-slate-900 p-8 rounded-[32px] shadow-sm border border-gray-100 dark:border-white/5">
+                                <h2 className="text-lg font-black text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                     <Layers className="text-indigo-500" size={20} />
                                     Sources de Données
                                 </h2>
@@ -517,8 +517,8 @@ export default function AdminSettingsPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <h3 className="text-base font-bold text-gray-900">Airtable: Intervenants</h3>
-                                            <p className="text-sm text-gray-500 mt-1 max-w-md">
+                                            <h3 className="text-base font-bold text-gray-900 dark:text-white">Airtable: Intervenants</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-md">
                                                 Synchronisez la table &quot;Intervenants&quot; de votre base Airtable vers Supabase.
                                                 La clé unique de correspondance est l&apos;email.
                                             </p>

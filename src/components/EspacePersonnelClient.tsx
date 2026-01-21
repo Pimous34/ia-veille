@@ -348,38 +348,46 @@ export default function EspacePersonnelClient() {
         <div className="personal-space-container">
             <div className="page-header">
                 <h1 className="page-title">Espace Personnel</h1>
-                <p className="page-subtitle">Gérez vos articles sauvegardés et suivez votre activité</p>
+                <p className="page-subtitle dark:text-gray-400">Gérez vos articles sauvegardés et suivez votre activité</p>
             </div>
 
             {/* Learning History Section */}
-            <div className="learning-history-container">
+            <div className="learning-history-container bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/10">
                 {/* Stats Grid */}
                 <div className="learning-stats-grid">
-                    <div className="learning-stat-card">
-                        <Book className="stat-icon text-[#FF6B9D]" />
+                    <div className="learning-stat-card shadow-sm border border-gray-100 dark:border-white/10 dark:bg-slate-900 bg-white">
+                        <div className="stat-icon-container">
+                            <Book className="stat-icon text-[#FF6B9D]" />
+                        </div>
                         <div className="stat-info">
-                            <div className="stat-value">{historyStats.totalReadings}</div>
+                            <div className="stat-value text-[#FF6B9D]">{historyStats.totalReadings}</div>
                             <div className="stat-label">Articles lus</div>
                         </div>
                     </div>
-                    <div className="learning-stat-card">
-                        <Target className="stat-icon text-[#9C27B0]" />
+                    <div className="learning-stat-card shadow-sm border border-gray-100 dark:border-white/10 dark:bg-slate-900 bg-white">
+                        <div className="stat-icon-container">
+                            <Target className="stat-icon text-[#9C27B0]" />
+                        </div>
                         <div className="stat-info">
-                            <div className="stat-value">{historyStats.favoriteCategory}</div>
+                            <div className="stat-value text-[#9C27B0]">{historyStats.favoriteCategory}</div>
                             <div className="stat-label">Catégorie favorite</div>
                         </div>
                     </div>
-                    <div className="learning-stat-card">
-                        <TrendingUp className="stat-icon text-[#2196F3]" />
+                    <div className="learning-stat-card shadow-sm border border-gray-100 dark:border-white/10 dark:bg-slate-900 bg-white">
+                        <div className="stat-icon-container">
+                            <TrendingUp className="stat-icon text-[#2196F3]" />
+                        </div>
                         <div className="stat-info">
-                            <div className="stat-value">{historyStats.readingStreak}</div>
+                            <div className="stat-value text-[#2196F3]">{historyStats.readingStreak}</div>
                             <div className="stat-label">Jours consécutifs</div>
                         </div>
                     </div>
-                    <div className="learning-stat-card">
-                        <Clock className="stat-icon text-orange-400" />
+                    <div className="learning-stat-card shadow-sm border border-gray-100 dark:border-white/10 dark:bg-slate-900 bg-white">
+                        <div className="stat-icon-container">
+                            <Clock className="stat-icon text-orange-400" />
+                        </div>
                         <div className="stat-info">
-                            <div className="stat-value">{historyStats.totalTime} min</div>
+                            <div className="stat-value text-orange-400">{historyStats.totalTime} min</div>
                             <div className="stat-label">Temps de lecture</div>
                         </div>
                     </div>
@@ -389,7 +397,7 @@ export default function EspacePersonnelClient() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Category Breakdown */}
                     <div className="category-breakdown">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Répartition par catégorie</h3>
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Répartition par catégorie</h3>
                         <div className="category-chart">
                             {Object.keys(historyStats.categories).length > 0 ? Object.entries(historyStats.categories)
                                 .sort((a, b) => b[1] - a[1])
@@ -398,8 +406,8 @@ export default function EspacePersonnelClient() {
                                     const percentage = Math.round((count / total) * 100);
                                     return (
                                         <div key={category} className="category-bar">
-                                            <div className="category-name">{category}</div>
-                                            <div className="category-progress">
+                                            <div className="category-name dark:text-gray-300 font-semibold">{category}</div>
+                                            <div className="category-progress bg-gray-100 dark:bg-slate-800">
                                                 <div className="category-progress-fill" style={{ width: `${percentage}%` }}>
                                                     {count} ({percentage}%)
                                                 </div>
@@ -411,16 +419,16 @@ export default function EspacePersonnelClient() {
                     </div>
 
                     {/* Top Tags */}
-                    <div className="top-tags-section !mt-0 !pt-30 md:!pt-0 md:!mt-8 md:!border-t-0 border-t border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Sujets explorés</h3>
+                    <div className="top-tags-section !mt-0 !pt-30 md:!pt-0 md:!mt-8 md:!border-t-0 border-t border-gray-100 dark:border-white/5">
+                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Sujets explorés</h3>
                         <div className="tags-cloud">
                             {Object.keys(historyStats.topTags).length > 0 ? Object.entries(historyStats.topTags)
                                 .sort((a, b) => b[1] - a[1])
                                 .slice(0, 10)
                                 .map(([tag, count]) => (
-                                    <div key={tag} className="tag-item">
+                                    <div key={tag} className="tag-item bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-indigo-400 border border-transparent dark:border-white/10">
                                         <span>{tag}</span>
-                                        <span className="tag-count">{count}</span>
+                                        <span className="tag-count dark:bg-indigo-900/30">{count}</span>
                                     </div>
                                 )) : <p className="text-gray-400 italic">Pas de tags.</p>}
                         </div>
@@ -429,14 +437,14 @@ export default function EspacePersonnelClient() {
 
                 {/* Activity Timeline */}
                 <div className="activity-timeline">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Activité récente</h3>
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">Activité récente</h3>
                     <div className="timeline-container">
                         {historyStats.recentActivity.length > 0 ? historyStats.recentActivity.map((activity, idx) => (
-                            <div key={idx} className="timeline-item">
+                            <div key={idx} className="timeline-item bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/10 p-3 rounded-lg mb-2 shadow-sm">
                                 <div className="timeline-date">{getTimeAgo(activity.date)}</div>
-                                <div className="timeline-content">
-                                    <div className="timeline-title">{activity.title}</div>
-                                    <span className="timeline-category">{activity.category}</span>
+                                <div className="timeline-content flex items-center justify-between flex-1">
+                                    <div className="timeline-title text-gray-800 dark:text-gray-200 font-medium">{activity.title}</div>
+                                    <span className="timeline-category bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded text-xs">{activity.category}</span>
                                 </div>
                             </div>
                         )) : <p className="text-gray-400 text-center">Aucune activité récente</p>}
@@ -445,19 +453,19 @@ export default function EspacePersonnelClient() {
             </div>
 
             {/* Saved Articles Section */}
-            <h2 className="section-title">Mes Articles Sauvegardés</h2>
+            <h2 className="section-title dark:text-white">Mes Articles Sauvegardés</h2>
             <div className="saved-articles-grid">
                 {savedArticles.length > 0 ? savedArticles.map(article => (
-                    <div key={article.id} className="article-card" onClick={() => article.article_url && window.open(article.article_url, '_blank')}>
+                    <div key={article.id} className="article-card dark:bg-slate-900/50 dark:border-white/10 dark:shadow-2xl" onClick={() => article.article_url && window.open(article.article_url, '_blank')}>
                         {article.image_url && (
                             <img src={article.image_url} alt={article.title} className="article-image" />
                         )}
                         <div className="article-content">
                             {article.category && <span className="article-category">{article.category}</span>}
-                            <h3 className="article-title">{article.title}</h3>
-                            {article.excerpt && <p className="article-excerpt line-clamp-2">{article.excerpt}</p>}
+                            <h3 className="article-title dark:text-white group-hover:text-indigo-600 transition-colors">{article.title}</h3>
+                            {article.excerpt && <p className="article-excerpt line-clamp-2 dark:text-gray-400">{article.excerpt}</p>}
                             <div className="article-meta">
-                                <span className="article-date">
+                                <span className="article-date dark:text-gray-500">
                                     <Calendar size={14} className="mr-1" />
                                     {new Date(article.created_at).toLocaleDateString()}
                                 </span>
@@ -476,18 +484,18 @@ export default function EspacePersonnelClient() {
                 )}
             </div>
 
-            <h2 className="section-title">À regarder plus tard</h2>
+            <h2 className="section-title dark:text-white">À regarder plus tard</h2>
             <div className="saved-articles-grid">
                 {watchLaterArticles.length > 0 ? watchLaterArticles.map(article => (
-                    <div key={article.id} className="article-card" onClick={() => article.article_url && window.open(article.article_url, '_blank')}>
+                    <div key={article.id} className="article-card dark:bg-slate-900/50 dark:border-white/10 dark:shadow-2xl" onClick={() => article.article_url && window.open(article.article_url, '_blank')}>
                         {article.image_url && (
                             <img src={article.image_url} alt={article.title} className="article-image" />
                         )}
                         <div className="article-content">
                             {article.category && <span className="article-category">{article.category}</span>}
-                            <h3 className="article-title">{article.title}</h3>
+                            <h3 className="article-title dark:text-white group-hover:text-indigo-600 transition-colors">{article.title}</h3>
                             <div className="article-meta">
-                                <span className="article-date">
+                                <span className="article-date dark:text-gray-500">
                                     <Calendar size={14} className="mr-1" />
                                     {new Date(article.created_at).toLocaleDateString()}
                                 </span>
@@ -499,9 +507,9 @@ export default function EspacePersonnelClient() {
                     </div>
                 )) : (
                     <div className="empty-state">
-                        <Clock size={80} strokeWidth={1} className="mx-auto mb-4 opacity-30" />
-                        <h3>Aucun article à regarder plus tard</h3>
-                        <p>Ajoutez des articles à votre liste pour les consulter ultérieurement</p>
+                        <Clock size={80} strokeWidth={1} className="mx-auto mb-4 opacity-30 dark:text-white" />
+                        <h3 className="dark:text-gray-400">Aucun article à regarder plus tard</h3>
+                        <p className="dark:text-gray-500">Ajoutez des articles à votre liste pour les consulter ultérieurement</p>
                     </div>
                 )}
             </div>
