@@ -1184,10 +1184,7 @@ CONSIGNES POUR METADATA :
                                                     </div>
                                                 )}
 
-                                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
-                                                    <p className="font-bold mb-1">Mises à jour</p>
-                                                    <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
-                                                </div>
+
                                             </div>
                                         </div>
                                     </div>
