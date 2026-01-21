@@ -294,7 +294,7 @@ export default function HomeClient({
                     const data = await response.json();
                     if (data.found && data.courses) {
                         setUpcomingCourses(data.courses);
-                        
+
                         // Group by Day
                         const grouped: { [key: string]: NextCourse[] } = {};
                         data.courses.forEach((course: NextCourse) => {
@@ -1012,16 +1012,22 @@ CONSIGNES POUR METADATA :
                                                     <div className="empty-state"><p>Chargement des sujets...</p></div>
                                                 ) : (isSearching ? searchResultArticles : jtSubjects).length > 0 ? (
                                                     (isSearching ? searchResultArticles : jtSubjects).map((article, index) => (
-                                                        <div key={article.id} className="vignette-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
+                                                        <div key={article.id} className={`vignette-card group ${isRead(article.id) ? 'opacity-80' : ''}`} onClick={() => router.push(`/shorts?id=${article.id}`)}>
                                                             <div className="relative w-full h-[120px]">
                                                                 <SafeImage
                                                                     src={article.image}
                                                                     fallbackTitle={article.title}
-                                                                    className="vignette-image object-cover"
+                                                                    className={`vignette-image object-cover transition-all duration-300 ${isRead(article.id) ? 'grayscale-[50%]' : ''}`}
                                                                     alt={article.title}
                                                                     fill
                                                                     priority={index < 2}
                                                                 />
+                                                                {isRead(article.id) && (
+                                                                    <div className="absolute top-1 right-1 bg-green-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm z-10 flex items-center gap-1 backdrop-blur-sm">
+                                                                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                        LU
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                             <div className="vignette-info">{article.title}</div>
                                                         </div>
@@ -1100,30 +1106,30 @@ CONSIGNES POUR METADATA :
                                                 {currentDaySchedule ? (
                                                     <div className="space-y-3 animate-in fade-in duration-300">
                                                         <div className="flex items-center justify-between pb-2 border-b border-indigo-100/50 mb-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => setCurrentDayIndex(prev => Math.max(0, prev - 1))}
                                                                 disabled={currentDayIndex === 0}
                                                                 className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
                                                             >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                                                             </button>
-                                                            
+
                                                             <div className="font-bold text-indigo-900 text-lg">
                                                                 {currentDaySchedule.dateLabel}
                                                             </div>
 
-                                                            <button 
+                                                            <button
                                                                 onClick={() => setCurrentDayIndex(prev => Math.min(dailySchedules.length - 1, prev + 1))}
                                                                 disabled={currentDayIndex >= dailySchedules.length - 1}
                                                                 className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex >= dailySchedules.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
                                                             >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                                                             </button>
                                                         </div>
                                                         {currentDaySchedule.courses.map((course, idx) => {
                                                             const isNow = course.endDate && new Date() >= new Date(course.date) && new Date() <= new Date(course.endDate);
-                                                            const startTime = new Date(course.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}).replace(':', 'h');
-                                                            
+                                                            const startTime = new Date(course.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+
                                                             let label = `À ${startTime}`;
                                                             if (isNow) label = "Maintenant";
 
@@ -1141,26 +1147,42 @@ CONSIGNES POUR METADATA :
                                                                             {course.location && !course.location.toLowerCase().includes('distanciel') ? 'Présentiel' : 'Distanciel'}
                                                                         </span>
                                                                     </div>
-                                                                <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
-        
-                                                                <div className="space-y-1.5 text-xs text-gray-700">
-                                                                    {course.meetLink && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 10l5-4v8l-5-4"/><rect x="4" y="6" width="12" height="12" rx="2" ry="2"/></svg>
-                                                                            <a href={course.meetLink} target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold hover:text-indigo-800">
-                                                                                Rejoindre la visio
-                                                                            </a>
-                                                                        </div>
-                                                                    )}
-        
-                                                                    {course.instructor && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                                            <span>Formateur : <span className="font-medium">{course.instructor}</span></span>
-                                                                        </div>
-                                                                    )}
+                                                                    <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
+
+                                                                    <div className="space-y-1.5 text-xs text-gray-700">
+                                                                        {course.location && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                                                <span>
+                                                                                    {course.location !== 'Distanciel' && course.location !== 'Présentiel' ? (
+                                                                                        <a
+                                                                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(course.location)}`}
+                                                                                            target="_blank"
+                                                                                            rel="noreferrer"
+                                                                                            className="hover:text-indigo-600 hover:underline transition-colors"
+                                                                                        >
+                                                                                            {course.location}
+                                                                                        </a>
+                                                                                    ) : (
+                                                                                        course.location
+                                                                                    )}
+                                                                                    {course.meetLink && (
+                                                                                        <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
+                                                                                            Lien Google Meet
+                                                                                        </a>
+                                                                                    )}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {course.instructor && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                                                <span>Formateur : <span className="font-medium">{course.instructor}</span></span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
                                                             );
                                                         })}
 
@@ -1168,7 +1190,7 @@ CONSIGNES POUR METADATA :
 
 
 
-                                                    
+
 
                                                     </div>
                                                 ) : (
@@ -1202,15 +1224,23 @@ CONSIGNES POUR METADATA :
                             </div>
                             <div className="articles-grid">
                                 {trendingArticles.map(article => (
-                                    <article key={article.id} className="article-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
+                                    <article key={article.id} className={`article-card group/card ${isRead(article.id) ? 'read-card opacity-90' : ''}`} onClick={() => router.push(`/shorts?id=${article.id}`)}>
                                         <div className="article-image-container relative h-48 w-full group">
                                             <Image
                                                 src={article.image}
                                                 alt={article.title}
                                                 fill
-                                                className="article-image object-cover"
+                                                className={`article-image object-cover transition-all duration-500 ${isRead(article.id) ? 'grayscale-[100%] contrast-125' : ''}`}
                                                 unoptimized
                                             />
+                                            {isRead(article.id) && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none z-10">
+                                                    <span className="bg-green-600/90 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg border border-white/20 backdrop-blur-sm flex items-center gap-1.5 transform -rotate-6">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                        LU
+                                                    </span>
+                                                </div>
+                                            )}
 
                                             {/* Action Buttons */}
                                             <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
