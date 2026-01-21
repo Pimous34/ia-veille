@@ -217,7 +217,7 @@ export default function HomeClient({
 }: HomeClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { isRead } = useReadTracking();
+    const { isRead, toggleLike, toggleBookmark, isLiked, isBookmarked } = useReadTracking();
     const { supabase, user } = useAuth(); // Use shared client
     // Auth check moved to Server Component wrapper
 
@@ -1139,11 +1139,10 @@ CONSIGNES POUR METADATA :
                                                                         <span className={`${isNow ? 'bg-green-600 animate-pulse' : 'bg-indigo-600'} text-white text-xs px-2 py-0.5 rounded-full font-bold transition-colors`}>
                                                                             {label}
                                                                         </span>
-                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
-                                                                            course.location && !course.location.toLowerCase().includes('distanciel') 
-                                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                                                                : 'bg-orange-50 text-orange-700 border-orange-200'
-                                                                        }`}>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${course.location && !course.location.toLowerCase().includes('distanciel')
+                                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                            : 'bg-orange-50 text-orange-700 border-orange-200'
+                                                                            }`}>
                                                                             {course.location && !course.location.toLowerCase().includes('distanciel') ? 'Présentiel' : 'Distanciel'}
                                                                         </span>
                                                                     </div>
@@ -1243,19 +1242,19 @@ CONSIGNES POUR METADATA :
                                             )}
 
                                             {/* Action Buttons */}
-                                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        alert('Article sauvegardé !');
+                                                        toggleLike(article.id);
                                                     }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
-                                                    aria-label="Sauvegarder"
-                                                    title="Sauvegarder"
+                                                    className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg ${isLiked(article.id) ? 'bg-pink-50 text-pink-600 border border-pink-200' : 'bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white'}`}
+                                                    aria-label={isLiked(article.id) ? "Retirer des favoris" : "Sauvegarder"}
+                                                    title={isLiked(article.id) ? "Retirer des favoris" : "Sauvegarder"}
                                                 >
                                                     <svg
                                                         viewBox="0 0 24 24"
-                                                        fill="none"
+                                                        fill={isLiked(article.id) ? "currentColor" : "none"}
                                                         stroke="currentColor"
                                                         strokeWidth="2"
                                                         className="w-5 h-5"
@@ -1267,17 +1266,17 @@ CONSIGNES POUR METADATA :
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        alert('Ajouté à "À regarder plus tard" !');
+                                                        toggleBookmark(article.id);
                                                     }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
-                                                    aria-label="À regarder plus tard"
-                                                    title="À regarder plus tard"
+                                                    className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg ${isBookmarked(article.id) ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-white/90 text-gray-700 hover:bg-indigo-500 hover:text-white'}`}
+                                                    aria-label={isBookmarked(article.id) ? "Retirer de la liste" : "À regarder plus tard"}
+                                                    title={isBookmarked(article.id) ? "Retirer de la liste" : "À regarder plus tard"}
                                                 >
                                                     <svg
                                                         viewBox="0 0 24 24"
                                                         fill="none"
                                                         stroke="currentColor"
-                                                        strokeWidth="2"
+                                                        strokeWidth={isBookmarked(article.id) ? "2.5" : "2"}
                                                         className="w-5 h-5"
                                                     >
                                                         <circle cx="12" cy="12" r="10"></circle>

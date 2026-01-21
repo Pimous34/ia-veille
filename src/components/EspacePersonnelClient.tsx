@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { createClient } from '@/utils/supabase/client'; // Using utils as seen in ShortsFeed
 import { useRouter } from 'next/navigation';
-import { 
-    Book, 
-    Target, 
-    TrendingUp, 
-    Clock, 
-    Trash2, 
-    ExternalLink, 
+import {
+    Book,
+    Target,
+    TrendingUp,
+    Clock,
+    Trash2,
+    ExternalLink,
     Calendar,
     Bookmark,
     AlertCircle,
@@ -77,7 +78,7 @@ export default function EspacePersonnelClient() {
         const checkUser = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                router.push('/auth'); 
+                router.push('/auth');
                 return;
             }
             setUser(session.user);
@@ -88,11 +89,11 @@ export default function EspacePersonnelClient() {
 
         // Listen for auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-             if (event === 'SIGNED_OUT') {
-                 router.push('/auth');
-             } else if (session) {
-                 setUser(session.user);
-             }
+            if (event === 'SIGNED_OUT') {
+                router.push('/auth');
+            } else if (session) {
+                setUser(session.user);
+            }
         });
 
         return () => {
@@ -116,33 +117,53 @@ export default function EspacePersonnelClient() {
 
     const loadSavedArticles = async (userId: string) => {
         const { data, error } = await supabase
-            .from('saved_articles')
-            .select('id, saved_at, status, user_id, articles(id, title, excerpt, image_url, url, published_at)')
+            .from('article_interactions')
+            .select(`
+                article_id, is_liked, is_bookmarked, last_interacted_at,
+                articles (
+                    id, title, excerpt, image_url, url, published_at
+                )
+            `)
             .eq('user_id', userId)
-            .order('saved_at', { ascending: false });
+            .or('is_liked.eq.true,is_bookmarked.eq.true')
+            .order('last_interacted_at', { ascending: false });
 
         if (error) {
-            console.error('Error fetching saved:', error);
+            console.error('Error fetching interactions:', error);
             return;
         }
 
         if (data) {
-            const mappedArticles: Article[] = data.map((item: any) => ({
-                id: item.id,
-                title: item.articles?.title || 'Article indisponible',
-                description: item.articles?.excerpt || '',
-                excerpt: item.articles?.excerpt || '',
-                image_url: item.articles?.image_url || '',
-                article_url: item.articles?.url || '#',
-                category: 'IA', // Placeholder: logic to fetch category name would require deeper join
-                published_at: item.articles?.published_at,
-                created_at: item.saved_at,
-                status: item.status || 'saved',
-                user_id: item.user_id
-            }));
+            const loadedSaved: Article[] = [];
+            const loadedWatchLater: Article[] = [];
 
-            setSavedArticles(mappedArticles.filter(a => a.status === 'saved'));
-            setWatchLaterArticles(mappedArticles.filter(a => a.status === 'watch_later'));
+            data.forEach((item: any) => {
+                if (!item.articles) return;
+
+                const art: Article = {
+                    id: item.articles.id,
+                    title: item.articles.title || 'Article indisponible',
+                    description: item.articles.excerpt || '',
+                    excerpt: item.articles.excerpt || '',
+                    image_url: item.articles.image_url || '',
+                    article_url: item.articles.url || '#',
+                    category: 'IA',
+                    published_at: item.articles.published_at,
+                    created_at: item.last_interacted_at,
+                    status: 'saved',
+                    user_id: userId
+                };
+
+                if (item.is_liked) {
+                    loadedSaved.push({ ...art, status: 'saved' });
+                }
+                if (item.is_bookmarked) {
+                    loadedWatchLater.push({ ...art, status: 'watch_later' });
+                }
+            });
+
+            setSavedArticles(loadedSaved);
+            setWatchLaterArticles(loadedWatchLater);
         }
     };
 
@@ -176,36 +197,62 @@ export default function EspacePersonnelClient() {
             stats.readingStreak = profileData.current_streak ?? stats.readingStreak;
             // You could also add XP or other new stats here if the UI supported them
         } else {
-             // Optional: Create profile if missing?
-             // For now, we just rely on existing calculations or 0
+            // Optional: Create profile if missing?
+            // For now, we just rely on existing calculations or 0
         }
-        
+
         setHistoryStats(stats);
     };
 
-    const removeArticle = async (articleId: number | string, e: React.MouseEvent) => {
+    const removeArticle = async (articleId: number | string, type: 'liked' | 'bookmarked', e: React.MouseEvent) => {
         e.stopPropagation();
         if (!user) return;
-        
-        const confirmed = window.confirm('Êtes-vous sûr de vouloir retirer cet article ?');
-        if (!confirmed) return;
+
+        // Confirm logic removed for better UX
 
         try {
+            // Optimistic update
+            if (type === 'liked') {
+                setSavedArticles(prev => prev.filter(a => a.id !== articleId));
+                toast.success("Article retiré des favoris", {
+                    icon: '🗑️',
+                    style: { borderRadius: '10px', background: '#333', color: '#fff' }
+                });
+            } else {
+                setWatchLaterArticles(prev => prev.filter(a => a.id !== articleId));
+                toast.success("Retiré de 'À regarder plus tard'", {
+                    icon: '🗑️',
+                    style: { borderRadius: '10px', background: '#333', color: '#fff' }
+                });
+            }
+
+            // Sync with LocalStorage
+            const storageKey = type === 'liked' ? 'oreegamia_liked_items' : 'oreegamia_bookmarked_items';
+            try {
+                const stored = localStorage.getItem(storageKey);
+                if (stored) {
+                    const ids = JSON.parse(stored);
+                    const newIds = ids.filter((id: string) => id !== articleId.toString());
+                    localStorage.setItem(storageKey, JSON.stringify(newIds));
+                }
+            } catch (e) { console.error("LS update error", e); }
+
+            const updatePayload: any = {};
+            if (type === 'liked') updatePayload.is_liked = false;
+            if (type === 'bookmarked') updatePayload.is_bookmarked = false;
+            updatePayload.last_interacted_at = new Date().toISOString();
+
             const { error } = await supabase
-                .from('saved_articles')
-                .delete()
-                .eq('id', articleId)
+                .from('article_interactions')
+                .update(updatePayload)
+                .eq('article_id', articleId)
                 .eq('user_id', user.id);
 
             if (error) throw error;
-            
-            // Optimistic update
-            setSavedArticles(prev => prev.filter(a => a.id !== articleId));
-            setWatchLaterArticles(prev => prev.filter(a => a.id !== articleId));
-            
+
         } catch (err) {
-            console.error("Error deleting:", err);
-            alert("Erreur lors de la suppression.");
+            console.error("Error updating interaction:", err);
+            toast.error("Erreur lors de la mise à jour.");
         }
     };
 
@@ -232,32 +279,32 @@ export default function EspacePersonnelClient() {
             }
         });
 
-        const favoriteCategory = Object.entries(categoryCounts).sort((a,b) => b[1] - a[1])[0]?.[0] || '-';
-        
+        const favoriteCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+
         // Streak Logic
         const dates = history.map(item => {
             const d = new Date(item.read_at);
             return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
         });
         const uniqueDates = [...new Set(dates)].sort((a, b) => b - a);
-        
+
         let streak = 0;
         if (uniqueDates.length > 0) {
             streak = 1;
             const oneDayMs = 24 * 60 * 60 * 1000;
             for (let i = 0; i < uniqueDates.length - 1; i++) {
-                if (uniqueDates[i] - uniqueDates[i+1] <= oneDayMs) { // Allow for same day or previous day? Code said diff === oneDayMs.
-                   // Original code logic:
-                   // diff === oneDayMs -> streak++
-                   // My enhanced logic: usually streak means consecutive dates.
-                   // The original JS strictly checked `diff === oneDayMs`.
-                   if (uniqueDates[i] - uniqueDates[i+1] === oneDayMs) {
-                       streak++;
-                   } else {
-                       break;
-                   }
+                if (uniqueDates[i] - uniqueDates[i + 1] <= oneDayMs) { // Allow for same day or previous day? Code said diff === oneDayMs.
+                    // Original code logic:
+                    // diff === oneDayMs -> streak++
+                    // My enhanced logic: usually streak means consecutive dates.
+                    // The original JS strictly checked `diff === oneDayMs`.
+                    if (uniqueDates[i] - uniqueDates[i + 1] === oneDayMs) {
+                        streak++;
+                    } else {
+                        break;
+                    }
                 } else {
-                   break;
+                    break;
                 }
             }
         }
@@ -290,11 +337,11 @@ export default function EspacePersonnelClient() {
     };
 
     if (loading) {
-         return (
-             <div className="flex h-screen items-center justify-center">
-                 <div className="text-xl animate-pulse">Chargement de votre espace...</div>
-             </div>
-         );
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="text-xl animate-pulse">Chargement de votre espace...</div>
+            </div>
+        );
     }
 
     return (
@@ -365,10 +412,10 @@ export default function EspacePersonnelClient() {
 
                     {/* Top Tags */}
                     <div className="top-tags-section !mt-0 !pt-30 md:!pt-0 md:!mt-8 md:!border-t-0 border-t border-gray-100">
-                         <h3 className="text-lg font-bold text-gray-800 mb-4">Sujets explorés</h3>
-                         <div className="tags-cloud">
-                             {Object.keys(historyStats.topTags).length > 0 ? Object.entries(historyStats.topTags)
-                                .sort((a,b) => b[1] - a[1])
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">Sujets explorés</h3>
+                        <div className="tags-cloud">
+                            {Object.keys(historyStats.topTags).length > 0 ? Object.entries(historyStats.topTags)
+                                .sort((a, b) => b[1] - a[1])
                                 .slice(0, 10)
                                 .map(([tag, count]) => (
                                     <div key={tag} className="tag-item">
@@ -376,7 +423,7 @@ export default function EspacePersonnelClient() {
                                         <span className="tag-count">{count}</span>
                                     </div>
                                 )) : <p className="text-gray-400 italic">Pas de tags.</p>}
-                         </div>
+                        </div>
                     </div>
                 </div>
 
@@ -414,7 +461,7 @@ export default function EspacePersonnelClient() {
                                     <Calendar size={14} className="mr-1" />
                                     {new Date(article.created_at).toLocaleDateString()}
                                 </span>
-                                <button className="remove-btn" onClick={(e) => removeArticle(article.id, e)} title="Retirer">
+                                <button className="remove-btn" onClick={(e) => removeArticle(article.id, 'liked', e)} title="Retirer">
                                     <Trash2 size={18} />
                                 </button>
                             </div>
@@ -431,32 +478,32 @@ export default function EspacePersonnelClient() {
 
             <h2 className="section-title">À regarder plus tard</h2>
             <div className="saved-articles-grid">
-                 {watchLaterArticles.length > 0 ? watchLaterArticles.map(article => (
+                {watchLaterArticles.length > 0 ? watchLaterArticles.map(article => (
                     <div key={article.id} className="article-card" onClick={() => article.article_url && window.open(article.article_url, '_blank')}>
-                         {article.image_url && (
+                        {article.image_url && (
                             <img src={article.image_url} alt={article.title} className="article-image" />
                         )}
                         <div className="article-content">
-                             {article.category && <span className="article-category">{article.category}</span>}
+                            {article.category && <span className="article-category">{article.category}</span>}
                             <h3 className="article-title">{article.title}</h3>
                             <div className="article-meta">
                                 <span className="article-date">
                                     <Calendar size={14} className="mr-1" />
                                     {new Date(article.created_at).toLocaleDateString()}
                                 </span>
-                                <button className="remove-btn" onClick={(e) => removeArticle(article.id, e)} title="Retirer">
+                                <button className="remove-btn" onClick={(e) => removeArticle(article.id, 'bookmarked', e)} title="Retirer">
                                     <Trash2 size={18} />
                                 </button>
                             </div>
                         </div>
                     </div>
-                 )) : (
+                )) : (
                     <div className="empty-state">
                         <Clock size={80} strokeWidth={1} className="mx-auto mb-4 opacity-30" />
                         <h3>Aucun article à regarder plus tard</h3>
                         <p>Ajoutez des articles à votre liste pour les consulter ultérieurement</p>
                     </div>
-                 )}
+                )}
             </div>
         </div>
     );
