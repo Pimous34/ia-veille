@@ -1,0 +1,274 @@
+{
+  "name": "Form to Supabase (HTTP Fix)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Partage de ressources formateur",
+        "formDescription": "Envoyez facilement aux apprenants des supports, fichiers et informations utiles pour votre intervention.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Session",
+              "requiredField": true,
+              "defaultValue": "={{ $query.Session }}"
+            },
+            {
+              "fieldLabel": "Date",
+              "requiredField": true,
+              "defaultValue": "={{ $query.Date }}"
+            },
+            {
+              "fieldLabel": "Message pour les apprenants"
+            },
+            {
+              "fieldLabel": "Votre profil LinkedIn"
+            },
+            {
+              "fieldLabel": "Fichiers (optionnel)",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "da8f3d62-4e3d-483d-9229-5b21adc9f6c8",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -432,
+        -80
+      ],
+      "webhookId": "dc146c60-e441-44af-9d7e-639c62801b20"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $('Form Trigger').item.json['Fichiers (optionnel)'] }}",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "18befaa5-d48e-463c-95aa-d595976b6c85",
+      "name": "Check if File Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -208,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://pjiobifgcvdapikurlbn.supabase.co/rest/v1/ressources_intervenants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTEwMjQ4MSwiZXhwIjoyMDgwNjc4NDgxfQ.TDVP4swScKmcyyrn9e3iXMRjEEiwQsSooGqpX70imEA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTEwMjQ4MSwiZXhwIjoyMDgwNjc4NDgxfQ.TDVP4swScKmcyyrn9e3iXMRjEEiwQsSooGqpX70imEA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prenom",
+              "value": "={{ $('Form Trigger').item.json['Votre prénom'] }}"
+            },
+            {
+              "name": "nom",
+              "value": "={{ $('Form Trigger').item.json['Votre nom'] }}"
+            },
+            {
+              "name": "sujet_intervention",
+              "value": "={{ $('Form Trigger').item.json['Sujet de votre intervention : '] }}"
+            },
+            {
+              "name": "infos_apprenants",
+              "value": "={{ $('Form Trigger').item.json['Informations pour les apprenants : '] }}"
+            },
+            {
+              "name": "fichiers",
+              "value": "={{ [$json.Key || $json.path || 'file_uploaded'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-insert-with-file",
+      "name": "Insert with File (HTTP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        256,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://pjiobifgcvdapikurlbn.supabase.co/rest/v1/ressources_intervenants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTEwMjQ4MSwiZXhwIjoyMDgwNjc4NDgxfQ.TDVP4swScKmcyyrn9e3iXMRjEEiwQsSooGqpX70imEA"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTEwMjQ4MSwiZXhwIjoyMDgwNjc4NDgxfQ.TDVP4swScKmcyyrn9e3iXMRjEEiwQsSooGqpX70imEA"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prenom",
+              "value": "={{ $('Form Trigger').item.json['Votre prénom'] }}"
+            },
+            {
+              "name": "nom",
+              "value": "={{ $('Form Trigger').item.json['Votre nom'] }}"
+            },
+            {
+              "name": "sujet_intervention",
+              "value": "={{ $('Form Trigger').item.json['Sujet de votre intervention : '] }}"
+            },
+            {
+              "name": "infos_apprenants",
+              "value": "={{ $('Form Trigger').item.json['Informations pour les apprenants : '] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-insert-without-file",
+      "name": "Insert without File (HTTP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        224,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://pjiobifgcvdapikurlbn.supabase.co/storage/v1/object/ressources-intervenants/{{ $binary.Fichiers__optionnel_.fileName }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqaW9iaWZnY3ZkYXBpa3VybGJuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTEwMjQ4MSwiZXhwIjoyMDgwNjc4NDgxfQ.TDVP4swScKmcyyrn9e3iXMRjEEiwQsSooGqpX70imEA"
+            },
+            {
+              "name": "x-upsert",
+              "value": "true"
+            },
+            {
+              "name": "Content-Type",
+              "value": "={{ $binary.Fichiers__optionnel_.mimeType }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "Fichiers__optionnel_",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "ff35139d-d67f-436b-820f-8a7942d0c5fb",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check if File Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if File Exists": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert without File (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Insert with File (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
