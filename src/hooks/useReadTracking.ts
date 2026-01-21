@@ -9,6 +9,7 @@ interface ArticleMetadata {
     title: string;
     category?: string;
     tags?: string[];
+    duration?: number;
 }
 
 /**
@@ -58,6 +59,9 @@ export function useReadTracking() {
                 const mergedIds = [...new Set([...localIds, ...dbIds])];
                 setReadIds(mergedIds);
 
+                // Init session read ids
+                mergedIds.forEach(id => sessionReadIds.current.add(id));
+
                 // Update localStorage with merged data
                 if (mergedIds.length > 0) {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedIds));
@@ -89,6 +93,8 @@ export function useReadTracking() {
                         const localIds = stored ? JSON.parse(stored) : [];
                         const mergedIds = [...new Set([...localIds, ...dbIds])];
                         setReadIds(mergedIds);
+                        // Update session cache too
+                        mergedIds.forEach(id => sessionReadIds.current.add(id));
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedIds));
                     }
                 } catch (e) {
@@ -107,13 +113,23 @@ export function useReadTracking() {
     const markAsRead = async (id: string | number, metadata?: ArticleMetadata, readingDuration?: number) => {
         const idStr = id.toString();
 
-        // Skip if already marked as read
+        // Skip if already tracked in this session to prevent spam
+        if (sessionReadIds.current.has(idStr)) {
+            // Optional logic: if we want to allow re-reading logic, we can remove this check or adapt
+            return;
+        }
+
+        // Skip if locally known as read (double check)
         if (readIds.includes(idStr)) {
             console.log(`ℹ️ Article ${idStr} already marked as read`);
+            sessionReadIds.current.add(idStr);
             return;
         }
 
         console.log(`📖 Marking article ${idStr} as read`, { metadata, readingDuration });
+
+        // Mark as processed in session immediately
+        sessionReadIds.current.add(idStr);
 
         // Update localStorage
         const newIds = [...readIds, idStr];
@@ -146,27 +162,19 @@ export function useReadTracking() {
                         article_title: metadata.title,
                         article_category: metadata.category || null,
                         article_tags: metadata.tags || null,
-                        reading_duration: readingDuration || 7, // Default 7 seconds if not provided
+                        reading_duration: readingDuration || metadata.duration || 7, // Handle both props
                         read_at: new Date().toISOString()
                     })
                     .select();
 
                 if (error) {
                     console.error('❌ Failed to save to reading_history:', error);
-                    console.error('❌ Error details:', {
-                        message: error.message,
-                        details: error.details,
-                        hint: error.hint,
-                        code: error.code
-                    });
                 } else {
                     console.log(`✅ Successfully saved article ${idStr} to reading_history`, data);
                 }
             } catch (e) {
                 console.error('❌ Error saving to database:', e);
             }
-        } else {
-            console.log(`⚠️ Not saving to database: userId=${userId}, metadata=${!!metadata}`);
         }
     };
 
