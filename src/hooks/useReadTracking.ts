@@ -9,6 +9,7 @@ interface ArticleMetadata {
     title: string;
     category?: string;
     tags?: string[];
+    duration?: number;
 }
 
 /**
@@ -21,12 +22,17 @@ export function useReadTracking() {
     const [supabase] = useState(() => createClient());
     const [userId, setUserId] = useState<string | null>(null);
 
-    // Load user and read IDs on mount
+    // Track items read in this session to prevent spamming the API
+    const sessionReadIds = useRef<Set<string>>(new Set());
+
+    // Load initial data from LocalStorage
     useEffect(() => {
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
-                setReadIds(JSON.parse(stored));
+                const ids = JSON.parse(stored);
+                setReadIds(ids);
+                ids.forEach((id: string) => sessionReadIds.current.add(id));
             }
         } catch (e) {
             console.error('Failed to load read status:', e);
@@ -35,87 +41,44 @@ export function useReadTracking() {
         }
     }, []);
 
-    const [supabase] = useState(() => createClient());
-
-    // Track items read in this session to prevent spamming the API on scroll
-    const sessionReadIds = useRef<Set<string>>(new Set());
-
-    const markAsRead = async (id: string | number, meta?: { title?: string, category?: string, tags?: string[], duration?: number }) => {
-        const idStr = id.toString();
-        
-        // 1. Update Local Storage (Persistent)
-        if (!readIds.includes(idStr)) {
-            const newIds = [...readIds, idStr];
-            setReadIds(newIds);
+    // Auth Listener & DB Sync
+    useEffect(() => {
+        const fetchUserHistory = async (uid: string) => {
             try {
-                // Get current user
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: historyData, error } = await supabase
+                    .from('reading_history')
+                    .select('article_id')
+                    .eq('user_id', uid);
 
-                let localIds: string[] = [];
-                let dbIds: string[] = [];
-
-                // Load from localStorage first
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    localIds = JSON.parse(stored);
-                }
-
-                // If user is logged in, load from database
-                if (session?.user) {
-                    setUserId(session.user.id);
-
-                    const { data: historyData, error } = await supabase
-                        .from('reading_history')
-                        .select('article_id')
-                        .eq('user_id', session.user.id);
-
-                    if (!error && historyData) {
-                        dbIds = historyData.map(item => item.article_id);
-                    }
-                }
-
-                // Merge localStorage and database IDs (remove duplicates)
-                const mergedIds = [...new Set([...localIds, ...dbIds])];
-                setReadIds(mergedIds);
-
-                // Update localStorage with merged data
-                if (mergedIds.length > 0) {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedIds));
+                if (!error && historyData) {
+                    const dbIds = historyData.map(item => item.article_id);
+                    setReadIds(prev => {
+                         const merged = [...new Set([...prev, ...dbIds])];
+                         // Update local storage with merged data
+                         localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+                         merged.forEach((id: string) => sessionReadIds.current.add(id));
+                         return merged;
+                    });
                 }
             } catch (e) {
-                console.error('Failed to load read status:', e);
-            } finally {
-                setIsLoaded(true);
+                console.error('Failed to reload read status on auth change:', e);
             }
         };
 
-        loadData();
-
-        // Listen for auth changes
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
                 setUserId(session.user.id);
-
-                // Reload data from database when user logs in
-                try {
-                    const { data: historyData, error } = await supabase
-                        .from('reading_history')
-                        .select('article_id')
-                        .eq('user_id', session.user.id);
-
-                    if (!error && historyData) {
-                        const dbIds = historyData.map(item => item.article_id);
-                        const stored = localStorage.getItem(STORAGE_KEY);
-                        const localIds = stored ? JSON.parse(stored) : [];
-                        const mergedIds = [...new Set([...localIds, ...dbIds])];
-                        setReadIds(mergedIds);
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedIds));
-                    }
-                } catch (e) {
-                    console.error('Failed to reload read status on auth change:', e);
-                }
+                await fetchUserHistory(session.user.id);
             } else {
                 setUserId(null);
+            }
+        });
+
+        // Initial check if session exists
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                setUserId(session.user.id);
+                fetchUserHistory(session.user.id);
             }
         });
 
@@ -124,18 +87,15 @@ export function useReadTracking() {
         };
     }, [supabase]);
 
-    const markAsRead = async (id: string | number, metadata?: ArticleMetadata, readingDuration?: number) => {
+    const markAsRead = async (id: string | number, metadata?: ArticleMetadata) => {
         const idStr = id.toString();
 
-        // Skip if already marked as read
-        if (readIds.includes(idStr)) {
-            console.log(`ℹ️ Article ${idStr} already marked as read`);
-            return;
-        }
+        if (sessionReadIds.current.has(idStr)) return;
+        
+        // Update Session Ref immediately
+        sessionReadIds.current.add(idStr);
 
-        console.log(`📖 Marking article ${idStr} as read`, { metadata, readingDuration });
-
-        // Update localStorage
+        // 1. Update State & LocalStorage
         const newIds = [...readIds, idStr];
         setReadIds(newIds);
         try {
@@ -144,77 +104,19 @@ export function useReadTracking() {
             console.error('Failed to save read status to localStorage:', e);
         }
 
-        // Save to database if user is logged in
+        // 2. Sync to DB if logged in
         if (userId && metadata) {
-            console.log(`💾 Saving to reading_history for user ${userId}`);
-            console.log('📝 Data to insert:', {
-                user_id: userId,
-                article_id: idStr,
-                article_title: metadata.title,
-                article_category: metadata.category || null,
-                article_tags: metadata.tags || null,
-                reading_duration: readingDuration || 7,
-                read_at: new Date().toISOString()
-            });
-
-            try {
-                const { error, data } = await supabase
-                    .from('reading_history')
-                    .insert({
-                        user_id: userId,
-                        article_id: idStr,
-                        article_title: metadata.title,
-                        article_category: metadata.category || null,
-                        article_tags: metadata.tags || null,
-                        reading_duration: readingDuration || 7, // Default 7 seconds if not provided
-                        read_at: new Date().toISOString()
-                    })
-                    .select();
-
-                if (error) {
-                    console.error('❌ Failed to save to reading_history:', error);
-                    console.error('❌ Error details:', {
-                        message: error.message,
-                        details: error.details,
-                        hint: error.hint,
-                        code: error.code
-                    });
-                } else {
-                    console.log(`✅ Successfully saved article ${idStr} to reading_history`, data);
-                }
-            } catch (e) {
-                console.error('❌ Error saving to database:', e);
-            }
-        } else {
-            console.log(`⚠️ Not saving to database: userId=${userId}, metadata=${!!metadata}`);
-        }
-
-        // 2. Sync with Supabase (if not done in this session)
-        if (!sessionReadIds.current.has(idStr)) {
-            sessionReadIds.current.add(idStr); // Mark as processed for this session
-            
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                    const { error } = await supabase.from('reading_history').insert({
-                        user_id: session.user.id,
-                        article_id: id,
-                        read_at: new Date().toISOString(),
-                        article_title: meta?.title || 'Article sans titre',
-                        article_category: meta?.category || 'Non catégorisé',
-                        article_tags: meta?.tags || [],
-                        reading_duration: meta?.duration || 0
-                        // device field removed as it does not exist in schema
-                    });
-
-                    if (!error) {
-                        // console.log("Synced read to Supabase");
-                        // Optional: trigger a toast or UI update? 
-                        // For now we keep it silent to not annoy user, or maybe small indicator?
-                    } else {
-                        console.error("Supabase insert error:", error);
-                    }
-                }
+            // console.log(`💾 Saving article ${idStr} to reading_history for user ${userId}`);
+             try {
+                await supabase.from('reading_history').insert({
+                    user_id: userId,
+                    article_id: idStr,
+                    article_title: metadata.title,
+                    article_category: metadata.category || null,
+                    article_tags: metadata.tags || [],
+                    reading_duration: metadata.duration || 7,
+                    read_at: new Date().toISOString()
+                });
             } catch (err) {
                 console.error("Failed to sync read status to Supabase", err);
             }
