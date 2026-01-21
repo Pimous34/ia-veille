@@ -16,7 +16,7 @@ import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, BookOpen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 // --- Types ---
@@ -254,6 +254,7 @@ export default function HomeClient({
     const [aiResponse, setAiResponse] = useState<string | null>(null);
     const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
     const [showContributionPopup, setShowContributionPopup] = useState(false);
+    // const [showResources, setShowResources] = useState(false); // Removed
 
     // New States for Videos and Next Course
 
@@ -1132,32 +1133,23 @@ CONSIGNES POUR METADATA :
                                                                         <span className={`${isNow ? 'bg-green-600 animate-pulse' : 'bg-indigo-600'} text-white text-xs px-2 py-0.5 rounded-full font-bold transition-colors`}>
                                                                             {label}
                                                                         </span>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                                                                            course.location && !course.location.toLowerCase().includes('distanciel') 
+                                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                                                                : 'bg-orange-50 text-orange-700 border-orange-200'
+                                                                        }`}>
+                                                                            {course.location && !course.location.toLowerCase().includes('distanciel') ? 'Présentiel' : 'Distanciel'}
+                                                                        </span>
                                                                     </div>
                                                                 <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
         
                                                                 <div className="space-y-1.5 text-xs text-gray-700">
-                                                                    {course.location && (
+                                                                    {course.meetLink && (
                                                                         <div className="flex items-center gap-2">
-                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                                                            <span>
-                                                                                {course.location !== 'Distanciel' && course.location !== 'Présentiel' ? (
-                                                                                    <a 
-                                                                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(course.location)}`}
-                                                                                        target="_blank" 
-                                                                                        rel="noreferrer"
-                                                                                        className="hover:text-indigo-600 hover:underline transition-colors"
-                                                                                    >
-                                                                                        {course.location}
-                                                                                    </a>
-                                                                                ) : (
-                                                                                    course.location
-                                                                                )}
-                                                                                {course.meetLink && (
-                                                                                    <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
-                                                                                        Lien Google Meet
-                                                                                    </a>
-                                                                                )}
-                                                                            </span>
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 10l5-4v8l-5-4"/><rect x="4" y="6" width="12" height="12" rx="2" ry="2"/></svg>
+                                                                            <a href={course.meetLink} target="_blank" rel="noreferrer" className="text-indigo-600 underline font-semibold hover:text-indigo-800">
+                                                                                Rejoindre la visio
+                                                                            </a>
                                                                         </div>
                                                                     )}
         
