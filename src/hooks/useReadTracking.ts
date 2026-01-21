@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client';
 const STORAGE_KEY_READ = 'oreegamia_read_items';
 const STORAGE_KEY_LIKES = 'oreegamia_liked_items';
 const STORAGE_KEY_BOOKMARKS = 'oreegamia_bookmarked_items';
+const STORAGE_KEY_SKIPPED = 'oreegamia_skipped_items';
 
 interface ArticleMetadata {
     title: string;
@@ -15,13 +16,14 @@ interface ArticleMetadata {
 }
 
 /**
- * Hook to manage the read/like/bookmark status of items.
+ * Hook to manage the read/like/bookmark/skip status of items.
  * Persists data in localStorage and syncs with Supabase article_interactions table.
  */
 export function useReadTracking() {
     const [readIds, setReadIds] = useState<string[]>([]);
     const [likedIds, setLikedIds] = useState<string[]>([]);
     const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
+    const [skippedIds, setSkippedIds] = useState<string[]>([]);
 
     const [isLoaded, setIsLoaded] = useState(false);
     const [supabase] = useState(() => createClient());
@@ -40,6 +42,7 @@ export function useReadTracking() {
                 let localReads: string[] = [];
                 let localLikes: string[] = [];
                 let localBookmarks: string[] = [];
+                let localSkipped: string[] = [];
 
                 // Load from localStorage
                 try {
@@ -51,6 +54,9 @@ export function useReadTracking() {
 
                     const sBookmarks = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
                     if (sBookmarks) localBookmarks = JSON.parse(sBookmarks);
+
+                    const sSkipped = localStorage.getItem(STORAGE_KEY_SKIPPED);
+                    if (sSkipped) localSkipped = JSON.parse(sSkipped);
                 } catch (e) { console.error("Local storage error", e); }
 
                 // If user is logged in, load from database (article_interactions)
@@ -59,24 +65,27 @@ export function useReadTracking() {
 
                     const { data: interactions, error } = await supabase
                         .from('article_interactions')
-                        .select('article_id, is_read, is_liked, is_bookmarked')
+                        .select('article_id, is_read, is_liked, is_bookmarked, is_skipped')
                         .eq('user_id', session.user.id);
 
                     if (!error && interactions) {
                         const dbReads = interactions.filter(i => i.is_read).map(i => i.article_id);
                         const dbLikes = interactions.filter(i => i.is_liked).map(i => i.article_id);
                         const dbBookmarks = interactions.filter(i => i.is_bookmarked).map(i => i.article_id);
+                        const dbSkipped = interactions.filter(i => i.is_skipped).map(i => i.article_id);
 
                         // Merge DB and Local (DB wins for sync usually, but here we union)
                         localReads = [...new Set([...localReads, ...dbReads])];
                         localLikes = [...new Set([...localLikes, ...dbLikes])];
                         localBookmarks = [...new Set([...localBookmarks, ...dbBookmarks])];
+                        localSkipped = [...new Set([...localSkipped, ...dbSkipped])];
                     }
                 }
 
                 setReadIds(localReads);
                 setLikedIds(localLikes);
                 setBookmarkedIds(localBookmarks);
+                setSkippedIds(localSkipped);
 
                 // Init session read cache
                 localReads.forEach(id => sessionReadIds.current.add(id));
@@ -131,6 +140,15 @@ export function useReadTracking() {
         sessionReadIds.current.add(idStr);
         updateLocalStorage(STORAGE_KEY_READ, newIds);
 
+        // Remove from skipped if present (read overrides skipped)
+        if (skippedIds.includes(idStr)) {
+            const newSkipped = skippedIds.filter(i => i !== idStr);
+            setSkippedIds(newSkipped);
+            updateLocalStorage(STORAGE_KEY_SKIPPED, newSkipped);
+            // We should ideally update DB too to set is_skipped=false, but the upsert below might not unset it unless we strictly set it to false.
+            // Let's handle it in the next update.
+        }
+
         // DB Update
         if (userId) {
             // 1. Log to reading_history (Log)
@@ -145,13 +163,33 @@ export function useReadTracking() {
             });
 
             // 2. Update interaction state (Upsert)
-            // Note: Trigger on reading_history might handle this, but explicit upsert is safe
-            // We use the trigger in SQL usually, but if trigger fails/doesn't exist:
-            /* 
-               supabase.from('article_interactions').upsert({ 
-                 user_id: userId, article_id: idStr, is_read: true, last_interacted_at: new Date() 
-               }, { onConflict: 'user_id, article_id' }) 
-            */
+            // Explicitly set is_skipped to false if we mark as read
+             supabase.from('article_interactions').upsert({ 
+               user_id: userId, article_id: idStr, is_read: true, is_skipped: false, last_interacted_at: new Date().toISOString() 
+             }, { onConflict: 'user_id, article_id' }).then(({ error }) => {
+                 if (error) console.error("Error marking as read utils:", error);
+             });
+        }
+    };
+
+    const markAsSkipped = async (id: string | number) => {
+        const idStr = id.toString();
+
+        if (skippedIds.includes(idStr) || readIds.includes(idStr)) return;
+
+        const newIds = [...skippedIds, idStr];
+        setSkippedIds(newIds);
+        updateLocalStorage(STORAGE_KEY_SKIPPED, newIds);
+
+        if (userId) {
+            const { error } = await supabase.from('article_interactions').upsert({
+                user_id: userId,
+                article_id: idStr,
+                is_skipped: true,
+                last_interacted_at: new Date().toISOString()
+            }, { onConflict: 'user_id, article_id' });
+
+            if (error) console.error("Mark as Skipped Error:", error);
         }
     };
 
@@ -206,11 +244,12 @@ export function useReadTracking() {
     const isRead = (id: string | number) => readIds.includes(id?.toString());
     const isLiked = (id: string | number) => likedIds.includes(id?.toString());
     const isBookmarked = (id: string | number) => bookmarkedIds.includes(id?.toString());
+    const isSkipped = (id: string | number) => skippedIds.includes(id?.toString());
 
     return {
-        readIds, likedIds, bookmarkedIds,
-        markAsRead, toggleLike, toggleBookmark,
-        isRead, isLiked, isBookmarked,
+        readIds, likedIds, bookmarkedIds, skippedIds,
+        markAsRead, markAsSkipped, toggleLike, toggleBookmark,
+        isRead, isLiked, isBookmarked, isSkipped,
         isLoaded, userId
     };
 }

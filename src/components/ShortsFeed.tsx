@@ -89,13 +89,17 @@ export default function ShortsFeed() {
     const [supabase] = useState(() => createClient());
 
     // Read Tracking
-    const { markAsRead, isRead, toggleLike, toggleBookmark, isLiked, isBookmarked } = useReadTracking();
+    const { markAsRead, isRead, toggleLike, toggleBookmark, isLiked, isBookmarked, markAsSkipped, skippedIds, isLoaded: isTrackingLoaded } = useReadTracking();
     const [activeIndex, setActiveIndex] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const startTimeRef = useRef<number | null>(null);
+    const currentItemIdRef = useRef<string | number | null>(null);
 
     useEffect(() => {
-        fetchContent();
-    }, []);
+        if (isTrackingLoaded) {
+            fetchContent();
+        }
+    }, [isTrackingLoaded]);
 
     // Start tracking for the first item once items are loaded
     useEffect(() => {
@@ -106,8 +110,14 @@ export default function ShortsFeed() {
     }, [items, loading]);
 
     const startTracking = (index: number) => {
+        // Stop tracking previous item first (checks if it was skipped)
         stopTracking();
+
+        if (!items[index]) return;
+
         console.log(`Starting read tracking for item index ${index} (ID: ${items[index]?.id})`);
+        currentItemIdRef.current = items[index].id;
+        startTimeRef.current = Date.now();
 
         timerRef.current = setTimeout(() => {
             if (items[index]) {
@@ -119,15 +129,30 @@ export default function ShortsFeed() {
                     tags: item.tags,
                     duration: 1 // default duration 1 min or calculate?
                 });
+                // Clear timer ref so stopTracking knows it finished normally
+                timerRef.current = null; 
             }
         }, 7000); // 7 seconds
     };
 
     const stopTracking = () => {
+        // If timer is still running, it means we didn't reach 7 seconds
         if (timerRef.current) {
             clearTimeout(timerRef.current);
             timerRef.current = null;
+
+            // Check how long we stayed
+            if (startTimeRef.current && currentItemIdRef.current) {
+                const duration = Date.now() - startTimeRef.current;
+                if (duration < 7000) {
+                    console.log(`Item ${currentItemIdRef.current} skipped (time: ${duration}ms)`);
+                    markAsSkipped(currentItemIdRef.current);
+                }
+            }
         }
+        
+        startTimeRef.current = null;
+        currentItemIdRef.current = null;
     };
 
     // Helper for safe URL
@@ -168,10 +193,17 @@ export default function ShortsFeed() {
             }
 
             let mixedContent = rawContent || [];
+            
+            // Filter out skipped items based on loaded skiplist
+            if (skippedIds && skippedIds.length > 0) {
+                 mixedContent = mixedContent.filter(item => !skippedIds.includes(item.id.toString()));
+            }
 
             // Handle Initial ID (Specific Article)
             if (initialId) {
                 const exists = mixedContent.find(item => item.id.toString() === initialId);
+                // Even if skipped, if specifically requested via ID, we show it? 
+                // Logic: Yes, usually specific ID access overrides skip.
                 if (!exists) {
                     // Fetch specific item if not in the random batch
                     const { data: specificItem } = await supabase
