@@ -16,7 +16,7 @@ import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, BookOpen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 // --- Types ---
@@ -254,6 +254,7 @@ export default function HomeClient({
     const [aiResponse, setAiResponse] = useState<string | null>(null);
     const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
     const [showContributionPopup, setShowContributionPopup] = useState(false);
+    // const [showResources, setShowResources] = useState(false); // Removed
 
     // New States for Videos and Next Course
 
@@ -1137,6 +1138,13 @@ CONSIGNES POUR METADATA :
                                                                     <div className="flex items-center gap-2 mb-2">
                                                                         <span className={`${isNow ? 'bg-green-600 animate-pulse' : 'bg-indigo-600'} text-white text-xs px-2 py-0.5 rounded-full font-bold transition-colors`}>
                                                                             {label}
+                                                                        </span>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                                                                            course.location && !course.location.toLowerCase().includes('distanciel') 
+                                                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                                                                : 'bg-orange-50 text-orange-700 border-orange-200'
+                                                                        }`}>
+                                                                            {course.location && !course.location.toLowerCase().includes('distanciel') ? 'Présentiel' : 'Distanciel'}
                                                                         </span>
                                                                     </div>
                                                                     <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
