@@ -8,6 +8,8 @@ import 'video.js/dist/video-js.css';
 import { createClient } from '@/lib/supabase/client';
 import LoginModal from './LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
+import toast from 'react-hot-toast';
+
 
 
 interface DailyNewsVideo {
@@ -124,22 +126,22 @@ const Hero = () => {
     // Re-initialize player if needed or just update src
     if (!playerRef.current) {
       if (currentVideoRef.current && currentVideoRef.current.src) {
-           const player = videojs(videoRef.current, {
-            controls: true,
-            autoplay: true,
-            muted: true,
-            loop: true, // Loop the main video directly
-            preload: 'auto',
-            fill: true,
-            sources: [{ type: 'video/mp4', src: currentVideoRef.current.src }]
-          });
-          playerRef.current = player;
-    
-          player.on('error', () => {
-            const error = player.error();
-            console.error('Video player error:', error);
-            setVideoUnavailable(true);
-          });
+        const player = videojs(videoRef.current, {
+          controls: true,
+          autoplay: true,
+          muted: true,
+          loop: true, // Loop the main video directly
+          preload: 'auto',
+          fill: true,
+          sources: [{ type: 'video/mp4', src: currentVideoRef.current.src }]
+        });
+        playerRef.current = player;
+
+        player.on('error', () => {
+          const error = player.error();
+          console.error('Video player error:', error);
+          setVideoUnavailable(true);
+        });
       }
     }
 
@@ -267,14 +269,90 @@ const Hero = () => {
 
     if (type === 'share') {
       await handleShareClick();
-    } else {
-      // Placeholder for other actions
+    } else if (type === 'save' || type === 'watch_later') {
+      // Save to database
+      try {
+        if (!currentVideo || currentVideoIndex >= playlist.length) {
+          toast.error('Erreur: aucune vidéo sélectionnée');
+          return;
+        }
+
+        // Get the current JT ID from newsItems
+        const currentJT = newsItems[currentVideoIndex];
+        if (!currentJT) {
+          toast.error('Erreur: impossible de sauvegarder');
+          return;
+        }
+
+        // Extract JT ID from URL (format: /jt/{id})
+        const jtId = currentJT.url.split('/').pop();
+        const status = type === 'save' ? 'saved' : 'watch_later';
+
+        // Check if already saved
+        const { data: existing } = await supabase
+          .from('saved_articles')
+          .select('id, status')
+          .eq('user_id', user.id)
+          .eq('article_id', jtId)
+          .single();
+
+        if (existing) {
+          // If same status, remove it
+          if (existing.status === status) {
+            const { error: deleteError } = await supabase
+              .from('saved_articles')
+              .delete()
+              .eq('id', existing.id);
+
+            if (deleteError) throw deleteError;
+
+            toast.success(
+              type === 'save' ? '❤️ JT retiré des favoris' : '🕐 JT retiré de "À regarder plus tard"',
+              { duration: 2000 }
+            );
+          } else {
+            // Update status if different
+            const { error: updateError } = await supabase
+              .from('saved_articles')
+              .update({
+                status,
+                saved_at: new Date().toISOString()
+              })
+              .eq('id', existing.id);
+
+            if (updateError) throw updateError;
+
+            toast.success(
+              type === 'save' ? '❤️ JT sauvegardé !' : '🕐 Ajouté à "À regarder plus tard" !',
+              { duration: 2000 }
+            );
+          }
+        } else {
+          // Insert new saved article
+          const { error: insertError } = await supabase
+            .from('saved_articles')
+            .insert({
+              user_id: user.id,
+              article_id: jtId,
+              status,
+              saved_at: new Date().toISOString()
+            });
+
+          if (insertError) throw insertError;
+
+          toast.success(
+            type === 'save' ? '❤️ JT sauvegardé !' : '🕐 Ajouté à "À regarder plus tard" !',
+            { duration: 2000 }
+          );
+        }
+      } catch (error) {
+        console.error('Error saving article:', error);
+        toast.error('Erreur lors de la sauvegarde');
+      }
+    } else if (type === 'like') {
+      // Placeholder for like action
       console.log(`${type} clicked by user ${user.email}`);
-      showShareFeedback(
-        type === 'save' ? 'Article sauvegardé !' :
-          type === 'watch_later' ? 'Ajouté à "À regarder plus tard" !' :
-            type === 'like' ? 'Merci pour votre retour !' : ''
-      );
+      toast.success('Merci pour votre retour !', { duration: 2000 });
     }
   };
 

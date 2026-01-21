@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
+import ResourcesCarousel from '@/components/ResourcesCarousel';
 import Footer from '@/components/Footer';
 
 
@@ -1184,7 +1185,17 @@ CONSIGNES POUR METADATA :
                                                     </div>
                                                 )}
 
+<<<<<<< HEAD
 
+=======
+                                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
+                                                    <p className="font-bold mb-1">Mises à jour</p>
+                                                    <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
+                                                </div>
+
+                                                {/* Resources Carousel */}
+                                                <ResourcesCarousel />
+>>>>>>> 2cf32b7e9a341263cfd89ef2dbbda97e71f712d8
                                             </div>
                                         </div>
                                     </div>
@@ -1324,7 +1335,7 @@ CONSIGNES POUR METADATA :
 
                 </main>
 
-            {/* Footer */}
+                {/* Footer */}
                 <Footer />
 
                 {/* Contribution Popup */}
@@ -1333,16 +1344,16 @@ CONSIGNES POUR METADATA :
                         <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl transform scale-100 animate-in zoom-in-95 duration-200 text-center relative overflow-hidden">
                             {/* Decorative background effect */}
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-500 via-pink-500 to-indigo-500"></div>
-                            
+
                             <div className="mx-auto w-16 h-16 bg-gradient-to-br from-violet-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
                                 <Sparkles className="w-8 h-8 text-indigo-600" />
                             </div>
-                            
+
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Merci !</h3>
                             <p className="text-gray-600 mb-8 leading-relaxed">
                                 Merci pour ta contribution à la formation !
                             </p>
-                            
+
                             <button
                                 onClick={() => setShowContributionPopup(false)}
                                 className="w-full py-3 px-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
