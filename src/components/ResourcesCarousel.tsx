@@ -11,6 +11,7 @@ interface ResourceIntervenant {
     sujet_intervention: string;
     infos_apprenants: string | null;
     fichiers: string[] | null; // Array of filenames/paths
+    linkedin_url?: string | null;
     created_at: string;
 }
 
@@ -113,20 +114,36 @@ export default function ResourcesCarousel({ embedded = false }: { embedded?: boo
             )}
 
             {/* Content */}
-            <div className={`flex-1 flex flex-col justify-between relative ${embedded ? 'pt-8' : 'p-6'}`}>
+            <div className={`flex-1 flex flex-col justify-between relative ${embedded ? 'pt-8' : 'p-3'}`}>
                 {/* Top Section: Title & Name */}
-                <div className="px-8"> 
+                <div className="px-2"> 
 
-                    <p className="text-lg text-indigo-600 font-medium text-center">
-                        {currentResource.prenom} {currentResource.nom}
-                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                        <p className="text-lg text-indigo-600 font-medium text-center">
+                            {currentResource.prenom} {currentResource.nom}
+                        </p>
+                        {currentResource.linkedin_url && (
+                            <a 
+                                href={currentResource.linkedin_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="hover:opacity-80 transition-opacity"
+                            >
+                                <img 
+                                    src="/LinkedIn_icon.svg.png" 
+                                    alt="LinkedIn" 
+                                    className="w-5 h-5 object-contain"
+                                />
+                            </a>
+                        )}
+                    </div>
                 </div>
 
                 {/* Bottom Section: Info & Files */}
-                <div className="mt-6 flex-1 flex flex-col justify-center">
+                <div className="flex-1 flex flex-col justify-start">
                     {currentResource.infos_apprenants && (
-                        <div className="bg-gray-50 p-6 rounded-2xl text-lg text-gray-700 italic border border-gray-100 mb-6 relative mx-4">
-                            <span className="absolute top-4 left-4 text-5xl text-indigo-100 pointer-events-none select-none font-serif leading-none">“</span>
+                        <div className="bg-gray-50 p-2 rounded-xl text-lg text-gray-700 italic border border-gray-100 mb-2 relative mx-0">
+                            <span className="absolute top-2 left-2 text-5xl text-indigo-100 pointer-events-none select-none font-serif leading-none">“</span>
                             <p className="relative z-10 text-center">
                                 {currentResource.infos_apprenants}
                             </p>
@@ -134,7 +151,7 @@ export default function ResourcesCarousel({ embedded = false }: { embedded?: boo
                     )}
 
                     {/* Files */}
-                    <div className="space-y-3 px-4">
+                    <div className="space-y-2 px-1">
                         {displayedFiles.map((file, idx) => {
                             let cleanName = file.replace(/^["'\[\]]+|["'\[\]]+$/g, '').trim();
                             cleanName = cleanName.replace(/^ressources-intervenants\//, '');
