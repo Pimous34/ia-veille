@@ -79,6 +79,7 @@ export async function middleware(request: NextRequest) {
   // Skip this check on /auth pages to avoid infinite redirects if the user is logged in but unauthorized
   if (user && user.email && !request.nextUrl.pathname.startsWith('/auth')) {
     // Check 'students' table
+    /*
     const { count: studentCount } = await supabase
       .from('students')
       .select('id', { count: 'exact', head: true })
@@ -102,9 +103,11 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set('error', 'unauthorized')
       return NextResponse.redirect(url)
     }
+    */
 
     // ADMIN ROUTE PROTECTION
     // Only allow users in 'admins' table to access /admin routes
+    /*
     if (request.nextUrl.pathname.startsWith('/admin')) {
       const isAdmin = adminCount && adminCount > 0;
       if (!isAdmin) {
@@ -114,6 +117,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
+    */
   }
 
   return response
