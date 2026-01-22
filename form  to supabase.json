@@ -1,5 +1,4 @@
 {
-  "name": "Form to Supabase (HTTP Fix)",
   "nodes": [
     {
       "parameters": {
@@ -8,14 +7,22 @@
         "formFields": {
           "values": [
             {
+              "fieldLabel": "Prénom",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Nom",
+              "requiredField": true
+            },
+            {
               "fieldLabel": "Session",
-              "requiredField": true,
-              "defaultValue": "={{ $query.Session }}"
+              "defaultValue": "={{ $query.Session }}",
+              "requiredField": true
             },
             {
               "fieldLabel": "Date",
-              "requiredField": true,
-              "defaultValue": "={{ $query.Date }}"
+              "defaultValue": "={{ $query.Date }}",
+              "requiredField": true
             },
             {
               "fieldLabel": "Message pour les apprenants"
@@ -33,13 +40,13 @@
           "appendAttribution": false
         }
       },
-      "id": "da8f3d62-4e3d-483d-9229-5b21adc9f6c8",
+      "id": "cec6eae0-9861-4b8b-b794-9b046245aded",
       "name": "Form Trigger",
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.3,
       "position": [
-        -432,
-        -80
+        -1168,
+        -48
       ],
       "webhookId": "dc146c60-e441-44af-9d7e-639c62801b20"
     },
@@ -66,13 +73,13 @@
         },
         "options": {}
       },
-      "id": "18befaa5-d48e-463c-95aa-d595976b6c85",
+      "id": "5f810653-a137-473d-a58e-625f08072364",
       "name": "Check if File Exists",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -208,
-        -80
+        -944,
+        -48
       ]
     },
     {
@@ -105,19 +112,23 @@
           "parameters": [
             {
               "name": "prenom",
-              "value": "={{ $('Form Trigger').item.json['Votre prénom'] }}"
+              "value": "={{ $('Form Trigger').item.json['Prénom'] }}"
             },
             {
               "name": "nom",
-              "value": "={{ $('Form Trigger').item.json['Votre nom'] }}"
-            },
-            {
-              "name": "sujet_intervention",
-              "value": "={{ $('Form Trigger').item.json['Sujet de votre intervention : '] }}"
+              "value": "={{ $('Form Trigger').item.json['Nom'] }}"
             },
             {
               "name": "infos_apprenants",
-              "value": "={{ $('Form Trigger').item.json['Informations pour les apprenants : '] }}"
+              "value": "={{ $('Form Trigger').item.json['Message pour les apprenants'] }}"
+            },
+            {
+              "name": "linkedin",
+              "value": "={{ $('Form Trigger').item.json['Votre profil LinkedIn'] }}"
+            },
+            {
+              "name": "session_date",
+              "value": "={{ $('Form Trigger').item.json['Date'] }}"
             },
             {
               "name": "fichiers",
@@ -127,13 +138,13 @@
         },
         "options": {}
       },
-      "id": "http-insert-with-file",
+      "id": "4cebd6bb-1a27-4f23-838b-cefa1db14cb5",
       "name": "Insert with File (HTTP)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        256,
-        -176
+        -480,
+        -144
       ]
     },
     {
@@ -166,11 +177,11 @@
           "parameters": [
             {
               "name": "prenom",
-              "value": "={{ $('Form Trigger').item.json['Votre prénom'] }}"
+              "value": "={{ $('Form Trigger').item.json['Prénom'] }}"
             },
             {
               "name": "nom",
-              "value": "={{ $('Form Trigger').item.json['Votre nom'] }}"
+              "value": "={{ $('Form Trigger').item.json['Nom'] }}"
             },
             {
               "name": "sujet_intervention",
@@ -178,19 +189,27 @@
             },
             {
               "name": "infos_apprenants",
-              "value": "={{ $('Form Trigger').item.json['Informations pour les apprenants : '] }}"
+              "value": "={{ $('Form Trigger').item.json['Message pour les apprenants'] }}"
+            },
+            {
+              "name": "linkedin",
+              "value": "={{ $('Form Trigger').item.json['Votre profil LinkedIn'] }}"
+            },
+            {
+              "name": "session_date",
+              "value": "={{ $('Form Trigger').item.json['Date'] }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "http-insert-without-file",
+      "id": "c2305d64-b486-4375-bc40-b9c329d0eb69",
       "name": "Insert without File (HTTP)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        224,
-        16
+        -512,
+        48
       ]
     },
     {
@@ -222,10 +241,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        0,
-        -176
+        -736,
+        -144
       ],
-      "id": "ff35139d-d67f-436b-820f-8a7942d0c5fb",
+      "id": "bf42448c-6539-43ce-97b3-3da3470ec1c2",
       "name": "HTTP Request"
     }
   ],
@@ -270,5 +289,9 @@
         ]
       ]
     }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "9cb4ac6e6eaad1a7f01eac7a5711885fdbbf1c11ab1c44dd1c94cd5f6f69cdea"
   }
 }

@@ -11,11 +11,11 @@ interface ResourceIntervenant {
     sujet_intervention: string;
     infos_apprenants: string | null;
     fichiers: string[] | null; // Array of filenames/paths
-    linkedin_url?: string | null;
+    linkedin?: string | null;
     created_at: string;
 }
 
-export default function ResourcesCarousel({ embedded = false }: { embedded?: boolean }) {
+export default function ResourcesCarousel({ embedded = false, date }: { embedded?: boolean; date?: string }) {
     const [resources, setResources] = useState<ResourceIntervenant[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -23,17 +23,34 @@ export default function ResourcesCarousel({ embedded = false }: { embedded?: boo
 
     useEffect(() => {
         const fetchResources = async () => {
+            setLoading(true);
             try {
-                // Fetch resources ordered by creation date (storage order)
-                const { data, error } = await supabase
+                let query = supabase
                     .from('ressources_intervenants')
                     .select('*')
-                    .order('created_at', { ascending: false }); // Newest first
+                    .order('created_at', { ascending: false });
+
+                if (date) {
+                    const d = new Date(date);
+                    if (!isNaN(d.getTime())) {
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const year = d.getFullYear();
+                        const datePart = `${day}/${month}/${year}`;
+                        
+                        console.log('Filtering resources for date:', datePart);
+                        query = query.eq('session_date', datePart);
+                    }
+                }
+
+                const { data, error } = await query;
 
                 if (error) {
                     console.error('Error fetching resources:', error);
                 } else if (data) {
+                    console.log('Fetched resources:', data);
                     setResources(data);
+                    setCurrentIndex(0); // Reset index when date/data changes
                 }
             } catch (err) {
                 console.error('Unexpected error:', err);
@@ -43,7 +60,7 @@ export default function ResourcesCarousel({ embedded = false }: { embedded?: boo
         };
 
         fetchResources();
-    }, [supabase]);
+    }, [supabase, date]);
 
     const handleNext = () => {
         setCurrentIndex((prev) => (prev + 1) % resources.length);
@@ -122,9 +139,9 @@ export default function ResourcesCarousel({ embedded = false }: { embedded?: boo
                         <p className="text-lg text-indigo-600 font-medium text-center">
                             {currentResource.prenom} {currentResource.nom}
                         </p>
-                        {currentResource.linkedin_url && (
+                        {currentResource.linkedin && (
                             <a 
-                                href={currentResource.linkedin_url} 
+                                href={currentResource.linkedin} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="hover:opacity-80 transition-opacity"

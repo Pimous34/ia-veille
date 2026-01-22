@@ -1199,7 +1199,7 @@ CONSIGNES POUR METADATA :
                                                 )}
 
                                                 {/* Resources Carousel */}
-                                                <ResourcesCarousel />
+                                                <ResourcesCarousel date={currentDaySchedule?.courses?.[0]?.date} />
                                             </div>
                                         </div>
                                     </div>
