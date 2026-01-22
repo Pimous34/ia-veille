@@ -1,0 +1,167 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        208
+      ],
+      "id": "3c6f29a8-f618-4972-bbcd-f14ce7e4275a",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupère tous les items\nconst items = $input.all();\n\n// Crée un Set pour stocker les emails uniques\nconst seenEmails = new Set();\nconst uniqueItems = [];\n\n// Filtre les doublons\nfor (const item of items) {\n  const email = item.json.email; // Ajustez selon votre structure\n  \n  if (!seenEmails.has(email)) {\n    seenEmails.add(email);\n    uniqueItems.push(item);\n  }\n}\n\nreturn uniqueItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        208
+      ],
+      "id": "1ea0c5a6-7d8b-4e32-a807-90e35050ff3b",
+      "name": "Supprime les emails doublon1"
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.flatMap(item => {\n  const event = item.json;\n  const attendees = event.attendees || [];\n\n  return attendees\n    .filter(a => a.email && !a.organizer)\n    .map(a => ({\n      json: {\n        email: a.email,\n        eventName: event.summary,\n        courseSubject: event.summary.replace(/^.*?Montpellier\\s*[\\u2014\\u2013-]\\s*/i, '').trim(),\n        startDate: event.start.dateTime || event.start.date\n      }\n    }));\n});"
+      },
+      "name": "Extrait les informations concernant les apprenants1",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        16,
+        208
+      ],
+      "id": "7674b516-b211-40eb-ae85-e79614986138"
+    },
+    {
+      "parameters": {
+        "sendTo": "=benjamin.rigouste@gmail.com",
+        "subject": "={{ $json.eventName }}",
+        "message": "=Bonjour,\n<br><br>Nous avons le plaisir de vous confirmer votre intervention avec la promotion PBNC.25-10.CDP le {{ DateTime.fromISO($json.startDate).setLocale('fr').toFormat('cccc d MMMM yyyy') }}.\n<br><br>Pour faciliter les échanges et créer une belle dynamique dès le départ, nous vous proposons de partager avec les apprenants :\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Les objectifs clés de votre session,\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Des ressources ou lectures préparatoires si vous le souhaitez,\n<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Toute information pratique que vous jugez utile.\n<br>Ces éléments seront transmis aux apprenants dès votre retour, leur permettant d'arriver préparés et motivés.\n<br><br>Votre contribution est précieuse pour la réussite de nos apprenants, et nous savons qu'ils apprécient particulièrement les formateurs qui créent du lien dès les premiers instants.\n<br><br>N'hésitez pas à nous transmettre vos éléments ou à nous contacter si vous avez des questions. \n<br><br>\n<a href=\"http://localhost:5678/form/dc146c60-e441-44af-9d7e-639c62801b20?Session={{ $json.courseSubject }}&Date={{ DateTime.fromISO($json.startDate).setLocale('fr').toFormat('dd/MM/yyyy') }}\"> Cliquez ici</a> pour accéder au formulaire afin de transmettre toutes les informations que vous jugez utiles.\n<br><br>Au plaisir de collaborer avec vous,\n<br>L'équipe pédagogique d'Oreegami",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        208
+      ],
+      "id": "d9b15552-b194-490a-9d90-c73a5f8a1c2e",
+      "name": "Envoi un message1",
+      "webhookId": "d02c1f02-2637-4bc1-b7dc-7389bb0863a9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qWUa3He2rNcA9tjx",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "benjamin.rigouste@gmail.com",
+          "mode": "list",
+          "cachedResultName": "benjamin.rigouste@gmail.com"
+        },
+        "timeMin": "={{ $now.toISO() }}",
+        "timeMax": "={{ $now.plus({ days: 3 }).toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -224,
+        208
+      ],
+      "id": "de8d4b34-89fc-48fc-be87-7e206a19aa79",
+      "name": "Récupère les cours à J+",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "VvlaeY9fUXewGWyV",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Récupère les cours à J+",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supprime les emails doublon1": {
+      "main": [
+        [
+          {
+            "node": "Envoi un message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrait les informations concernant les apprenants1": {
+      "main": [
+        [
+          {
+            "node": "Supprime les emails doublon1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Récupère les cours à J+": {
+      "main": [
+        [
+          {
+            "node": "Extrait les informations concernant les apprenants1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Schedule Trigger1": [
+      {
+        "timestamp": "2026-01-21T11:46:36.927+01:00",
+        "Readable date": "January 21st 2026, 11:46:36 am",
+        "Readable time": "11:46:36 am",
+        "Day of week": "Wednesday",
+        "Year": "2026",
+        "Month": "January",
+        "Day of month": "21",
+        "Hour": "11",
+        "Minute": "46",
+        "Second": "36",
+        "Timezone": "Europe/Paris (UTC+01:00)"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e7a498bd0d6bb2203468a2121b00e2acb7b76c213ebc82f53ca7cca3ff97d734"
+  }
+}

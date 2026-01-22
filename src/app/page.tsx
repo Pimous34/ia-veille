@@ -34,6 +34,7 @@ interface JtVideo {
   title?: string;
   date: string;
   article_ids?: number[];
+  script?: string;
 }
 
 // --- Helpers ---
@@ -106,38 +107,38 @@ export default async function Home() {
   }
 
   // --- Data Fetching (Parallelized) ---
-  
+
   // 1. Fetch Latest JTs
   const jtPromise = supabase
-      .from('daily_news_videos')
-      .select('id, video_url, thumbnail_url, title, date, article_ids, status')
-      .eq('status', 'completed')
-      .order('date', { ascending: false })
-      .limit(10);
+    .from('daily_news_videos')
+    .select('id, video_url, thumbnail_url, title, date, article_ids, status, script')
+    .eq('status', 'completed')
+    .order('date', { ascending: false })
+    .limit(10);
 
   // 2. Fetch Articles for Buzz
   const articlesPromise = supabase
-      .from('articles')
-      .select('id, title, excerpt, tags, published_at, url, image_url, source_id')
-      .order('published_at', { ascending: false })
-      .limit(30);
+    .from('articles')
+    .select('id, title, excerpt, tags, published_at, url, image_url, source_id')
+    .order('published_at', { ascending: false })
+    .limit(30);
 
   // 3. Fetch External Videos Sources
   const sourcesPromise = supabase
-      .from('sources')
-      .select('id')
-      .in('name', ['Micode', 'Underscore_', 'Ludovic Salenne', 'GEEK CONCEPT']);
+    .from('sources')
+    .select('id')
+    .in('name', ['Micode', 'Underscore_', 'Ludovic Salenne', 'GEEK CONCEPT']);
 
   // 4. Fetch Tutorials
   const tutorialsPromise = supabase
-      .from('tutorials')
-      .select('id, software, channel_name, url, image_url, created_at')
-      .order('created_at', { ascending: false })
-      .limit(20); // Limit to 20 for client-side filtering flexibility if needed later
+    .from('tutorials')
+    .select('id, software, channel_name, url, image_url, created_at')
+    .order('created_at', { ascending: false })
+    .limit(20); // Limit to 20 for client-side filtering flexibility if needed later
 
   const [
-    { data: jtDataList }, 
-    { data: articlesData }, 
+    { data: jtDataList },
+    { data: articlesData },
     { data: sourceIdsData },
     { data: tutoData }
   ] = await Promise.all([jtPromise, articlesPromise, sourcesPromise, tutorialsPromise]);
@@ -147,64 +148,64 @@ export default async function Home() {
   // Process JTs
   let fetchedJts: JtVideo[] = [];
   if (jtDataList && jtDataList.length > 0) {
-      fetchedJts = jtDataList.map((jt: JtVideo) => ({
-        ...jt,
-        thumbnail_url: jt.thumbnail_url || getDeterministicImage(jt.title || 'JT IA')
-      }));
+    fetchedJts = jtDataList.map((jt: JtVideo) => ({
+      ...jt,
+      thumbnail_url: jt.thumbnail_url || getDeterministicImage(jt.title || 'JT IA')
+    }));
   }
 
   // Process Trending Articles
   let trendingArticles: Article[] = fallbackJtArticles;
   if (articlesData && articlesData.length > 0) {
-      const interestingKeywords = ['nouveau', 'révolution', 'innovation', 'découverte', 'important', 'majeur', 'exclusif', 'outil', 'guide', 'comment', 'gpt-5', 'llm', 'agent'];
-      
-      const mapped = articlesData.map((article: any) => {
-         let score = 0;
-         const lowerTitle = article.title?.toLowerCase() || '';
-         interestingKeywords.forEach(k => {
-           if (lowerTitle.includes(k)) score += 10;
-         });
-         if (new Date(article.published_at).toDateString() === new Date().toDateString()) score += 10;
-         
-         return {
-           id: article.id,
-           title: article.title,
-           excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
-           category: 'IA',
-           tags: article.tags,
-           date: article.published_at,
-           published_at: article.published_at,
-           link: article.url,
-           image: article.image_url || getDeterministicImage(article.title),
-           score
-         };
-      });
+    const interestingKeywords = ['nouveau', 'révolution', 'innovation', 'découverte', 'important', 'majeur', 'exclusif', 'outil', 'guide', 'comment', 'gpt-5', 'llm', 'agent'];
 
-      mapped.sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
-      trendingArticles = mapped.slice(0, 15);
+    const mapped = articlesData.map((article: any) => {
+      let score = 0;
+      const lowerTitle = article.title?.toLowerCase() || '';
+      interestingKeywords.forEach(k => {
+        if (lowerTitle.includes(k)) score += 10;
+      });
+      if (new Date(article.published_at).toDateString() === new Date().toDateString()) score += 10;
+
+      return {
+        id: article.id,
+        title: article.title,
+        excerpt: (article.excerpt || '').replace(/<[^>]*>?/gm, ''),
+        category: 'IA',
+        tags: article.tags,
+        date: article.published_at,
+        published_at: article.published_at,
+        link: article.url,
+        image: article.image_url || getDeterministicImage(article.title),
+        score
+      };
+    });
+
+    mapped.sort((a: any, b: any) => (b.score || 0) - (a.score || 0));
+    trendingArticles = mapped.slice(0, 15);
   }
 
   // Process External Videos for Column
   let externalVideos: JtVideo[] = [];
   if (sourceIdsData && sourceIdsData.length > 0) {
-      const ids = sourceIdsData.map(s => s.id);
-      const { data: extArticles } = await supabase
-          .from('articles')
-          .select('id, title, url, image_url, published_at, source_id')
-          .in('source_id', ids)
-          .order('published_at', { ascending: false })
-          .limit(10);
+    const ids = sourceIdsData.map(s => s.id);
+    const { data: extArticles } = await supabase
+      .from('articles')
+      .select('id, title, url, image_url, published_at, source_id')
+      .in('source_id', ids)
+      .order('published_at', { ascending: false })
+      .limit(10);
 
-      if (extArticles) {
-          externalVideos = extArticles.map((a: any) => ({
-              id: a.id,
-              video_url: a.url,
-              thumbnail_url: a.image_url || getDeterministicImage(a.title),
-              title: a.title,
-              date: a.published_at,
-              article_ids: []
-          }));
-      }
+    if (extArticles) {
+      externalVideos = extArticles.map((a: any) => ({
+        id: a.id,
+        video_url: a.url,
+        thumbnail_url: a.image_url || getDeterministicImage(a.title),
+        title: a.title,
+        date: a.published_at,
+        article_ids: []
+      }));
+    }
   }
 
   // Combined Videos Column
@@ -215,29 +216,29 @@ export default async function Home() {
   // Process Tutorials
   let parsedTutos: Tutorial[] = [];
   if (tutoData) {
-      // Simplified filtering (take top 5 for now as we don't have promoConfig on server easily without User DB fetch)
-      // If we needed personalization, we would fetch user profile here.
-      const limitedTutos = tutoData.slice(0, 5);
+    // Simplified filtering (take top 5 for now as we don't have promoConfig on server easily without User DB fetch)
+    // If we needed personalization, we would fetch user profile here.
+    const limitedTutos = tutoData.slice(0, 5);
 
-      parsedTutos = limitedTutos.map((tuto: any) => {
-          let bgImage = tuto.image_url;
-          if (bgImage && typeof bgImage === 'string' && (bgImage.startsWith('{') || bgImage.startsWith('['))) {
-              try {
-                  const parsed = JSON.parse(bgImage);
-                  const imageObj = Array.isArray(parsed) ? parsed[0] : parsed;
-                  if (imageObj && imageObj.url) {
-                      bgImage = imageObj.url;
-                  }
-              } catch (e) { 
-                  // ignore
-              }
+    parsedTutos = limitedTutos.map((tuto: any) => {
+      let bgImage = tuto.image_url;
+      if (bgImage && typeof bgImage === 'string' && (bgImage.startsWith('{') || bgImage.startsWith('['))) {
+        try {
+          const parsed = JSON.parse(bgImage);
+          const imageObj = Array.isArray(parsed) ? parsed[0] : parsed;
+          if (imageObj && imageObj.url) {
+            bgImage = imageObj.url;
           }
-          return { ...tuto, image_url: bgImage };
-      });
+        } catch (e) {
+          // ignore
+        }
+      }
+      return { ...tuto, image_url: bgImage };
+    });
   }
 
   return (
-    <HomeClient 
+    <HomeClient
       initialJtVideos={fetchedJts}
       initialArticles={trendingArticles}
       initialTutorials={parsedTutos}

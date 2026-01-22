@@ -95,7 +95,7 @@ export default function AdminArticlesPage() {
   );
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Sidebar */}
       <aside className="sidebar">
         <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
@@ -115,7 +115,7 @@ export default function AdminArticlesPage() {
         <nav className="sidebar-nav">
           <Link href="/admin" className="nav-item">
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>Tableau de bord</span>
           </Link>
           <Link href="/admin/articles" className="nav-item active">
             <span className="nav-icon">📰</span>
@@ -158,12 +158,12 @@ export default function AdminArticlesPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm">
             <div className="flex items-center gap-4 mb-3">
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">🤖</div>
+              <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center text-xl">🤖</div>
               <span className="text-sm font-bold text-gray-400">IA</span>
             </div>
-            <div className="text-3xl font-black text-gray-900">{stats.ia}</div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white">{stats.ia}</div>
             <div className="text-xs text-green-500 font-bold mt-1">+12% vues</div>
           </div>
           <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
@@ -201,7 +201,7 @@ export default function AdminArticlesPage() {
                 <input
                   type="text"
                   placeholder="Chercher un titre ou catégorie..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-gray-900 dark:text-white outline-none focus:border-indigo-500 transition-colors"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -217,7 +217,7 @@ export default function AdminArticlesPage() {
             </button>
           </div>
 
-          <div className="table-container">
+          <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-white/5 shadow-sm p-6 overflow-hidden">
             <table className="data-table">
               <thead>
                 <tr>
@@ -234,7 +234,7 @@ export default function AdminArticlesPage() {
                   <tr key={article.id}>
                     <td>
                       <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 max-w-sm block truncate" title={article.title}>{article.title}</span>
+                        <span className="font-bold text-gray-900 dark:text-white max-w-sm block truncate" title={article.title}>{article.title}</span>
                         <span className="text-xs text-gray-400 mt-1">{article.type}</span>
                       </div>
                     </td>

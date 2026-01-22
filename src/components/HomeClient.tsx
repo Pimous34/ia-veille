@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
 import Chatbot from '@/components/Chatbot';
 import ResourcesCarousel from '@/components/ResourcesCarousel';
+import JtPodcastPlayer from '@/components/JtPodcastPlayer';
+import JtTextReader from '@/components/JtTextReader';
 import Footer from '@/components/Footer';
 
 
@@ -16,7 +18,7 @@ import { widgetsDb } from '@/lib/widgets-firebase';
 import { collection, addDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, BookOpen, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 // --- Types ---
@@ -217,7 +219,7 @@ export default function HomeClient({
 }: HomeClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { isRead } = useReadTracking();
+    const { isRead, toggleLike, toggleBookmark, isLiked, isBookmarked } = useReadTracking();
     const { supabase, user } = useAuth(); // Use shared client
     // Auth check moved to Server Component wrapper
 
@@ -254,6 +256,7 @@ export default function HomeClient({
     const [aiResponse, setAiResponse] = useState<string | null>(null);
     const [loadingAiMessage, setLoadingAiMessage] = useState('Analyse en cours...');
     const [showContributionPopup, setShowContributionPopup] = useState(false);
+    // const [showResources, setShowResources] = useState(false); // Removed
 
     // New States for Videos and Next Course
 
@@ -293,7 +296,7 @@ export default function HomeClient({
                     const data = await response.json();
                     if (data.found && data.courses) {
                         setUpcomingCourses(data.courses);
-                        
+
                         // Group by Day
                         const grouped: { [key: string]: NextCourse[] } = {};
                         data.courses.forEach((course: NextCourse) => {
@@ -651,6 +654,13 @@ CONSIGNES POUR METADATA :
         return () => clearTimeout(timeoutId);
     }, [searchQuery, supabase]);
 
+    // Handle audio/video stop on format change
+    useEffect(() => {
+        if (activeFormat !== 'video' && videoRef.current) {
+            videoRef.current.pause();
+        }
+    }, [activeFormat]);
+
     const handlePrevJt = () => {
         if (currentJtIndex < jtVideosList.length - 1) {
             isNavigatingRef.current = true;
@@ -802,7 +812,7 @@ CONSIGNES POUR METADATA :
 
     return (
         <>
-            <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col">
+            <div className="min-h-screen bg-gray-50 dark:bg-transparent text-gray-900 dark:text-gray-100 font-sans flex flex-col">
                 {/* <Navbar onSearch={handleSearch} /> */}
 
                 <main className="main-content grow pt-20 !ml-0">
@@ -822,25 +832,25 @@ CONSIGNES POUR METADATA :
                             <div className="hero-container">
                                 {/* Search Results Mode for Hero */}
                                 {isSearching ? (
-                                    <div className={`video-column border-2 border-dashed border-gray-800 rounded-2xl bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden transition-all duration-300 ${aiResponse ? 'p-2' : 'p-6'}`}>
+                                    <div className={`video-column border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl bg-white dark:bg-black flex flex-col gap-4 max-h-[700px] overflow-hidden transition-all duration-300 ${aiResponse ? 'p-2' : 'p-6'}`}>
                                         {!aiResponse && (
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Recherche d'information sur <span className="text-indigo-400">&quot;{searchQuery}&quot;</span>
+                                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                                Recherche d'information sur <span className="text-indigo-600 dark:text-indigo-400">&quot;{searchQuery}&quot;</span>
                                             </h2>
                                         )}
 
-                                        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] prose prose-sm prose-invert max-w-none">
+                                        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] prose prose-sm dark:prose-invert max-w-none">
                                             <div className="p-1 rounded-xl">
                                                 {aiResponse ? (
                                                     <>
                                                         <ReactMarkdown
                                                             remarkPlugins={[remarkGfm]}
                                                             components={{
-                                                                h2: ({ node, ...props }) => <h2 className="text-xl font-black text-white mt-0 mb-4 pb-2 border-b-2 border-gray-700" {...props} />,
-                                                                strong: ({ node, ...props }) => <strong className="font-black text-indigo-400" {...props} />,
-                                                                ul: ({ node, ...props }) => <ul className="space-y-2 my-4 text-gray-300" {...props} />,
+                                                                h2: ({ node, ...props }) => <h2 className="text-xl font-black text-gray-900 dark:text-white mt-0 mb-4 pb-2 border-b-2 border-gray-100 dark:border-gray-700" {...props} />,
+                                                                strong: ({ node, ...props }) => <strong className="font-black text-indigo-600 dark:text-indigo-400" {...props} />,
+                                                                ul: ({ node, ...props }) => <ul className="space-y-2 my-4 text-gray-600 dark:text-gray-300" {...props} />,
                                                                 li: ({ node, ...props }) => <li className="flex gap-2 items-start" {...props} />,
-                                                                p: ({ node, ...props }) => <p className="text-gray-300 leading-relaxed" {...props} />,
+                                                                p: ({ node, ...props }) => <p className="text-gray-600 dark:text-gray-300 leading-relaxed" {...props} />,
                                                             }}
                                                         >
                                                             {aiResponse}
@@ -869,15 +879,25 @@ CONSIGNES POUR METADATA :
                                     <div className={`video-column ${isFullscreen ? 'fullscreen' : ''}`} ref={videoContainerRef}>
 
                                         <div className="video-wrapper">
-                                            <button className="fullscreen-btn" onClick={toggleFullscreen} aria-label="Plein écran">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <button
+                                                className="absolute top-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border border-white/50 dark:border-white/10 hover:scale-105 transition-transform text-gray-800 dark:text-white"
+                                                onClick={toggleFullscreen}
+                                                aria-label="Plein écran"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d={isFullscreen ? "M4 14h6v6M10 14L3 21M20 10h-6V4M14 10l7-7" : "M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7"} />
                                                 </svg>
                                             </button>
 
-                                            <div className="format-controls">
-                                                <button className="format-btn" onClick={() => setIsFormatMenuOpen(!isFormatMenuOpen)}>
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <div
+                                                className="absolute top-4 left-4 z-50 group/format"
+                                                onMouseEnter={() => setIsFormatMenuOpen(true)}
+                                                onMouseLeave={() => setIsFormatMenuOpen(false)}
+                                            >
+                                                <button
+                                                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border border-white/50 dark:border-white/10 hover:scale-105 transition-transform text-sm font-bold text-gray-800 dark:text-white"
+                                                >
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                         <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
                                                         <path d="M12 8v8"></path>
                                                         <path d="M8 12h8"></path>
@@ -932,69 +952,68 @@ CONSIGNES POUR METADATA :
 
                                             </div>
                                             <div id="format-podcast" className={`format-content ${activeFormat === 'podcast' ? 'active' : ''}`} style={activeFormat !== 'podcast' ? { display: 'none' } : {}}>
-                                                <div className="placeholder-content">
-                                                    <div className="audio-player-mock">
-                                                        <div className="play-btn">▶</div>
-                                                        <div className="progress-bar">
-                                                            <div className="progress" style={{ width: '30%' }}></div>
+                                                {jtVideo?.video_url && activeFormat === 'podcast' ? (
+                                                    <JtPodcastPlayer
+                                                        audioUrl={jtVideo.video_url}
+                                                        isActive={activeFormat === 'podcast'}
+                                                        title={jtVideo.title || "Résumé du JT"}
+                                                        date={jtVideo.date ? getJtDateLabel(jtVideo.date) : "Format Podcast"}
+                                                    />
+                                                ) : (
+                                                    <div className="placeholder-content">
+                                                        <div className="audio-player-mock">
+                                                            <div className="play-btn">▶</div>
+                                                            <div className="progress-bar">
+                                                                <div className="progress" style={{ width: '30%' }}></div>
+                                                            </div>
+                                                            <div className="time">00:00 / 00:00</div>
                                                         </div>
-                                                        <div className="time">04:20 / 12:45</div>
+                                                        <h3>Version Audio indisponible</h3>
+                                                        <p>Le flux audio n&apos;est pas disponible pour cette date.</p>
                                                     </div>
-                                                    <h3>Version Audio (Podcast)</h3>
-                                                    <p>Écoutez le résumé de l&apos;actualité IA & No-Code de la semaine.</p>
-                                                </div>
+                                                )}
                                             </div>
                                             <div id="format-text" className={`format-content ${activeFormat === 'text' ? 'active' : ''}`} style={activeFormat !== 'text' ? { display: 'none' } : {}}>
-                                                <div className="text-format-content" style={{ height: '100%', overflowY: 'auto', padding: '2rem', backgroundColor: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '1.1rem', lineHeight: '1.8', whiteSpace: 'pre-wrap', textAlign: 'justify', hyphens: 'auto' }}>
-                                                    {jtVideo?.script ? (
-                                                        <>
-                                                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Transcription du JT</h3>
-                                                            <div className="script-content">
-                                                                {jtVideo.script.replace(/<break[^>]*>/g, '\n\n')}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="placeholder-content">
-                                                            <p>Le script de ce JT n&apos;est pas encore disponible.</p>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                <JtTextReader
+                                                    script={jtVideo?.script || ""}
+                                                    title={jtVideo?.title}
+                                                    date={jtVideo?.date ? getJtDateLabel(jtVideo.date) : undefined}
+                                                />
                                             </div>
                                         </div>
 
                                         {/* JT Navigation Controls - Moved outside wrapper to avoid overflow clipping */}
-                                        {activeFormat === 'video' && (
-                                            <div className="flex items-center justify-center gap-6 mt-4 pb-2 select-none">
-                                                <button
-                                                    onClick={handlePrevJt}
-                                                    disabled={currentJtIndex >= jtVideosList.length - 1}
-                                                    className={`p-2 rounded-full transition-colors flex items-center justify-center group ${currentJtIndex >= jtVideosList.length - 1 ? 'opacity-30 cursor-not-allowed text-gray-400' : 'hover:bg-gray-200 text-black'}`}
-                                                    aria-label="JT Précédent"
-                                                >
-                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:-translate-x-1 transition-transform">
-                                                        <polyline points="15 18 9 12 15 6"></polyline>
-                                                    </svg>
-                                                </button>
+                                        {/* JT Navigation Controls - Always visible */}
+                                        <div className="flex items-center justify-center gap-6 mt-4 pb-2 select-none">
+                                            <button
+                                                onClick={handlePrevJt}
+                                                disabled={currentJtIndex >= jtVideosList.length - 1}
+                                                className={`p-2 rounded-full transition-colors flex items-center justify-center group ${currentJtIndex >= jtVideosList.length - 1 ? 'opacity-30 cursor-not-allowed text-gray-400' : 'hover:bg-gray-200 text-black'}`}
+                                                aria-label="JT Précédent"
+                                            >
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:-translate-x-1 transition-transform">
+                                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                                </svg>
+                                            </button>
 
-                                                <div className="text-lg font-bold text-black min-w-[150px] text-center">
-                                                    {jtVideo ? getJtDateLabel(jtVideo.date) : "Chargement..."}
-                                                </div>
-
-                                                <div className="min-w-[40px]">
-                                                    {currentJtIndex > 0 && (
-                                                        <button
-                                                            onClick={handleNextJt}
-                                                            className="p-2 rounded-full hover:bg-gray-200 text-black transition-colors flex items-center justify-center group"
-                                                            aria-label="JT Suivant"
-                                                        >
-                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
-                                                                <polyline points="9 18 15 12 9 6"></polyline>
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                </div>
+                                            <div className="text-lg font-bold text-black min-w-[150px] text-center">
+                                                {jtVideo ? getJtDateLabel(jtVideo.date) : "Chargement..."}
                                             </div>
-                                        )}
+
+                                            <div className="min-w-[40px]">
+                                                {currentJtIndex > 0 && (
+                                                    <button
+                                                        onClick={handleNextJt}
+                                                        className="p-2 rounded-full hover:bg-gray-200 text-black transition-colors flex items-center justify-center group"
+                                                        aria-label="JT Suivant"
+                                                    >
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
+                                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                                 {/* End Search Rendering */}
@@ -1011,18 +1030,24 @@ CONSIGNES POUR METADATA :
                                                     <div className="empty-state"><p>Chargement des sujets...</p></div>
                                                 ) : (isSearching ? searchResultArticles : jtSubjects).length > 0 ? (
                                                     (isSearching ? searchResultArticles : jtSubjects).map((article, index) => (
-                                                        <div key={article.id} className="vignette-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
+                                                        <div key={article.id} className={`vignette-card group bg-white dark:bg-slate-900 dark:border dark:border-white/10 ${isRead(article.id) ? 'opacity-80' : ''}`} onClick={() => router.push(`/shorts?id=${article.id}`)}>
                                                             <div className="relative w-full h-[120px]">
                                                                 <SafeImage
                                                                     src={article.image}
                                                                     fallbackTitle={article.title}
-                                                                    className="vignette-image object-cover"
+                                                                    className={`vignette-image object-cover transition-all duration-300 ${isRead(article.id) ? 'grayscale-[50%]' : ''}`}
                                                                     alt={article.title}
                                                                     fill
                                                                     priority={index < 2}
                                                                 />
+                                                                {isRead(article.id) && (
+                                                                    <div className="absolute top-1 right-1 bg-green-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm z-10 flex items-center gap-1 backdrop-blur-sm">
+                                                                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                        LU
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="vignette-info">{article.title}</div>
+                                                            <div className="vignette-info dark:text-slate-200">{article.title}</div>
                                                         </div>
                                                     ))
                                                 ) : (
@@ -1044,7 +1069,7 @@ CONSIGNES POUR METADATA :
                                             </h3>
                                             <div className="vignettes-list" style={{ gap: '1rem' }}>
                                                 {(isSearching ? searchResultVideos : videosColumnList).map((video, index) => (
-                                                    <div key={video.id || index} className="vignette-card" onClick={() => {
+                                                    <div key={video.id || index} className="vignette-card bg-white dark:bg-slate-900 dark:border dark:border-white/10" onClick={() => {
                                                         const isYouTube = video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be');
                                                         if (isYouTube) {
                                                             window.open(video.video_url, '_blank');
@@ -1080,10 +1105,10 @@ CONSIGNES POUR METADATA :
                                                             )}
                                                         </div>
                                                         <div className="vignette-info">
-                                                            <div style={{ fontWeight: 900, fontSize: '0.9em', color: '#000', marginBottom: '4px' }}>
+                                                            <div style={{ fontWeight: 900, fontSize: '0.9em', color: '#000', marginBottom: '4px' }} className="dark:text-slate-400">
                                                                 {getJtDateLabel(video.date)}
                                                             </div>
-                                                            <div className="text-sm text-gray-600 line-clamp-2">{video.title}</div>
+                                                            <div className="text-sm text-gray-600 dark:text-slate-300 line-clamp-2">{video.title}</div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1099,76 +1124,82 @@ CONSIGNES POUR METADATA :
                                                 {currentDaySchedule ? (
                                                     <div className="space-y-3 animate-in fade-in duration-300">
                                                         <div className="flex items-center justify-between pb-2 border-b border-indigo-100/50 mb-2">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => setCurrentDayIndex(prev => Math.max(0, prev - 1))}
                                                                 disabled={currentDayIndex === 0}
                                                                 className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
                                                             >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                                                             </button>
-                                                            
+
                                                             <div className="font-bold text-indigo-900 text-lg">
                                                                 {currentDaySchedule.dateLabel}
                                                             </div>
 
-                                                            <button 
+                                                            <button
                                                                 onClick={() => setCurrentDayIndex(prev => Math.min(dailySchedules.length - 1, prev + 1))}
                                                                 disabled={currentDayIndex >= dailySchedules.length - 1}
                                                                 className={`p-1 rounded-full hover:bg-indigo-50 transition-colors ${currentDayIndex >= dailySchedules.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-indigo-600'}`}
                                                             >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                                                             </button>
                                                         </div>
                                                         {currentDaySchedule.courses.map((course, idx) => {
                                                             const isNow = course.endDate && new Date() >= new Date(course.date) && new Date() <= new Date(course.endDate);
-                                                            const startTime = new Date(course.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}).replace(':', 'h');
-                                                            
+                                                            const startTime = new Date(course.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+
                                                             let label = `À ${startTime}`;
                                                             if (isNow) label = "Maintenant";
 
                                                             return (
-                                                                <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-xl border border-indigo-100 text-sm text-indigo-900 shadow-sm">
+                                                                <div key={`${course.date}-${idx}`} className="bg-gradient-to-br from-indigo-50 to-white dark:from-slate-900 dark:to-slate-800 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/30 text-sm text-indigo-900 dark:text-indigo-300 shadow-sm">
                                                                     <div className="flex items-center gap-2 mb-2">
                                                                         <span className={`${isNow ? 'bg-green-600 animate-pulse' : 'bg-indigo-600'} text-white text-xs px-2 py-0.5 rounded-full font-bold transition-colors`}>
                                                                             {label}
                                                                         </span>
+                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${course.location && !course.location.toLowerCase().includes('distanciel')
+                                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                                            : 'bg-orange-50 text-orange-700 border-orange-200'
+                                                                            }`}>
+                                                                            {course.location && !course.location.toLowerCase().includes('distanciel') ? 'Présentiel' : 'Distanciel'}
+                                                                        </span>
                                                                     </div>
-                                                                <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
-        
-                                                                <div className="space-y-1.5 text-xs text-gray-700">
-                                                                    {course.location && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                                                            <span>
-                                                                                {course.location !== 'Distanciel' && course.location !== 'Présentiel' ? (
-                                                                                    <a 
-                                                                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(course.location)}`}
-                                                                                        target="_blank" 
-                                                                                        rel="noreferrer"
-                                                                                        className="hover:text-indigo-600 hover:underline transition-colors"
-                                                                                    >
-                                                                                        {course.location}
-                                                                                    </a>
-                                                                                ) : (
-                                                                                    course.location
-                                                                                )}
-                                                                                {course.meetLink && (
-                                                                                    <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 underline font-semibold hover:text-indigo-800">
-                                                                                        Lien Google Meet
-                                                                                    </a>
-                                                                                )}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-        
-                                                                    {course.instructor && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                                            <span>Formateur : <span className="font-medium">{course.instructor}</span></span>
-                                                                        </div>
-                                                                    )}
+                                                                    <p className="font-bold text-base mb-2 leading-tight">{course.title}</p>
+
+                                                                    <div className="space-y-1.5 text-xs text-gray-700 dark:text-gray-400">
+                                                                        {course.location && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                                                <span>
+                                                                                    {course.location !== 'Distanciel' && course.location !== 'Présentiel' ? (
+                                                                                        <a
+                                                                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(course.location)}`}
+                                                                                            target="_blank"
+                                                                                            rel="noreferrer"
+                                                                                            className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
+                                                                                        >
+                                                                                            {course.location}
+                                                                                        </a>
+                                                                                    ) : (
+                                                                                        course.location
+                                                                                    )}
+                                                                                    {course.meetLink && (
+                                                                                        <a href={course.meetLink} target="_blank" rel="noreferrer" className="ml-1 text-indigo-600 dark:text-indigo-400 underline font-semibold hover:text-indigo-800 dark:hover:text-indigo-300">
+                                                                                            Lien Google Meet
+                                                                                        </a>
+                                                                                    )}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {course.instructor && (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                                                                <span>Formateur : <span className="font-medium">{course.instructor}</span></span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
                                                             );
                                                         })}
 
@@ -1176,7 +1207,7 @@ CONSIGNES POUR METADATA :
 
 
 
-                                                    
+
 
                                                     </div>
                                                 ) : (
@@ -1185,13 +1216,8 @@ CONSIGNES POUR METADATA :
                                                     </div>
                                                 )}
 
-                                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
-                                                    <p className="font-bold mb-1">Mises à jour</p>
-                                                    <p>Retrouvez ici les dernières annonces et informations importantes en bref.</p>
-                                                </div>
-
                                                 {/* Resources Carousel */}
-                                                <ResourcesCarousel />
+                                                <ResourcesCarousel date={currentDaySchedule?.courses?.[0]?.date} />
                                             </div>
                                         </div>
                                     </div>
@@ -1215,30 +1241,38 @@ CONSIGNES POUR METADATA :
                             </div>
                             <div className="articles-grid">
                                 {trendingArticles.map(article => (
-                                    <article key={article.id} className="article-card" onClick={() => router.push(`/shorts?id=${article.id}`)}>
+                                    <article key={article.id} className={`article-card group/card ${isRead(article.id) ? 'read-card opacity-90' : ''}`} onClick={() => router.push(`/shorts?id=${article.id}`)}>
                                         <div className="article-image-container relative h-48 w-full group">
                                             <Image
                                                 src={article.image}
                                                 alt={article.title}
                                                 fill
-                                                className="article-image object-cover"
+                                                className={`article-image object-cover transition-all duration-500 ${isRead(article.id) ? 'grayscale-[100%] contrast-125' : ''}`}
                                                 unoptimized
                                             />
+                                            {isRead(article.id) && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none z-10">
+                                                    <span className="bg-green-600/90 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg border border-white/20 backdrop-blur-sm flex items-center gap-1.5 transform -rotate-6">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                        LU
+                                                    </span>
+                                                </div>
+                                            )}
 
                                             {/* Action Buttons */}
-                                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        alert('Article sauvegardé !');
+                                                        toggleLike(article.id);
                                                     }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
-                                                    aria-label="Sauvegarder"
-                                                    title="Sauvegarder"
+                                                    className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg ${isLiked(article.id) ? 'bg-pink-50 text-pink-600 border border-pink-200' : 'bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white'}`}
+                                                    aria-label={isLiked(article.id) ? "Retirer des favoris" : "Sauvegarder"}
+                                                    title={isLiked(article.id) ? "Retirer des favoris" : "Sauvegarder"}
                                                 >
                                                     <svg
                                                         viewBox="0 0 24 24"
-                                                        fill="none"
+                                                        fill={isLiked(article.id) ? "currentColor" : "none"}
                                                         stroke="currentColor"
                                                         strokeWidth="2"
                                                         className="w-5 h-5"
@@ -1250,17 +1284,17 @@ CONSIGNES POUR METADATA :
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        alert('Ajouté à "À regarder plus tard" !');
+                                                        toggleBookmark(article.id);
                                                     }}
-                                                    className="p-2 rounded-full bg-white/90 text-gray-700 hover:bg-pink-500 hover:text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg"
-                                                    aria-label="À regarder plus tard"
-                                                    title="À regarder plus tard"
+                                                    className={`p-2 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 shadow-lg ${isBookmarked(article.id) ? 'bg-indigo-50 text-indigo-600 border border-indigo-200' : 'bg-white/90 text-gray-700 hover:bg-indigo-500 hover:text-white'}`}
+                                                    aria-label={isBookmarked(article.id) ? "Retirer de la liste" : "À regarder plus tard"}
+                                                    title={isBookmarked(article.id) ? "Retirer de la liste" : "À regarder plus tard"}
                                                 >
                                                     <svg
                                                         viewBox="0 0 24 24"
                                                         fill="none"
                                                         stroke="currentColor"
-                                                        strokeWidth="2"
+                                                        strokeWidth={isBookmarked(article.id) ? "2.5" : "2"}
                                                         className="w-5 h-5"
                                                     >
                                                         <circle cx="12" cy="12" r="10"></circle>

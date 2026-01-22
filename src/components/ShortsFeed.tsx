@@ -8,16 +8,16 @@ import { useReadTracking } from '@/hooks/useReadTracking';
 
 // --- Types ---
 interface ShortItem {
-  id: string | number;
-  type: 'article' | 'video';
-  title: string;
-  description?: string; // resume_ia, excerpt, etc.
-  imageUrl: string;
-  date: string;
-  source?: string;
-  link: string;
-  tags: string[];
-  originalData?: any; // Keep original data for actions like save
+    id: string | number;
+    type: 'article' | 'video';
+    title: string;
+    description?: string; // resume_ia, excerpt, etc.
+    imageUrl: string;
+    date: string;
+    source?: string;
+    link: string;
+    tags: string[];
+    originalData?: any; // Keep original data for actions like save
 }
 
 // --- Helper: Deterministic Image ---
@@ -69,10 +69,10 @@ const SafeShortImage = ({ src, alt, title, className, isBackground = false }: { 
     if (isBackground && hasError) return null; // Logic from original: hide bg if fail
 
     return (
-        <img 
-            src={imgSrc || getDeterministicImage(title)} 
-            alt={alt} 
-            className={className} 
+        <img
+            src={imgSrc || getDeterministicImage(title)}
+            alt={alt}
+            className={className}
             onError={handleError}
         />
     );
@@ -87,15 +87,19 @@ export default function ShortsFeed() {
     const searchParams = useSearchParams();
     const initialId = searchParams.get('id');
     const [supabase] = useState(() => createClient());
-    
+
     // Read Tracking
-    const { markAsRead, isRead } = useReadTracking();
+    const { markAsRead, isRead, toggleLike, toggleBookmark, isLiked, isBookmarked, markAsSkipped, skippedIds, isLoaded: isTrackingLoaded } = useReadTracking();
     const [activeIndex, setActiveIndex] = useState(0);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const startTimeRef = useRef<number | null>(null);
+    const currentItemIdRef = useRef<string | number | null>(null);
 
     useEffect(() => {
-        fetchContent();
-    }, []);
+        if (isTrackingLoaded) {
+            fetchContent();
+        }
+    }, [isTrackingLoaded]);
 
     // Start tracking for the first item once items are loaded
     useEffect(() => {
@@ -106,9 +110,15 @@ export default function ShortsFeed() {
     }, [items, loading]);
 
     const startTracking = (index: number) => {
+        // Stop tracking previous item first (checks if it was skipped)
         stopTracking();
+
+        if (!items[index]) return;
+
         console.log(`Starting read tracking for item index ${index} (ID: ${items[index]?.id})`);
-        
+        currentItemIdRef.current = items[index].id;
+        startTimeRef.current = Date.now();
+
         timerRef.current = setTimeout(() => {
             if (items[index]) {
                 console.log(`Marking item ${items[index].id} as read`);
@@ -119,15 +129,30 @@ export default function ShortsFeed() {
                     tags: item.tags,
                     duration: 1 // default duration 1 min or calculate?
                 });
+                // Clear timer ref so stopTracking knows it finished normally
+                timerRef.current = null; 
             }
         }, 7000); // 7 seconds
     };
 
     const stopTracking = () => {
+        // If timer is still running, it means we didn't reach 7 seconds
         if (timerRef.current) {
             clearTimeout(timerRef.current);
             timerRef.current = null;
+
+            // Check how long we stayed
+            if (startTimeRef.current && currentItemIdRef.current) {
+                const duration = Date.now() - startTimeRef.current;
+                if (duration < 7000) {
+                    console.log(`Item ${currentItemIdRef.current} skipped (time: ${duration}ms)`);
+                    markAsSkipped(currentItemIdRef.current);
+                }
+            }
         }
+        
+        startTimeRef.current = null;
+        currentItemIdRef.current = null;
     };
 
     // Helper for safe URL
@@ -151,7 +176,7 @@ export default function ShortsFeed() {
                 .from('sources')
                 .select('id')
                 .in('name', videoSourceNames);
-            
+
             const videoSourceIds = videoSources?.map(s => s.id) || [];
 
             // 2. Fetch Content
@@ -168,28 +193,35 @@ export default function ShortsFeed() {
             }
 
             let mixedContent = rawContent || [];
+            
+            // Filter out skipped items based on loaded skiplist
+            if (skippedIds && skippedIds.length > 0) {
+                 mixedContent = mixedContent.filter(item => !skippedIds.includes(item.id.toString()));
+            }
 
             // Handle Initial ID (Specific Article)
             if (initialId) {
-                 const exists = mixedContent.find(item => item.id.toString() === initialId);
-                 if (!exists) {
-                     // Fetch specific item if not in the random batch
-                     const { data: specificItem } = await supabase
+                const exists = mixedContent.find(item => item.id.toString() === initialId);
+                // Even if skipped, if specifically requested via ID, we show it? 
+                // Logic: Yes, usually specific ID access overrides skip.
+                if (!exists) {
+                    // Fetch specific item if not in the random batch
+                    const { data: specificItem } = await supabase
                         .from('articles')
                         .select('id, title, excerpt, image_url, published_at, created_at, url, tags, source_id')
                         .eq('id', initialId)
                         .single();
-                     
-                     if (specificItem) {
-                         mixedContent = [specificItem, ...mixedContent];
-                     }
-                 }
+
+                    if (specificItem) {
+                        mixedContent = [specificItem, ...mixedContent];
+                    }
+                }
             }
 
             // 3. Separate & Verify Items
             const formattedItems: ShortItem[] = mixedContent.map(item => {
                 const isVideo = videoSourceIds.includes(item.source_id);
-                
+
                 // For videos, try to get a better high-res thumb
                 let imageUrl = item.image_url;
                 if (isVideo && item.url) {
@@ -222,7 +254,7 @@ export default function ShortsFeed() {
 
             // Construct final list
             const finalItems = firstItem ? [firstItem, ...otherItems] : otherItems;
-            
+
             setItems(finalItems);
 
         } catch (error) {
@@ -234,7 +266,7 @@ export default function ShortsFeed() {
 
     const handleScroll = () => {
         if (!containerRef.current) return;
-        
+
         const scrollTop = containerRef.current.scrollTop;
         const itemHeight = containerRef.current.clientHeight;
         const newIndex = Math.round(scrollTop / itemHeight);
@@ -250,14 +282,14 @@ export default function ShortsFeed() {
     }
 
     return (
-        <div 
+        <div
             ref={containerRef}
             className="h-screen w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth no-scrollbar bg-background text-foreground"
             onScroll={handleScroll}
             style={{ scrollSnapType: 'y mandatory' }}
         >
             {/* Close Button */}
-            <button 
+            <button
                 onClick={() => router.push('/')}
                 className="fixed top-6 left-6 z-50 p-2 bg-background/40 backdrop-blur-md rounded-full text-foreground hover:bg-background/60 transition-colors border border-border"
                 aria-label="Retour"
@@ -268,15 +300,15 @@ export default function ShortsFeed() {
             </button>
 
             {items.map((item, index) => (
-                <div 
-                    key={`${item.type}-${item.id}-${index}`} 
+                <div
+                    key={`${item.type}-${item.id}-${index}`}
                     className="w-full h-screen snap-start relative flex items-start justify-center bg-background overflow-hidden pt-28"
                 >
 
 
                     {/* Main Content Card */}
                     <div className="relative z-20 w-full max-w-2xl h-[80vh] bg-card rounded-3xl overflow-hidden shadow-2xl flex flex-col mx-4 animate-in fade-in duration-500 border border-border">
-                        
+
                         {/* Image or Video Section (Top 45%) */}
                         <div className="relative h-[45%] w-full bg-black">
                             {item.type === 'video' && extractYouTubeVideoId(item.link) ? (
@@ -290,10 +322,10 @@ export default function ShortsFeed() {
                                     />
                                 ) : (
                                     <div className="relative w-full h-full">
-                                        <SafeShortImage 
-                                            src={item.imageUrl} 
+                                        <SafeShortImage
+                                            src={item.imageUrl}
                                             title={item.title}
-                                            alt={item.title} 
+                                            alt={item.title}
                                             className="w-full h-full object-cover"
                                         />
                                         {/* Play Icon Overlay for inactive slides */}
@@ -307,19 +339,42 @@ export default function ShortsFeed() {
                                     </div>
                                 )
                             ) : (
-                                <SafeShortImage 
-                                    src={item.imageUrl} 
+                                <SafeShortImage
+                                    src={item.imageUrl}
                                     title={item.title}
-                                    alt={item.title} 
+                                    alt={item.title}
                                     className="w-full h-full object-cover"
                                 />
                             )}
-                            
+
+                            {/* Action Buttons (Top Right) */}
+                            <div className="absolute top-4 right-4 flex flex-col gap-3 z-30">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleLike(item.id); }}
+                                    className={`p-2.5 rounded-full backdrop-blur-md shadow-lg transition-all duration-200 active:scale-90 ${isLiked(item.id) ? 'bg-pink-500 text-white' : 'bg-black/40 text-white hover:bg-black/60 border border-white/20'}`}
+                                    title={isLiked(item.id) ? "Retirer des favoris" : "J'aime"}
+                                >
+                                    <svg viewBox="0 0 24 24" fill={isLiked(item.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" className="w-6 h-6">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleBookmark(item.id); }}
+                                    className={`p-2.5 rounded-full backdrop-blur-md shadow-lg transition-all duration-200 active:scale-90 ${isBookmarked(item.id) ? 'bg-blue-600 text-white' : 'bg-black/40 text-white hover:bg-black/60 border border-white/20'}`}
+                                    title={isBookmarked(item.id) ? "Retirer de la liste" : "À regarder plus tard"}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isBookmarked(item.id) ? "2.5" : "2"} className="w-6 h-6">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+
                             <div className="absolute top-4 left-4 flex gap-2 z-10 flex-col">
                                 <div className="flex gap-2">
                                     {item.type === 'video' ? (
                                         <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
                                             Vidéo
                                         </span>
                                     ) : (
@@ -364,9 +419,9 @@ export default function ShortsFeed() {
                                     {item.source} • {new Date(item.date).toLocaleDateString()}
                                 </span>
 
-                                <a 
-                                    href={item.link} 
-                                    target="_blank" 
+                                <a
+                                    href={item.link}
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-transform active:scale-95 flex items-center gap-2"
                                 >

@@ -111,7 +111,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Sidebar */}
       <aside className="sidebar">
         <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
         <nav className="sidebar-nav">
           <Link href="/admin" className="nav-item active">
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>Tableau de bord</span>
           </Link>
           <Link href="/admin/articles" className="nav-item">
             <span className="nav-icon">📰</span>
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* User Feedback Section */}
-        <section className="content-section">
+        <section className="content-section bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/10">
           <div className="section-header">
             <h2 className="section-title">Retours Utilisateurs</h2>
           </div>
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Recent Content Section */}
-        <section className="content-section">
+        <section className="content-section bg-white dark:bg-slate-900 border border-gray-100 dark:border-white/10">
           <div className="section-header">
             <h2 className="section-title">Derniers Articles</h2>
             <Link href="/admin/articles" className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold">
@@ -244,13 +244,13 @@ export default function AdminDashboard() {
 
 function StatCard({ icon, title, value, trend }: { icon: string, title: string, value: string, trend: string }) {
   return (
-    <div className="stat-card">
-      <div className="stat-icon">{icon}</div>
+    <div className="stat-card bg-white dark:bg-slate-800 backdrop-blur-xl border border-gray-100 dark:border-white/10 p-6 rounded-[24px] shadow-sm hover:shadow-lg transition-all duration-300 group">
+      <div className="stat-icon w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">{icon}</div>
       <div className="stat-info">
-        <p className="stat-label">{title}</p>
-        <p className="stat-value">{value}</p>
+        <p className="stat-label text-sm text-gray-500 dark:text-gray-400 font-medium mb-1">{title}</p>
+        <p className="stat-value text-3xl font-black text-gray-900 dark:text-white">{value}</p>
       </div>
-      <div className={`stat-trend ${trend.startsWith('+') ? 'up' : 'down'}`}>
+      <div className={`stat-trend ${trend.startsWith('+') ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20'} text-xs font-bold px-2 py-1 rounded-lg w-fit mt-3`}>
         {trend}
       </div>
     </div>
@@ -260,17 +260,17 @@ function StatCard({ icon, title, value, trend }: { icon: string, title: string, 
 function FeedbackCard({ type, date, content, author, initials, statusClass, onClick }: { type: string, date: string, content: string, author: string, initials: string, statusClass: string, onClick?: () => void }) {
   return (
     <div
-      className="feedback-card cursor-pointer hover:scale-[1.02] transition-transform duration-200 hover:shadow-md active:scale-95"
+      className="feedback-card bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-white/10 cursor-pointer hover:scale-[1.02] transition-transform duration-200 hover:shadow-md active:scale-95"
       onClick={onClick}
     >
       <div className="feedback-header">
         <span className={`status-badge ${statusClass}`}>{type}</span>
-        <span className="feedback-date">{date}</span>
+        <span className="feedback-date text-gray-500 dark:text-gray-400">{date}</span>
       </div>
-      <p className="feedback-content line-clamp-3">&quot;{content}&quot;</p>
+      <p className="feedback-content line-clamp-3 text-gray-700 dark:text-gray-300">&quot;{content}&quot;</p>
       <div className="feedback-author">
         <div className="author-avatar">{initials}</div>
-        <span className="author-name">{author}</span>
+        <span className="author-name text-gray-900 dark:text-gray-200">{author}</span>
       </div>
     </div>
   );
@@ -376,10 +376,10 @@ function FeedbackModal({ feedback, onClose }: { feedback: any, onClose: () => vo
 function ArticleRow({ title, category, date, author, status, statusClass }: { title: string, category: string, date: string, author: string, status: string, statusClass: string }) {
   return (
     <tr>
-      <td>{title}</td>
-      <td>{category}</td>
-      <td>{date}</td>
-      <td>{author}</td>
+      <td className="text-gray-900 dark:text-gray-200">{title}</td>
+      <td className="text-gray-700 dark:text-gray-300">{category}</td>
+      <td className="text-gray-600 dark:text-gray-400">{date}</td>
+      <td className="text-gray-700 dark:text-gray-300">{author}</td>
       <td>
         <span className={`status-badge ${statusClass}`}>
           {status}
