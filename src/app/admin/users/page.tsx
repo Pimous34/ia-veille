@@ -211,7 +211,7 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Sidebar */}
       <aside className="sidebar">
         <Link href="/" className="sidebar-header group flex flex-col items-center gap-2 py-6 px-4">
@@ -231,7 +231,7 @@ export default function AdminUsersPage() {
         <nav className="sidebar-nav">
           <Link href="/admin" className="nav-item">
             <span className="nav-icon">📊</span>
-            <span>Dashboard</span>
+            <span>Tableau de bord</span>
           </Link>
           <Link href="/admin/articles" className="nav-item">
             <span className="nav-icon">📰</span>
@@ -305,8 +305,8 @@ export default function AdminUsersPage() {
             </div>
           </div>
 
-          <div className="table-container">
-            <table className="data-table">
+          <div className="table-container bg-white dark:bg-slate-900/50 backdrop-blur-xl border border-gray-100 dark:border-white/10 rounded-[24px] overflow-hidden shadow-xl p-6">
+            <table className="data-table w-full">
               <thead>
                 <tr>
                   <th>Prénom</th>

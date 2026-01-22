@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useReadTracking } from '@/hooks/useReadTracking';
+import { useTheme } from 'next-themes';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
@@ -23,6 +24,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { resolvedTheme } = useTheme();
 
 
 
@@ -143,6 +145,8 @@ const Navbar = ({ onSearch }: NavbarProps) => {
     return { ...badge, count };
   })();
 
+  const logoSrc = mounted && resolvedTheme === 'dark' ? '/logo-dark.png' : '/logo.png';
+
 
 
   if (pathname === '/auth') return null;
@@ -157,7 +161,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
           <div className="absolute left-5 top-1/2 -translate-y-1/2">
             <Link href="/" className="flex items-center">
               <Image
-                src="/logo.png"
+                src={logoSrc}
                 alt="OREEGAM'IA"
                 width={200}
                 height={70}
@@ -170,24 +174,24 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
           <div className="flex flex-col items-center">
             {/* Main Pill */}
-            <div className={`flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 border-l-2 border-l-white/80 border-b-2 border-b-[#1565C0]/50 border-r-2 border-r-[#1565C0]/50 pointer-events-auto min-w-[650px] justify-between transition-all duration-300 ${isScrolled ? 'h-[50px] scale-95' : 'h-[60px]'}`}>
+            <div className={`flex items-center gap-1 px-2 py-2 rounded-[50px] bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] border-t-2 border-t-white/80 dark:border-t-white/10 border-l-2 border-l-white/80 dark:border-l-white/10 border-b-2 border-b-[#1565C0]/50 dark:border-b-white/5 border-r-2 border-r-[#1565C0]/50 dark:border-r-white/5 pointer-events-auto min-w-[650px] justify-between transition-all duration-300 ${isScrolled ? 'h-[50px] scale-95' : 'h-[60px]'}`}>
               {/* Navigation Links */}
               <div className="flex items-center px-6 gap-8 flex-1 justify-center">
-                <Link href="/jt" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">JTNews</Link>
-                <Link href="/#actualite" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Catégories</Link>
-                <Link href="/#tutos" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Tutos</Link>
-                <Link href="/flashcards" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Se former</Link>
-                <Link href="/shorts" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">ShortNews</Link>
-                <Link href="/events" className="text-gray-900 font-bold hover:text-indigo-600 transition-colors text-sm">Evènements</Link>
+                <Link href="/jt" className="text-gray-900 dark:text-white/90 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm">JTNews</Link>
+                <Link href="/#actualite" className="text-gray-900 dark:text-white/90 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm">Catégories</Link>
+                <Link href="/#tutos" className="text-gray-900 dark:text-white/90 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm">Tutos</Link>
+                <Link href="/flashcards" className="text-gray-900 dark:text-white/90 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm">Se former</Link>
+                <Link href="/shorts" className="text-gray-900 dark:text-white/90 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm">ShortNews</Link>
+                <Link href="/events" className="text-gray-900 dark:text-white/90 font-bold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-sm">Evènements</Link>
               </div>
 
               <ThemeToggle />
 
               {/* Search Interaction */}
               <div className="relative group ml-4">
-                <div className="flex items-center bg-white/20 hover:bg-white/40 focus-within:bg-white/90 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden w-[250px]">
+                <div className="flex items-center bg-white/20 dark:bg-slate-700/50 hover:bg-white/40 dark:hover:bg-slate-700/80 focus-within:bg-white/90 dark:focus-within:bg-slate-700 focus-within:shadow-md transition-all duration-300 rounded-full overflow-hidden w-[250px]">
                   <div
-                    className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700"
+                    className="w-[40px] h-[40px] flex items-center justify-center shrink-0 cursor-pointer text-gray-700 dark:text-white/70"
                     onClick={() => {
                       if (searchValue) {
                         if (onSearch) onSearch(searchValue);
@@ -206,7 +210,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                     type="text"
                     value={searchValue}
                     placeholder="Je veux comprendre..."
-                    className="bg-transparent border-none outline-none text-sm text-gray-800 placeholder-gray-600 h-full w-full pr-2 py-2"
+                    className="bg-transparent border-none outline-none text-sm text-gray-800 dark:text-white placeholder-gray-600 dark:placeholder-white/40 h-full w-full pr-2 py-2"
                     onChange={(e) => setSearchValue(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
@@ -256,11 +260,11 @@ const Navbar = ({ onSearch }: NavbarProps) => {
                         unoptimized
                       />
                     </div>
-                    <span className="text-sm font-semibold text-gray-700">{getUserDisplayName()}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-white/90">{getUserDisplayName()}</span>
                   </button>
 
                   {/* Tooltip on Hover */}
-                  <div className={`absolute top-full right-0 mt-3 px-4 py-3 bg-gray-900/95 backdrop-blur-md text-white text-[11px] rounded-2xl transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-90 origin-top-right ${isMenuOpen ? 'opacity-0 scale-90' : 'opacity-0 group-hover/badge:opacity-100 group-hover/badge:scale-100'}`}>
+                  <div className={`absolute top-full right-0 mt-3 px-4 py-3 bg-gray-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white text-[11px] rounded-2xl transition-all duration-300 whitespace-nowrap shadow-2xl z-[120] pointer-events-none border border-white/10 scale-90 origin-top-right ${isMenuOpen ? 'opacity-0 scale-90' : 'opacity-0 group-hover/badge:opacity-100 group-hover/badge:scale-100'}`}>
                     <p className="font-bold text-indigo-300 mb-1.5 text-xs">{currentBadge.label}</p>
                     <div className="flex items-center gap-3 mb-1.5 min-w-[150px]">
                       <div className="h-2 flex-1 bg-gray-700/50 rounded-full overflow-hidden border border-white/5">
@@ -303,12 +307,12 @@ const Navbar = ({ onSearch }: NavbarProps) => {
       </nav>
 
       {/* Mobile Navigation */}
-      <nav className={`fixed top-0 w-full z-50 transition-transform duration-300 md:hidden bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] backdrop-blur-xl ${isScrolled ? 'shadow-md border-b-2 border-b-[#1565C0]/50' : 'shadow-sm border-b border-white/50'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-transform duration-300 md:hidden bg-[linear-gradient(135deg,rgba(255,235,59,0.15)_0%,rgba(255,152,0,0.15)_25%,rgba(255,107,157,0.15)_50%,rgba(156,39,176,0.15)_75%,rgba(33,150,243,0.15)_100%)] dark:bg-slate-900/90 backdrop-blur-xl ${isScrolled ? 'shadow-md border-b-2 border-b-[#1565C0]/50 dark:border-b-white/10' : 'shadow-sm border-b border-white/50 dark:border-b-white/5'} ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="container mx-auto px-4">
           <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-14' : 'h-16'}`}>
             {/* Left: Burger Menu */}
             <div className="flex items-center justify-start flex-1">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 -ml-2 text-gray-800 hover:bg-white/40 rounded-lg transition-colors" aria-label="Menu">
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 -ml-2 text-gray-800 dark:text-white/90 hover:bg-white/40 dark:hover:bg-white/10 rounded-lg transition-colors" aria-label="Menu">
                 {isMenuOpen ? (
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 ) : (
@@ -320,13 +324,13 @@ const Navbar = ({ onSearch }: NavbarProps) => {
             {/* Center: Logo */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <Link href="/">
-                <Image src="/logo.png" alt="OREEGAM'IA" width={180} height={60} className={`w-auto transition-all duration-300 ${isScrolled ? 'h-[40px]' : 'h-[50px]'}`} priority unoptimized />
+                <Image src={logoSrc} alt="OREEGAM'IA" width={180} height={60} className={`w-auto transition-all duration-300 ${isScrolled ? 'h-[40px]' : 'h-[50px]'}`} priority unoptimized />
               </Link>
             </div>
 
             {/* Right: Actions */}
             <div className="flex items-center justify-end flex-1 gap-2">
-              <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600">
+              <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 text-gray-600 dark:text-white/70">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
               </button>
 
@@ -347,7 +351,7 @@ const Navbar = ({ onSearch }: NavbarProps) => {
 
           {/* Mobile Menu Content */}
           {isMenuOpen && (
-            <div className="absolute top-full left-0 w-full bg-white shadow-xl border-t border-gray-100 z-40 flex flex-col animate-slide-in-top">
+            <div className="absolute top-full left-0 w-full bg-white dark:bg-slate-900 shadow-xl border-t border-gray-100 dark:border-white/10 z-40 flex flex-col animate-slide-in-top">
               <div className="p-4 space-y-2">
                 {!user && (
                   <div className="mb-4 pb-4 border-b border-gray-100">

@@ -79,7 +79,7 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
 
     if (loading) {
         return (
-            <div className={`flex items-center justify-center ${embedded ? 'h-[300px]' : 'bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-[260px]'}`}>
+            <div className={`flex items-center justify-center ${embedded ? 'h-[300px]' : 'bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-white/10 h-[260px]'}`}>
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             </div>
         );
@@ -104,9 +104,9 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
     }
 
     // Dynamic classes based on 'embedded' prop
-    const containerClasses = embedded 
-        ? "flex flex-col h-full relative group" 
-        : "bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden flex flex-col h-[420px] relative transition-all hover:shadow-lg group";
+    const containerClasses = embedded
+        ? "flex flex-col h-full relative group"
+        : "bg-white dark:bg-slate-900 rounded-xl shadow-md border border-gray-100 dark:border-white/10 overflow-hidden flex flex-col h-[420px] relative transition-all hover:shadow-lg group";
 
     return (
         <div className={containerClasses}>
@@ -125,7 +125,7 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
 
             {/* Embedded Counter */}
             {embedded && (
-                 <div className="absolute top-0 right-0 text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                <div className="absolute top-0 right-0 text-xs font-bold text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full">
                     {currentIndex + 1} / {resources.length}
                 </div>
             )}
@@ -133,22 +133,29 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
             {/* Content */}
             <div className={`flex-1 flex flex-col justify-between relative ${embedded ? 'pt-8' : 'p-3'}`}>
                 {/* Top Section: Title & Name */}
-                <div className="px-2"> 
+                <div className="px-2">
 
                     <div className="flex items-center justify-center gap-2">
-                        <p className="text-lg text-indigo-600 font-medium text-center">
+                        <p className="text-lg text-indigo-600 dark:text-indigo-400 font-medium text-center">
                             {currentResource.prenom} {currentResource.nom}
                         </p>
+<<<<<<< HEAD
                         {currentResource.linkedin && (
                             <a 
                                 href={currentResource.linkedin} 
                                 target="_blank" 
+=======
+                        {currentResource.linkedin_url && (
+                            <a
+                                href={currentResource.linkedin_url}
+                                target="_blank"
+>>>>>>> d14078d67e462abe3776328870e4c832b92b6578
                                 rel="noopener noreferrer"
                                 className="hover:opacity-80 transition-opacity"
                             >
-                                <img 
-                                    src="/LinkedIn_icon.svg.png" 
-                                    alt="LinkedIn" 
+                                <img
+                                    src="/LinkedIn_icon.svg.png"
+                                    alt="LinkedIn"
                                     className="w-5 h-5 object-contain"
                                 />
                             </a>
@@ -159,8 +166,8 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
                 {/* Bottom Section: Info & Files */}
                 <div className="flex-1 flex flex-col justify-start">
                     {currentResource.infos_apprenants && (
-                        <div className="bg-gray-50 p-2 rounded-xl text-lg text-gray-700 italic border border-gray-100 mb-2 relative mx-0">
-                            <span className="absolute top-2 left-2 text-5xl text-indigo-100 pointer-events-none select-none font-serif leading-none">“</span>
+                        <div className="bg-gray-50 dark:bg-slate-800 p-2 rounded-xl text-lg text-gray-700 dark:text-gray-300 italic border border-gray-100 dark:border-white/5 mb-2 relative mx-0">
+                            <span className="absolute top-2 left-2 text-5xl text-indigo-100 dark:text-indigo-900/30 pointer-events-none select-none font-serif leading-none">“</span>
                             <p className="relative z-10 text-center">
                                 {currentResource.infos_apprenants}
                             </p>
@@ -180,9 +187,9 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
                                     href={getPublicUrl(cleanName)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-4 text-base font-semibold text-gray-700 hover:text-indigo-600 p-4 rounded-xl hover:bg-indigo-50 transition-all border border-gray-200 hover:border-indigo-200 group/file"
+                                    className="flex items-center gap-4 text-base font-semibold text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 p-4 rounded-xl hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all border border-gray-200 dark:border-white/10 hover:border-indigo-200 group/file"
                                 >
-                                    <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg group-hover/file:bg-indigo-200 transition-colors">
+                                    <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 p-2 rounded-lg group-hover/file:bg-indigo-200 transition-colors">
                                         <Download className="w-5 h-5" />
                                     </div>
                                     <span className="truncate flex-1">{cleanName}</span>
@@ -198,14 +205,14 @@ export default function ResourcesCarousel({ embedded = false, date }: { embedded
                 <>
                     <button
                         onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all z-10 hover:shadow-md"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white dark:bg-slate-800 text-gray-400 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all z-10 hover:shadow-md border border-gray-100 dark:border-white/10"
                         aria-label="Précédent"
                     >
                         <ChevronLeft className="w-8 h-8" />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all z-10 hover:shadow-md"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white dark:bg-slate-800 text-gray-400 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all z-10 hover:shadow-md border border-gray-100 dark:border-white/10"
                         aria-label="Suivant"
                     >
                         <ChevronRight className="w-8 h-8" />

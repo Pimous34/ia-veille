@@ -1,0 +1,72 @@
+/* Dark Mode Overrides for Admin Panel */
+
+:global(.dark) .content-section {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(.dark) .section-title {
+    color: #e2e8f0;
+}
+
+:global(.dark) .feedback-card {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(.dark) .feedback-content {
+    color: #cbd5e1;
+}
+
+:global(.dark) .feedback-date {
+    color: #94a3b8;
+}
+
+:global(.dark) .author-name {
+    color: #e2e8f0;
+}
+
+:global(.dark) .data-table th {
+    color: #94a3b8;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+:global(.dark) .data-table td {
+    color: #cbd5e1;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+:global(.dark) .data-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+:global(.dark) .sidebar {
+    background: #0f172a;
+    border-right-color: rgba(255, 255, 255, 0.1);
+}
+
+:global(.dark) .nav-item {
+    color: #94a3b8;
+}
+
+:global(.dark) .nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #a5b4fc;
+}
+
+:global(.dark) .nav-item.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+}
+
+:global(.dark) .user-profile {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+:global(.dark) .user-name {
+    color: #e2e8f0;
+}
+
+:global(.dark) .user-email {
+    color: #94a3b8;
+}
