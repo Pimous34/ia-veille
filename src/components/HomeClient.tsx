@@ -1218,8 +1218,9 @@ CONSIGNES POUR METADATA :
 
                                                 {/* Resources Carousel */}
                                                 <ResourcesCarousel date={currentDaySchedule?.courses?.[0]?.date} />
-                                            </div>
-                                        </div>
+
+                                                    </div>
+                                    </div>
                                     </div>
                                 </div>
                             </div>

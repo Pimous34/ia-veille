@@ -83,7 +83,7 @@ async function FlashcardsDataFetcher({ searchParams }: { searchParams: { q?: str
       return (a.difficulty || 0) - (b.difficulty || 0);
   });
 
-  const initialBatch = sortedCards.slice(0, 10);
+  const initialBatch = sortedCards.slice(0, 20);
 
   return <FlashcardsWrapper initialFlashcards={initialBatch} initialQuery={initialQuery} />;
 }
