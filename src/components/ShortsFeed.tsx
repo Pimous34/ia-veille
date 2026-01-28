@@ -182,7 +182,7 @@ export default function ShortsFeed() {
             // 2. Fetch Content
             const { data: rawContent, error } = await supabase
                 .from('articles')
-                .select('id, title, excerpt, image_url, published_at, created_at, url, tags, source_id')
+                .select('id, title, excerpt, resume_ia, image_url, published_at, created_at, url, tags, source_id')
                 .order('published_at', { ascending: false })
                 .limit(50);
 
@@ -208,7 +208,7 @@ export default function ShortsFeed() {
                     // Fetch specific item if not in the random batch
                     const { data: specificItem } = await supabase
                         .from('articles')
-                        .select('id, title, excerpt, image_url, published_at, created_at, url, tags, source_id')
+                        .select('id, title, excerpt, resume_ia, image_url, published_at, created_at, url, tags, source_id')
                         .eq('id', initialId)
                         .single();
 
